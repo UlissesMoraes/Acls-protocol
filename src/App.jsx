@@ -366,6 +366,115 @@ const P = [
     ],
     scores:["chadsvasc"],
   },
+  {
+    id:"amax4", label:"Anafilaxia / Asma Grave — AMAX4", icon:"🚨", cat:"Emergência",
+    color:"#6B21A8", light:"#F5F3FF", border:"#7C3AED",
+    sub:"Algoritmo AMAX4 — Anafilaxia e Asma crítica com risco de lesão cerebral hipóxica · Dr. Ben McKenzie",
+    cascade:[
+      { step:1, phase:"RECONHECIMENTO IMEDIATO — JANELA DE 4 MINUTOS", alert:true,
+        items:[
+          "O cérebro tolera NO MÁXIMO 4 minutos de hipóxia antes de lesão cerebral irreversível",
+          "CPR NÃO estende essa janela em parada hipóxica — a oxigenação é a única prioridade",
+          "Anafilaxia: início agudo com comprometimento respiratório (broncoespasmo/estridor) ± hipotensão ± urticária",
+          "A maioria dos jovens com anafilaxia fatal morre por BRONCOESPASMO — não por hipotensão",
+          "Gatilho mais comum em jovens: alergia alimentar. Também venom, medicamentos",
+          "Paciente pode estar alerta e com SatO₂ 100% e deteriorar abruptamente em segundos",
+          "Ativar equipe de ressuscitação IMEDIATAMENTE ao primeiro sinal de gravidade",
+        ],
+        decision:{ q:"Paciente consciente com via aérea pérvia?", yes:"→ Adrenalina IM IMEDIATA + O₂ + monitorização (Passo 2)", no:"→ Inconsciente / assistindo ventilação → IOT EMERGENCIAL (Passo 3)" }},
+      { step:2, phase:"ANAFILAXIA GRAVE — PACIENTE AINDA CONSCIENTE", alert:true,
+        items:[
+          "Adrenalina IM: 0,5 mg IM (adulto) / 0,3 mg IM (criança > 25 kg) / 0,15 mg IM (criança < 25 kg) — face anterolateral da coxa",
+          "O₂ de alto fluxo: máscara com reservatório 15 L/min — alvo SatO₂ > 95%",
+          "Posição: deitado com MMII elevados (se hipotensão) OU sentado (se broncoespasmo/dispneia)",
+          "Acesso venoso imediato — duas vias calibrosas",
+          "Broncoespasmo: Salbutamol 5 mg nebulizado contínuo OU 4–8 puffs inalatório",
+          "Adrenalina IV em bomba: iniciar se sem resposta à IM — 1–10 mcg/min (0,05–0,3 mcg/kg/min)",
+          "SF 0,9% 500–1.000 mL IV rápido se hipotensão",
+          "Monitorização contínua: FC, PA, SatO₂, capnografia se disponível",
+          "Repetir Adrenalina IM a cada 5 min se sem resposta ou deterioração",
+        ],
+        decision:{ q:"Deterioração apesar do tratamento? (rebaixamento, apneia, SatO₂ caindo)", yes:"→ INTUBAÇÃO OROTRAQUEAL IMEDIATA (Passo 3) — NÃO AGUARDAR", no:"→ Manter tratamento, observação rigorosa, preparar IOT à beira do leito" }},
+      { step:3, phase:"INCONSCIÊNCIA / PARADA RESPIRATÓRIA — IOT EMERGENCIAL", alert:true,
+        items:[
+          "PRESSÕES DE VIA AÉREA SÃO EXTREMAMENTE ALTAS (50–100 cmH₂O) — BVM e LMA SÃO INADEQUADOS",
+          "Apenas o TUBO OROTRAQUEAL (TOT) suporta as pressões necessárias para ventilar",
+          "BVM pode oxigenar por tempo DESCONHECIDO — não confiar; intubar o mais rápido possível",
+          "PRIMEIRA tentativa de IOT deve ser a MELHOR tentativa — use bloqueador neuromuscular + videolaringoscópio + melhor intubador disponível",
+          "Succinilcolina 1,5 mg/kg IV ou Rocurônio 1,2 mg/kg IV — indução de sequência rápida",
+          "Cetamina 1–2 mg/kg IV: anestésico de escolha (broncodilatador, hemodinâmica preservada)",
+          "Se FALHA na IOT (CICO — Não Consigo Intubar, Não Consigo Oxigenar): VIA AÉREA CIRÚRGICA IMEDIATA",
+          "Cricotireoidotomia de emergência — sem hesitação, sem nova tentativa de laringoscopia",
+          "Confirmar posição do tubo: capnografia ETCO₂ OBRIGATÓRIA — mesmo em situação de urgência máxima",
+        ],
+        decision:null },
+      { step:4, phase:"PÓS-INTUBAÇÃO — VENTILAÇÃO EXTREMA (Xtreme Ventilation)", alert:true,
+        items:[
+          "USAR BOLSA-VALVA-MÁSCARA (ambu) manualmente — NÃO conectar ao ventilador imediatamente",
+          "Frequência respiratória BAIXA: 6–8 respirações/min para evitar auto-PEEP e hiperinsuflação",
+          "Tempo expiratório LONGO: relação I:E = 1:4 ou 1:5 (deixar o ar sair completamente)",
+          "Volume corrente: 6–8 mL/kg — aceitar hipercapnia permissiva (CO₂ até 80–100 mmHg)",
+          "Pneumotórax: RISCO ALTO em parada hipóxica com RCP — suspeitar se resistência súbita ou queda de SatO₂",
+          "Descompressão com agulha imediata se suspeita de pneumotórax hipertensivo (2º EIC linha médio-clavicular)",
+          "Se dificuldade extrema de ventilar: desconectar o circuito por 30–60s para permitir expiração completa (auto-PEEP)",
+          "Após estabilização ventilatória: conectar ao ventilador com modo controlado, FR 8–10, PEEP mínimo",
+        ],
+        decision:null },
+      { step:5, phase:"TERAPIA FARMACOLÓGICA MÁXIMA (Xtra Medical Therapy)", alert:false,
+        items:[
+          "Adrenalina IV contínua: 0,1–1 mcg/kg/min em bomba — titular pela resposta hemodinâmica e broncoespasmo",
+          "Push dose de Adrenalina: 1 mcg/kg IV bolus a cada 30s se deterioração — até dose de PCR se necessário",
+          "Salbutamol IV: 250 mcg bolus lento → infusão 5–20 mcg/min (broncoespasmo refratário)",
+          "Sulfato de Magnésio: 2 g IV em 20 min (broncodilatação adicional — asma grave)",
+          "Hidrocortisona: 200 mg IV bolus (efeito em 4–6h — não imediato, mas essencial)",
+          "Anti-histamínico: Difenidramina 50 mg IV ou Prometazina 25–50 mg IV (adjuvante — não substitui Adrenalina)",
+          "Noradrenalina: adicionar se hipotensão refratária à Adrenalina (0,1–1 mcg/kg/min)",
+          "Glucagon: 1–2 mg IV bolus se paciente em uso de betabloqueador (reverte broncoespasmo e hipotensão refratários)",
+          "Metilprednisolona: 1–2 mg/kg IV como alternativa à Hidrocortisona",
+        ],
+        decision:null },
+      { step:6, phase:"PREPARO DA ADRENALINA PUSH DOSE — Como Diluir", alert:false,
+        items:[
+          "Solução 100 mcg/mL (adultos): ampola 1:10.000 (1 mg/10 mL) → cada 1 mL = 100 mcg",
+          "Alternativa: ampola 1:1.000 (1 mg/1 mL) + 9 mL de SF 0,9% → 10 mL com 100 mcg/mL",
+          "Solução 10 mcg/mL (crianças): 1 mL da solução 100 mcg/mL + 9 mL SF → 10 mL com 10 mcg/mL",
+          "Push dose adulto: 1 mcg/kg IV → para 70 kg = 0,7 mL da solução 100 mcg/mL",
+          "Push dose criança 20 kg: 1 mcg/kg = 20 mcg → 2 mL da solução 10 mcg/mL",
+          "ROTULAR A SERINGA CLARAMENTE antes de administrar — erros de concentração são fatais",
+          "Dose de PCR (adulto): 1 mg IV = 10 mL da solução 100 mcg/mL",
+        ],
+        decision:null },
+      { step:7, phase:"PARADA CARDÍACA HIPÓXICA — SE OCORREU", alert:true,
+        items:[
+          "Parada em anafilaxia/asma = CAUSA HIPÓXICA — a conduta difere da PCR convencional",
+          "CONTINUAR ventilação de alta qualidade pelo tubo orotraqueal durante as compressões",
+          "Adrenalina 1 mg IV/IO a cada 3–5 min (protocolo ACLS padrão para PCR)",
+          "Tratar broncoespasmo agressivamente durante a ressuscitação — sem broncodilatação o coração não volta",
+          "Descompressão bilateral de tórax: pneumotórax é causa comum de PCR refratária nesse contexto",
+          "Se retorno da circulação: rever ventilação, manter Adrenalina IV em bomba, UTI imediata",
+          "Prognóstico neurológico depende DIRETAMENTE do tempo até oxigenação efetiva — cada segundo importa",
+        ],
+        decision:null },
+    ],
+    drugs:[
+      { name:"Adrenalina IM", cat:"Vasopressor / Broncodilatador", dose:"Adulto: 0,5 mg IM | Criança > 25 kg: 0,3 mg IM | Criança < 25 kg: 0,15 mg IM", via:"IM na face anterolateral da coxa (músculo vasto lateral)", ind:"Anafilaxia grave — 1ª linha absoluta. Repetir a cada 5 min se necessário.", ci:"Sem contraindicação absoluta em anafilaxia grave", obs:"A VIA IM NA COXA é superior ao deltóide (maior absorção). Nunca retardar por aguardar acesso venoso." },
+      { name:"Adrenalina IV Push Dose", cat:"Vasopressor / Broncodilatador", dose:"1 mcg/kg IV bolus a cada 30s (solução 100 mcg/mL = 0,01 mL/kg por dose)", via:"IV bolus direto + flush 10 mL SF", ind:"Anafilaxia com rebaixamento de consciência, parada iminente ou refratária à IM", ci:"Sem contraindicação em emergência hipóxica", obs:"DILUIR corretamente: 1 amp 1:10.000 = 1 mg/10 mL = 100 mcg/mL. Rotular a seringa." },
+      { name:"Adrenalina IV Contínua", cat:"Vasopressor / Broncodilatador", dose:"0,1–1 mcg/kg/min IV em bomba (iniciar 0,1 mcg/kg/min e titular)", via:"IV em bomba de infusão contínua", ind:"Anafilaxia grave pós-intubação ou refratária ao tratamento IM/bolus", ci:"Sem contraindicação em emergência hipóxica", obs:"Monitorização contínua de PA e ECG. Preparar noradrenalina se hipotensão persistir." },
+      { name:"Cetamina", cat:"Anestésico dissociativo", dose:"1–2 mg/kg IV (indução para IOT) | 0,5 mg/kg IV (sedação)", via:"IV bolus lento em 1 min", ind:"Indução para IOT em anafilaxia/asma — broncodilatador, mantém drive respiratório e PA", ci:"Hipertensão grave não controlada (relativo)", obs:"Anestésico de ESCOLHA nesse cenário. Broncodilatador direto. Preserva hemodinâmica." },
+      { name:"Succinilcolina", cat:"Bloqueador neuromuscular despolarizante", dose:"1,5 mg/kg IV (ISR)", via:"IV bolus rápido", ind:"Bloqueio neuromuscular para IOT em sequência rápida", ci:"Hipercalemia grave, queimaduras extensas > 24h, miopatias", obs:"Início em 45–60s, duração 8–10 min. Alternativa: Rocurônio 1,2 mg/kg IV." },
+      { name:"Rocurônio", cat:"Bloqueador neuromuscular adespolarizante", dose:"1,2 mg/kg IV (ISR de alta dose)", via:"IV bolus rápido", ind:"ISR quando Succinilcolina contraindicada", ci:"Sem CI absolutas em emergência hipóxica", obs:"Onset 60–90s em dose alta. Reverter com Sugammadex 16 mg/kg se necessário." },
+      { name:"Salbutamol (Albuterol)", cat:"Beta-2 agonista", dose:"Nebulização: 5 mg contínua | IV: 250 mcg bolus → 5–20 mcg/min infusão", via:"Nebulização contínua ou IV em bomba", ind:"Broncoespasmo em anafilaxia e asma grave — adjuvante à Adrenalina", ci:"Sem CI em broncoespasmo grave", obs:"Adjuvante — NÃO substitui Adrenalina. IV se sem resposta ao nebulizado pós-IOT." },
+      { name:"Sulfato de Magnésio", cat:"Broncodilatador adjuvante", dose:"2 g IV em 20 min", via:"IV diluído em 100 mL SF", ind:"Asma grave / broncoespasmo refratário pós-IOT", ci:"BAV, IRC grave", obs:"Broncodilatação por bloqueio de cálcio no músculo liso brônquico." },
+      { name:"Hidrocortisona", cat:"Corticoide", dose:"200 mg IV bolus (adulto) | 4 mg/kg IV (criança, máx 200 mg)", via:"IV bolus", ind:"Anafilaxia — previne reação bifásica (efeito em 4–6h)", ci:"Sem CI em emergência", obs:"NÃO é tratamento de emergência imediata — efeito tardio. Não substituir Adrenalina." },
+      { name:"Glucagon", cat:"Antídoto hormonal", dose:"1–2 mg IV bolus → infusão 1–5 mg/h", via:"IV bolus lento + manutenção", ind:"Anafilaxia refratária em paciente em uso de betabloqueador", ci:"Feocromocitoma, insulinoma", obs:"Reverte o bloqueio do receptor beta pela Adrenalina. Usar precocemente se suspeita de betabloqueador." },
+    ],
+    antidotes:[
+      { agent:"Anafilaxia por betabloqueador", antidote:"Glucagon", dose:"1–2 mg IV bolus → 1–5 mg/h infusão", notes:"Reverte bloqueio beta — essencial quando Adrenalina não responde adequadamente." },
+      { agent:"Bloqueio neuromuscular por Rocurônio", antidote:"Sugammadex", dose:"16 mg/kg IV (reversão emergencial) | 4 mg/kg (reversão de rotina)", notes:"Reversão imediata do Rocurônio — disponibilizar sempre que usar Rocurônio para IOT." },
+      { agent:"Depressão respiratória pós-sedação", antidote:"Flumazenil (BZD) / Naloxona (opioide)", dose:"Flumazenil 0,2 mg IV fracionado | Naloxona 0,4–2 mg IV", notes:"Usar apenas se sedação causou rebaixamento — NÃO usar em epilépticos (Flumazenil)." },
+    ],
+    scores:[],
+  },
 ];
 
 // ─── DRUG DOSE FORMULAS ────────────────────────────────────────────────────────
@@ -383,103 +492,300 @@ const FORMULAS = {
   "Midazolam IM|convulsoes": w => ({ result:`${w>40?10:5} mg IM`, details:[w>40?"Peso > 40 kg: 10 mg IM":"Peso 13–40 kg: 5 mg IM", "Músculo vasto lateral"] }),
   "Valproato de Sódio|convulsoes": w => { const d=Math.min(w*40,3000); return { result:`${d.toFixed(0)} mg IV em 10 min`, details:[`${w} kg × 40 mg/kg = ${d.toFixed(0)} mg (máx 3.000 mg)`, `Velocidade: ${(d/10).toFixed(0)} mg/min`] }; },
   "Levetiracetam|convulsoes": w => { const d=Math.min(w*60,4500); return { result:`${d.toFixed(0)} mg IV em 10 min`, details:[`${w} kg × 60 mg/kg = ${d.toFixed(0)} mg (máx 4.500 mg)`] }; },
+  "Adrenalina IM|amax4": w => { const d=w>=25?0.5:w>=10?0.3:0.15; return { result:`${d} mg IM (${w} kg)`, details:[w>=25?`Adulto / criança > 25 kg: 0,5 mg IM`:w>=10?`Criança 10–25 kg: 0,3 mg IM`:`Criança < 10 kg: 0,15 mg IM`, "Face anterolateral da coxa — músculo vasto lateral", "Repetir a cada 5 min se sem resposta"] }; },
+  "Adrenalina IV Push Dose|amax4": w => ({ result:`${(w*0.001).toFixed(3)} mg = ${(w*0.01).toFixed(1)} mL (sol. 100mcg/mL)`, details:[`1 mcg/kg × ${w} kg = ${w} mcg por bolus`, `Solução 100 mcg/mL: ${(w*0.01).toFixed(1)} mL por dose`, "Repetir a cada 30s se deterioração", `Dose de PCR: 1 mg = 10 mL da solução 100 mcg/mL`] }),
+  "Adrenalina IV Contínua|amax4": w => ({ result:`${(w*0.1).toFixed(1)}–${(w*1).toFixed(0)} mcg/min IV`, details:[`Início: ${(w*0.1).toFixed(1)} mcg/min (0,1 mcg/kg/min)`, `Máximo habitual: ${(w*0.5).toFixed(1)} mcg/min (0,5 mcg/kg/min)`] }),
+  "Cetamina|amax4": w => ({ result:`${(w*1.5).toFixed(0)}–${(w*2).toFixed(0)} mg IV (indução IOT)`, details:[`Indução ISR: ${w} kg × 1,5–2 mg/kg = ${(w*1.5).toFixed(0)}–${(w*2).toFixed(0)} mg IV`, `Sedação leve: ${(w*0.5).toFixed(0)} mg IV (0,5 mg/kg)`] }),
+  "Succinilcolina|amax4": w => ({ result:`${(w*1.5).toFixed(0)} mg IV (ISR)`, details:[`${w} kg × 1,5 mg/kg = ${(w*1.5).toFixed(0)} mg IV bolus rápido`, "Onset: 45–60s | Duração: 8–10 min"] }),
+  "Rocurônio|amax4": w => ({ result:`${(w*1.2).toFixed(0)} mg IV (ISR alta dose)`, details:[`${w} kg × 1,2 mg/kg = ${(w*1.2).toFixed(0)} mg IV bolus rápido`, "Onset: 60–90s | Reverter com Sugammadex 16 mg/kg"] }),
+  "Hidrocortisona|amax4": w => ({ result:`200 mg IV bolus (adulto)`, details:["Dose fixa no adulto: 200 mg IV", `Criança: ${Math.min(w*4,200).toFixed(0)} mg IV (4 mg/kg, máx 200 mg)`, "Efeito em 4–6h — não é tratamento imediato"] }),
 };
 
 // ─── SCORES ────────────────────────────────────────────────────────────────────
 const SCORES_DEF = {
+
+  // ── qSOFA — Completo (Sepsis-3, Singer et al. JAMA 2016) ──────────────────
   qsofa: {
-    label:"qSOFA — Triagem de Sepse", sub:"Quick SOFA · Sepsis-3",
+    label:"qSOFA — Triagem de Sepse",
+    sub:"Quick SOFA completo · Sepsis-3 · Singer et al., JAMA 2016",
+    ref:"Singer M et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810.",
     type:"check",
+    note:"O qSOFA é uma ferramenta de triagem rápida à beira do leito. Score ≥ 2 identifica pacientes com suspeita de infecção em risco de desfecho desfavorável. Para diagnóstico de sepse, utilizar o escore SOFA completo.",
     fields:[
-      { k:"fr", label:"FR ≥ 22 irpm", pts:1 },
-      { k:"pas", label:"PAS ≤ 100 mmHg", pts:1 },
-      { k:"neuro", label:"Alteração do nível de consciência", pts:1 },
+      { k:"fr",    label:"Frequência respiratória ≥ 22 irpm", pts:1, detail:"Avaliado por contagem direta da FR em 1 minuto" },
+      { k:"pas",   label:"Pressão arterial sistólica ≤ 100 mmHg", pts:1, detail:"PAS aferida; qualquer momento da avaliação" },
+      { k:"neuro", label:"Alteração do estado mental (Glasgow < 15)", pts:1, detail:"Qualquer alteração de consciência, confusão, agitação ou rebaixamento" },
     ],
     interp: s => s===0
-      ? { label:"Baixo risco", color:"#276749", bg:"#C6F6D5", text:"Risco baixo de disfunção orgânica. Reavaliar se deterioração." }
+      ? { label:"qSOFA 0 — Baixo risco imediato", color:"#276749", bg:"#C6F6D5",
+          text:"Risco baixo de disfunção orgânica por sepse. Reavaliar se piora clínica. Não exclui infecção grave — manter vigilância clínica." }
       : s===1
-      ? { label:"Risco moderado", color:"#744210", bg:"#FEFCBF", text:"Vigilância aumentada. Considerar SOFA completo e busca de foco infeccioso." }
-      : { label:"Alto risco — possível Sepse", color:"#9B2C2C", bg:"#FED7D7", text:"Provável sepse. Iniciar bundle 1h: hemoculturas, ATB, lactato, reposição volêmica." },
+      ? { label:"qSOFA 1 — Atenção", color:"#744210", bg:"#FEFCBF",
+          text:"Vigilância aumentada. Considerar avaliação SOFA completa. Investigar foco infeccioso e realizar lactato. Repetir qSOFA em 1–2h." }
+      : { label:"qSOFA ≥ 2 — Possível Sepse", color:"#9B2C2C", bg:"#FED7D7",
+          text:"Alta probabilidade de sepse. INICIAR BUNDLE 1h: hemoculturas (2 pares), antibiótico empírico < 1h, lactato arterial, cristaloide 30 mL/kg se hipotensão ou lactato ≥ 4 mmol/L, vasopressor se PAM < 65 mmHg." },
   },
+
+  // ── GRACE 2.0 — Completo com valores numéricos (Fox et al. 2006, revisado 2014) ─
   grace: {
-    label:"GRACE Simplificado — Risco na SCA", sub:"Estratificação na SCA sem Supra",
-    type:"check",
+    label:"GRACE 2.0 — Risco na SCA",
+    sub:"Global Registry of Acute Coronary Events · Fox et al. · ESC/ACC-AHA Guidelines",
+    ref:"Fox KA et al. Should patients with acute coronary disease be stratified for management according to their risk? BMJ 2010;340:b5453. GRACE 2.0: Reclassification of the GRACE risk score, 2014.",
+    type:"grace_calc",
+    note:"Escore validado em 102.341 pacientes (GRACE registry, 30 países). Recomendado pelas diretrizes ESC 2023 e ACC/AHA 2025 para estratificação de risco na SCA. Score > 140 = indicação de coronariografia em ≤ 24h.",
     fields:[
-      { k:"i65", label:"Idade ≥ 65 anos", pts:2 },
-      { k:"fc", label:"FC > 100 bpm", pts:2 },
-      { k:"pas", label:"PAS ≤ 100 mmHg", pts:3 },
-      { k:"cr", label:"Creatinina > 2,0 mg/dL", pts:2 },
-      { k:"kil", label:"Killip III ou IV (ICC / choque)", pts:3 },
-      { k:"par", label:"Parada cardíaca na admissão", pts:4 },
-      { k:"st", label:"Desvio do segmento ST", pts:2 },
-      { k:"trop", label:"Troponina elevada", pts:2 },
+      { k:"age",       label:"Idade (anos)",                     type:"number", ph:"Ex: 68",  unit:"anos" },
+      { k:"hr",        label:"Frequência cardíaca (bpm)",        type:"number", ph:"Ex: 92",  unit:"bpm"  },
+      { k:"sbp",       label:"Pressão arterial sistólica (mmHg)",type:"number", ph:"Ex: 115", unit:"mmHg" },
+      { k:"cr",        label:"Creatinina (mg/dL)",               type:"number", ph:"Ex: 1.2", unit:"mg/dL"},
+      { k:"killip",    label:"Classe Killip",                    type:"select",
+        options:[
+          { v:"1", label:"Classe I — Sem sinais de IC", pts:0 },
+          { v:"2", label:"Classe II — Estertores / TJP / B3", pts:20 },
+          { v:"3", label:"Classe III — EAP franco", pts:39 },
+          { v:"4", label:"Classe IV — Choque cardiogênico", pts:59 },
+        ]},
+      { k:"arrest",    label:"Parada cardíaca na admissão",       type:"bool", pts:39 },
+      { k:"stdev",     label:"Desvio do segmento ST no ECG",      type:"bool", pts:28 },
+      { k:"enzymes",   label:"Enzimas cardíacas elevadas (troponina/CK-MB)", type:"bool", pts:14 },
     ],
-    interp: s => s<=4
-      ? { label:"Baixo risco", color:"#276749", bg:"#C6F6D5", text:"Investigação não invasiva. Coronariografia eletiva se indicada." }
-      : s<=10
-      ? { label:"Risco intermediário", color:"#744210", bg:"#FEFCBF", text:"Coronariografia em ≤ 72h. Manter anticoagulação e monitorização." }
-      : { label:"Alto risco", color:"#9B2C2C", bg:"#FED7D7", text:"Coronariografia em ≤ 24h. Considerar ICP precoce. UTI." },
+    // Pontuação GRACE por faixas (tabela validada do GRACE registry)
+    calcPoints: v => {
+      let pts = 0;
+      // Idade
+      const age = parseInt(v.age)||0;
+      if(age<30) pts+=0; else if(age<40) pts+=8; else if(age<50) pts+=25;
+      else if(age<60) pts+=41; else if(age<70) pts+=58; else if(age<80) pts+=75; else pts+=91;
+      // FC
+      const hr = parseInt(v.hr)||0;
+      if(hr<50) pts+=0; else if(hr<70) pts+=3; else if(hr<90) pts+=9;
+      else if(hr<110) pts+=15; else if(hr<150) pts+=24; else if(hr<200) pts+=38; else pts+=46;
+      // PAS
+      const sbp = parseInt(v.sbp)||0;
+      if(sbp<80) pts+=58; else if(sbp<100) pts+=53; else if(sbp<120) pts+=43;
+      else if(sbp<140) pts+=34; else if(sbp<160) pts+=24; else if(sbp<200) pts+=10; else pts+=0;
+      // Creatinina (mg/dL)
+      const cr = parseFloat(v.cr)||0;
+      if(cr<0.39) pts+=1; else if(cr<0.79) pts+=4; else if(cr<1.19) pts+=7;
+      else if(cr<1.59) pts+=10; else if(cr<1.99) pts+=13; else if(cr<3.99) pts+=21; else pts+=28;
+      // Killip
+      pts += parseInt(v.killip)||0;
+      // Booleanos
+      if(v.arrest==="true"||v.arrest===true) pts+=39;
+      if(v.stdev==="true"||v.stdev===true)   pts+=28;
+      if(v.enzymes==="true"||v.enzymes===true) pts+=14;
+      return pts;
+    },
+    interp: s => s<=108
+      ? { label:"Baixo risco (≤ 108)", color:"#276749", bg:"#C6F6D5",
+          text:"Mortalidade hospitalar estimada < 1%. Investigação não invasiva. Coronariografia eletiva se indicada. Considerar alta precoce com seguimento ambulatorial." }
+      : s<=140
+      ? { label:"Risco intermediário (109–140)", color:"#744210", bg:"#FEFCBF",
+          text:"Mortalidade hospitalar estimada 1–3%. Coronariografia em ≤ 72h. Manter anticoagulação, monitorização em unidade coronariana." }
+      : { label:"Alto risco (> 140)", color:"#9B2C2C", bg:"#FED7D7",
+          text:"Mortalidade hospitalar estimada > 3%. Coronariografia em ≤ 24h. ICP precoce. Internação em UTI/UCO. Anticoagulação plena e monitorização intensiva." },
   },
+
+  // ── CHA₂DS₂-VASc — Completo (ESC 2020 + AHA/ACC/HRS 2023) ───────────────
   chadsvasc: {
-    label:"CHA₂DS₂-VASc — Risco Tromboembólico", sub:"Indicação de anticoagulação na FA",
+    label:"CHA₂DS₂-VASc — Risco Tromboembólico na FA",
+    sub:"Score completo · ESC Guidelines 2020 · AHA/ACC/HRS 2023",
+    ref:"Hindricks G et al. 2020 ESC Guidelines for the diagnosis and management of atrial fibrillation. Eur Heart J. 2021;42(5):373-498. January CT et al. 2023 ACC/AHA/ACCP/HRS Guideline for Diagnosis and Management of Atrial Fibrillation. JACC. 2024.",
     type:"check",
+    note:"Score máximo = 9 pontos. As diretrizes ESC 2024 propõem o CHA₂DS₂-VA (sem sexo feminino), mas o CHA₂DS₂-VASc permanece como padrão nas diretrizes AHA/ACC/HRS 2023. Ambas as versões são aceitas.",
     fields:[
-      { k:"icc", label:"ICC / Disfunção VE (C)", pts:1 },
-      { k:"has", label:"HAS (H)", pts:1 },
-      { k:"i75", label:"Idade ≥ 75 anos (A₂)", pts:2 },
-      { k:"dm", label:"Diabetes mellitus (D)", pts:1 },
-      { k:"avc", label:"AVC / AIT / TE prévio (S₂)", pts:2 },
-      { k:"dv", label:"Doença vascular: IAM/DAP/placa (V)", pts:1 },
-      { k:"i65", label:"Idade 65–74 anos (A)", pts:1 },
-      { k:"sf", label:"Sexo feminino (Sc)", pts:1 },
+      { k:"icc",  label:"C — ICC / Disfunção VE (FE reduzida ou preservada com sintomas)", pts:1,
+        detail:"Inclui IC com FE reduzida (HFrEF) e IC com FE preservada (HFpEF) sintomática. Inclui pacientes com BNP/NT-proBNP elevados e evidência de disfunção cardíaca." },
+      { k:"has",  label:"H — Hipertensão arterial sistêmica", pts:1,
+        detail:"HAS diagnosticada ou em uso de anti-hipertensivo, mesmo que PA controlada no momento." },
+      { k:"i75",  label:"A₂ — Idade ≥ 75 anos", pts:2,
+        detail:"Score duplo (2 pontos). Fator de risco de maior peso independente." },
+      { k:"dm",   label:"D — Diabetes mellitus", pts:1,
+        detail:"DM tipo 1 ou 2, em uso de medicação ou com glicemia de jejum ≥ 126 mg/dL." },
+      { k:"avc",  label:"S₂ — AVC / AIT / Tromboembolismo prévio", pts:2,
+        detail:"Score duplo (2 pontos). AVC isquêmico, AIT ou tromboembolismo sistêmico prévio documentado." },
+      { k:"dv",   label:"V — Doença vascular (IAM / DAP / placa aórtica)", pts:1,
+        detail:"IAM prévio, doença arterial periférica sintomática ou placa aórtica complexa documentada por imagem." },
+      { k:"i65",  label:"A — Idade 65–74 anos", pts:1,
+        detail:"Apenas se idade entre 65 e 74 anos. NÃO somar com o critério A₂ (≥ 75 anos)." },
+      { k:"sf",   label:"Sc — Sexo feminino", pts:1,
+        detail:"Sexo feminino biológico. Nota: as diretrizes ESC 2024 propõem retirar este critério (CHA₂DS₂-VA). O sexo feminino isolado (score = 1) NÃO indica anticoagulação." },
     ],
     interp: s => s===0
-      ? { label:"Baixo risco (homem)", color:"#276749", bg:"#C6F6D5", text:"Sem anticoagulação. Reavaliar anualmente." }
+      ? { label:"Score 0 — Baixo risco (homem)", color:"#276749", bg:"#C6F6D5",
+          text:"Risco de AVC < 1%/ano. Sem indicação de anticoagulação. Reavaliar anualmente. Mulher com score 0 (sem outros fatores): mesma conduta." }
       : s===1
-      ? { label:"Risco baixo-moderado", color:"#744210", bg:"#FEFCBF", text:"Homem: considerar DOAC. Mulher com score 1 só por sexo: sem anticoagulação." }
-      : { label:"Alto risco — anticoagular", color:"#9B2C2C", bg:"#FED7D7", text:"Indicação formal de anticoagulação (DOAC preferencial). Avaliar risco hemorrágico (HAS-BLED)." },
+      ? { label:"Score 1 — Risco baixo-moderado", color:"#744210", bg:"#FEFCBF",
+          text:"Homem score 1: considerar DOAC (risco ≈ 1%/ano). Mulher score 1 apenas por sexo (Sc): NÃO anticoagular. Mulher com 1 fator clínico real: considerar DOAC. Avaliar HAS-BLED." }
+      : { label:`Score ${s} — Alto risco — ANTICOAGULAR`, color:"#9B2C2C", bg:"#FED7D7",
+          text:`Score ${s}: indicação formal de anticoagulação oral. DOAC preferencial (Apixabana, Rivaroxabana, Dabigatrana). Warfarina se FA valvar ou prótese mecânica. Avaliar risco hemorrágico com escore HAS-BLED antes de prescrever.` },
   },
+
+  // ── NIHSS — Completo com subitens 1a/1b/1c (Brott et al. 1989, Lyden 2001) ─
   nihss: {
-    label:"NIHSS Simplificado — Gravidade do AVC", sub:"National Institutes of Health Stroke Scale",
-    type:"check",
-    fields:[
-      { k:"cons", label:"Nível de consciência alterado", pts:2 },
-      { k:"olho", label:"Desvio ocular conjugado", pts:2 },
-      { k:"camp", label:"Hemianopsia", pts:2 },
-      { k:"face", label:"Paralisia facial", pts:2 },
-      { k:"mmss", label:"Paresia de MMSS", pts:4 },
-      { k:"mmii", label:"Paresia de MMII", pts:4 },
-      { k:"atax", label:"Ataxia de membros", pts:2 },
-      { k:"sens", label:"Déficit sensitivo", pts:2 },
-      { k:"lang", label:"Afasia / disfasia", pts:3 },
-      { k:"dis", label:"Disartria", pts:2 },
-      { k:"neg", label:"Negligência / extinção", pts:2 },
+    label:"NIHSS Completo — Gravidade do AVC",
+    sub:"National Institutes of Health Stroke Scale · Score máximo: 42 pontos",
+    ref:"Brott T et al. Measurements of acute cerebral infarction: a clinical examination scale. Stroke. 1989;20(7):864-870. Lyden P et al. Improved reliability of the NIH Stroke Scale using video training. Stroke. 1994;25(11):2220-2226.",
+    type:"nihss_scale",
+    note:"O NIHSS é o escore padrão-ouro para avaliação neurológica no AVC agudo. Score máximo = 42 pontos. Pontuações individuais NÃO devem ser estimadas — cada item requer avaliação clínica direta.",
+    items:[
+      { k:"1a", label:"1a — Nível de consciência (alerta)",
+        detail:"Avalie sem estimular. Se intubado, a resposta pode ser deduzida da mímica e movimentos.",
+        options:[
+          { v:0, label:"0 — Alerta, responsivo" },
+          { v:1, label:"1 — Sonolento, desperta ao estímulo mínimo" },
+          { v:2, label:"2 — Obnubilado, requer estimulação repetida" },
+          { v:3, label:"3 — Coma, responde apenas a reflexos ou sem resposta" },
+        ]},
+      { k:"1b", label:"1b — Consciência: perguntas (mês atual e idade do paciente)",
+        detail:"Pergunte: 'Que mês é hoje?' e 'Qual é a sua idade?' Cada resposta correta = 0; ambas erradas = 2.",
+        options:[
+          { v:0, label:"0 — Responde ambas corretamente" },
+          { v:1, label:"1 — Responde uma corretamente" },
+          { v:2, label:"2 — Nenhuma correta (ou afásico/intubado)" },
+        ]},
+      { k:"1c", label:"1c — Consciência: comandos (abrir/fechar olhos e mão)",
+        detail:"Ordene: 'Abra os olhos' e 'Feche a mão'. Se parético, use mão contrária.",
+        options:[
+          { v:0, label:"0 — Executa ambos corretamente" },
+          { v:1, label:"1 — Executa apenas um" },
+          { v:2, label:"2 — Nenhum comando executado" },
+        ]},
+      { k:"2", label:"2 — Melhor olhar conjugado",
+        detail:"Avalie o olhar horizontal voluntário. Se paresia do nervo oculomotor isolada, pontue 1.",
+        options:[
+          { v:0, label:"0 — Normal" },
+          { v:1, label:"1 — Paralisia parcial do olhar ou desvio corrigível" },
+          { v:2, label:"2 — Desvio forçado ou paresia total não corrigível" },
+        ]},
+      { k:"3", label:"3 — Campo visual",
+        detail:"Avalie por confrontação. Pontue déficits de extinção como 1.",
+        options:[
+          { v:0, label:"0 — Sem perda visual" },
+          { v:1, label:"1 — Hemianopsia parcial (quadrantanopsia)" },
+          { v:2, label:"2 — Hemianopsia completa" },
+          { v:3, label:"3 — Hemianopsia bilateral / cegueira cortical" },
+        ]},
+      { k:"4", label:"4 — Paralisia facial",
+        detail:"Peça ao paciente mostrar os dentes ou fechar os olhos com força.",
+        options:[
+          { v:0, label:"0 — Movimentos normais e simétricos" },
+          { v:1, label:"1 — Paresia leve (assimetria ao sorrir)" },
+          { v:2, label:"2 — Paresia parcial (paralisia inferior da face)" },
+          { v:3, label:"3 — Paralisia completa uni ou bilateral" },
+        ]},
+      { k:"5a", label:"5a — Motor braço esquerdo",
+        detail:"Braço a 90° (sentado) ou 45° (deitado) por 10 segundos. Pontue cada membro separadamente.",
+        options:[
+          { v:0, label:"0 — Sem queda em 10s" },
+          { v:1, label:"1 — Queda antes de 10s, sem tocar a cama" },
+          { v:2, label:"2 — Esforço contra gravidade, toca a cama" },
+          { v:3, label:"3 — Sem esforço contra gravidade" },
+          { v:4, label:"4 — Sem movimento" },
+        ]},
+      { k:"5b", label:"5b — Motor braço direito",
+        detail:"Mesma avaliação do 5a para o lado direito.",
+        options:[
+          { v:0, label:"0 — Sem queda em 10s" },
+          { v:1, label:"1 — Queda antes de 10s, sem tocar a cama" },
+          { v:2, label:"2 — Esforço contra gravidade, toca a cama" },
+          { v:3, label:"3 — Sem esforço contra gravidade" },
+          { v:4, label:"4 — Sem movimento" },
+        ]},
+      { k:"6a", label:"6a — Motor perna esquerda",
+        detail:"Perna a 30° (deitado) por 5 segundos.",
+        options:[
+          { v:0, label:"0 — Sem queda em 5s" },
+          { v:1, label:"1 — Queda antes de 5s, sem tocar a cama" },
+          { v:2, label:"2 — Esforço contra gravidade, toca a cama" },
+          { v:3, label:"3 — Sem esforço contra gravidade" },
+          { v:4, label:"4 — Sem movimento" },
+        ]},
+      { k:"6b", label:"6b — Motor perna direita",
+        detail:"Mesma avaliação do 6a para o lado direito.",
+        options:[
+          { v:0, label:"0 — Sem queda em 5s" },
+          { v:1, label:"1 — Queda antes de 5s, sem tocar a cama" },
+          { v:2, label:"2 — Esforço contra gravidade, toca a cama" },
+          { v:3, label:"3 — Sem esforço contra gravidade" },
+          { v:4, label:"4 — Sem movimento" },
+        ]},
+      { k:"7", label:"7 — Ataxia de membros",
+        detail:"Teste index-nariz e calcanhar-joelho. Pontue apenas se desproporcional à fraqueza.",
+        options:[
+          { v:0, label:"0 — Ausente" },
+          { v:1, label:"1 — Em 1 membro" },
+          { v:2, label:"2 — Em 2 ou mais membros" },
+        ]},
+      { k:"8", label:"8 — Sensibilidade",
+        detail:"Teste com alfinete. Pontue apenas perda relacionada ao AVC.",
+        options:[
+          { v:0, label:"0 — Normal" },
+          { v:1, label:"1 — Perda leve a moderada (sente, mas menos que o normal)" },
+          { v:2, label:"2 — Perda grave ou total (não sente o toque)" },
+        ]},
+      { k:"9", label:"9 — Melhor linguagem (afasia)",
+        detail:"Peça para nomear objetos, ler frases e descrever cenas (use o formulário NIHSS).",
+        options:[
+          { v:0, label:"0 — Sem afasia" },
+          { v:1, label:"1 — Afasia leve a moderada (comunicação possível)" },
+          { v:2, label:"2 — Afasia grave (quase sem comunicação)" },
+          { v:3, label:"3 — Mudo, afasia global, coma" },
+        ]},
+      { k:"10", label:"10 — Disartria",
+        detail:"Avalie articulação ao ler palavras. Não pontue se afásico.",
+        options:[
+          { v:0, label:"0 — Normal" },
+          { v:1, label:"1 — Leve a moderada (palavras inteligíveis com dificuldade)" },
+          { v:2, label:"2 — Grave (fala ininteligível ou mudo)" },
+        ]},
+      { k:"11", label:"11 — Extinção e negligência (inatenção)",
+        detail:"Estimulação simultânea bilateral visual e sensitiva. Avalie também negligência espacial.",
+        options:[
+          { v:0, label:"0 — Sem anormalidade" },
+          { v:1, label:"1 — Inatenção ou extinção a um tipo de estimulação" },
+          { v:2, label:"2 — Negligência grave / hemi-inatenção (não reconhece o próprio lado)" },
+        ]},
     ],
     interp: s => s===0
-      ? { label:"Sem déficit", color:"#276749", bg:"#C6F6D5", text:"AVC minor ou AIT. Investigação urgente mesmo com NIHSS 0." }
+      ? { label:"NIHSS 0 — Sem déficit", color:"#276749", bg:"#C6F6D5",
+          text:"Sem déficit neurológico detectável. Investigar AVC minor ou AIT — mesmo NIHSS 0 pode ocultar oclusão de grande vaso. TC/RM e avaliação neurológica obrigatórias." }
       : s<=4
-      ? { label:"AVC leve", color:"#276749", bg:"#C6F6D5", text:"Trombólise se dentro da janela. Considerar trombectomia se oclusão de grande vaso." }
+      ? { label:`NIHSS ${s} — AVC leve (1–4)`, color:"#276749", bg:"#C6F6D5",
+          text:"AVC leve. Trombólise IV indicada se dentro da janela de 4,5h. Considerar angiotomografia para excluir oclusão de grande vaso (trombectomia)." }
       : s<=15
-      ? { label:"AVC moderado", color:"#744210", bg:"#FEFCBF", text:"Trombólise e/ou trombectomia urgente. Time de AVC ativado." }
+      ? { label:`NIHSS ${s} — AVC moderado (5–15)`, color:"#744210", bg:"#FEFCBF",
+          text:"AVC moderado. Trombólise IV e/ou trombectomia mecânica urgente. Alta probabilidade de oclusão de grande vaso. Time de AVC ativado." }
       : s<=20
-      ? { label:"AVC moderado-grave", color:"#C05621", bg:"#FEEBC8", text:"Trombectomia prioritária. Alta probabilidade de oclusão de grande vaso." }
-      : { label:"AVC grave", color:"#9B2C2C", bg:"#FED7D7", text:"AVC grave. Trombectomia urgente. Avaliar suporte intensivo." },
+      ? { label:`NIHSS ${s} — AVC moderado-grave (16–20)`, color:"#C05621", bg:"#FEEBC8",
+          text:"AVC moderado-grave. Trombectomia mecânica prioritária. Avaliação urgente por neurointervencionista. Alta probabilidade de oclusão de artéria de grande calibre." }
+      : { label:`NIHSS ${s} — AVC grave (21–42)`, color:"#9B2C2C", bg:"#FED7D7",
+          text:"AVC grave. Trombectomia urgente se candidato. Avaliar suporte intensivo, prognosticar com família. Monitorização da PIC se deterioração." },
   },
+
+  // ── Osmolaridade Sérica Efetiva ────────────────────────────────────────────
   osm: {
-    label:"Osmolaridade Sérica Efetiva", sub:"Cálculo para EHH / hipernatremia",
+    label:"Osmolaridade Sérica Efetiva",
+    sub:"Cálculo validado para EHH / hipernatremia · Fórmula de Worthley",
+    ref:"Worthley LI et al. A comparison of hypertonic solutions for the treatment of acute hyponatraemia. Intensive Care Med. 1979. Fórmula padrão adotada pelas diretrizes ADA 2024.",
     type:"calc",
+    note:"A osmolaridade sérica efetiva (tonicidade) é calculada excluindo a ureia, pois ela atravessa membranas livremente e não contribui para gradiente osmótico efetivo. Valor > 320 mOsm/kg é critério diagnóstico de EHH.",
     inputs:[
-      { k:"na", label:"Na⁺ (mEq/L)", ph:"Ex: 152" },
-      { k:"gli", label:"Glicemia (mg/dL)", ph:"Ex: 850" },
+      { k:"na",  label:"Sódio sérico — Na⁺ (mEq/L)",   ph:"Ex: 152", unit:"mEq/L"  },
+      { k:"gli", label:"Glicemia plasmática (mg/dL)",   ph:"Ex: 850", unit:"mg/dL"  },
     ],
     formula: v => 2*(parseFloat(v.na)||0) + (parseFloat(v.gli)||0)/18,
     interp: v => v<280
-      ? { label:"Hipoosmolar", color:"#2B6CB0", bg:"#EBF8FF", text:"Avaliar hiponatremia / hiper-hidratação." }
+      ? { label:"Hipoosmolar (< 280 mOsm/kg)", color:"#2B6CB0", bg:"#EBF8FF",
+          text:"Hipoosmolaridade. Avaliar hiponatremia verdadeira, síndrome de secreção inapropriada de ADH (SIADH) ou hiper-hidratação. Investigar causa antes de corrigir." }
       : v<=295
-      ? { label:"Normal (280–295 mOsm/kg)", color:"#276749", bg:"#C6F6D5", text:"Osmolaridade dentro da faixa de referência." }
+      ? { label:"Normal (280–295 mOsm/kg)", color:"#276749", bg:"#C6F6D5",
+          text:"Osmolaridade dentro da faixa de referência normal." }
       : v<=320
-      ? { label:"Hiperosmolar leve", color:"#744210", bg:"#FEFCBF", text:"Hiperosmolaridade leve. Investigar causa e hidratar." }
-      : { label:"Hiperosmolar grave — critério EHH", color:"#9B2C2C", bg:"#FED7D7", text:"Osmolaridade > 320 mOsm/kg confirma EHH. Iniciar protocolo de reposição lenta." },
+      ? { label:"Hiperosmolar leve (296–320 mOsm/kg)", color:"#744210", bg:"#FEFCBF",
+          text:"Hiperosmolaridade leve. Não preenche critério de EHH. Investigar causa, iniciar hidratação oral ou parenteral conforme quadro clínico." }
+      : { label:"Hiperosmolar grave > 320 mOsm/kg — Critério de EHH", color:"#9B2C2C", bg:"#FED7D7",
+          text:"Osmolaridade > 320 mOsm/kg confirma Estado Hiperosmolar Hiperglicêmico (EHH). CORREÇÃO LENTA obrigatória (máx 3–8 mOsm/kg/h). Redução rápida causa edema cerebral." },
     unit:"mOsm/kg",
   },
 };
@@ -490,43 +796,136 @@ const CATS = ["Todos","Cardiovascular","Emergência","Toxicologia","Infectologia
 function ScoreWidget({ scoreKey, color, light, border }) {
   const sc = SCORES_DEF[scoreKey];
   const [checks, setChecks] = useState({});
-  const [nums, setNums] = useState({});
+  const [nums, setNums]     = useState({});
+  const [selects, setSelects] = useState({});
+  const [bools, setBools]   = useState({});
+  const [nihssVals, setNihssVals] = useState({});
   if (!sc) return null;
-  const total = sc.type === "check"
-    ? sc.fields.reduce((a,f) => a + (checks[f.k] ? f.pts : 0), 0)
-    : sc.formula(nums);
+
+  const sans = "sans-serif";
+  const BD = "#E2E8F0";
+
+  // ── Calcular total por tipo ──
+  let total = 0;
+  if (sc.type === "check") {
+    total = (sc.fields||[]).reduce((a,f) => a + (checks[f.k] ? f.pts : 0), 0);
+  } else if (sc.type === "calc") {
+    total = sc.formula(nums);
+  } else if (sc.type === "grace_calc") {
+    total = sc.calcPoints({...nums, ...selects, ...bools});
+  } else if (sc.type === "nihss_scale") {
+    total = (sc.items||[]).reduce((a,it) => a + (parseInt(nihssVals[it.k])||0), 0);
+  }
+
   const interp = sc.interp(total);
+
   return (
-    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, overflow:"hidden", marginBottom:14, boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
+    <div style={{ background:"#fff", border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
+      {/* Header */}
       <div style={{ background:light, borderBottom:`1px solid ${border}33`, padding:"12px 16px" }}>
         <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"#1A202C" }}>{sc.label}</div>
-        <div style={{ fontSize:11, color:"#718096", fontFamily:"sans-serif", marginTop:2 }}>{sc.sub}</div>
+        <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginTop:2 }}>{sc.sub}</div>
+        {sc.ref && <div style={{ fontSize:10, color:"#A0AEC0", fontFamily:sans, marginTop:4, fontStyle:"italic" }}>Ref: {sc.ref}</div>}
       </div>
+
       <div style={{ padding:"14px 16px" }}>
-        {sc.type === "check" && sc.fields.map(f => (
-          <label key={f.k} style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 0", borderBottom:"1px solid #F0F4F8", cursor:"pointer" }}>
-            <input type="checkbox" checked={!!checks[f.k]} onChange={() => setChecks(p=>({...p,[f.k]:!p[f.k]}))}
-              style={{ width:16, height:16, accentColor:color, cursor:"pointer", flexShrink:0 }} />
-            <span style={{ fontSize:13, color:"#2D3748", fontFamily:"sans-serif", flex:1 }}>{f.label}</span>
-            <span style={{ fontSize:11, fontWeight:700, color:"#718096", fontFamily:"sans-serif", background:"#EDF2F7", padding:"1px 8px", borderRadius:12 }}>+{f.pts}</span>
-          </label>
-        ))}
-        {sc.type === "calc" && sc.inputs.map(inp => (
-          <div key={inp.k} style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#718096", fontFamily:"sans-serif", fontWeight:700, display:"block", marginBottom:4 }}>{inp.label}</label>
-            <input type="number" placeholder={inp.ph} value={nums[inp.k]||""}
-              onChange={e => setNums(p=>({...p,[inp.k]:e.target.value}))}
-              style={{ width:"100%", border:"1px solid #CBD5E0", borderRadius:6, padding:"8px 10px", fontSize:14, fontFamily:"sans-serif", outline:"none" }} />
+        {/* Nota clínica */}
+        {sc.note && (
+          <div style={{ background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#2C5282", fontFamily:sans, lineHeight:1.5 }}>
+            ℹ️ {sc.note}
+          </div>
+        )}
+
+        {/* ── TIPO: check (qSOFA, CHA₂DS₂-VASc) ── */}
+        {sc.type === "check" && (sc.fields||[]).map(f => (
+          <div key={f.k}>
+            <label style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"8px 0", borderBottom:`1px solid #F0F4F8`, cursor:"pointer" }}>
+              <input type="checkbox" checked={!!checks[f.k]} onChange={() => setChecks(p=>({...p,[f.k]:!p[f.k]}))}
+                style={{ width:16, height:16, accentColor:color, cursor:"pointer", flexShrink:0, marginTop:2 }} />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, color:"#2D3748", fontFamily:sans, fontWeight:600 }}>{f.label}</div>
+                {f.detail && <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginTop:2, lineHeight:1.4 }}>{f.detail}</div>}
+              </div>
+              <span style={{ fontSize:12, fontWeight:700, color:"#718096", fontFamily:sans, background:"#EDF2F7", padding:"2px 8px", borderRadius:12, flexShrink:0 }}>+{f.pts}</span>
+            </label>
           </div>
         ))}
-        <div style={{ marginTop:12, padding:"12px 14px", background:interp.bg, borderRadius:8, border:`1px solid ${interp.color}44` }}>
+
+        {/* ── TIPO: calc (Osmolaridade) ── */}
+        {sc.type === "calc" && (sc.inputs||[]).map(inp => (
+          <div key={inp.k} style={{ marginBottom:12 }}>
+            <label style={{ fontSize:12, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 }}>{inp.label}</label>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <input type="number" placeholder={inp.ph} value={nums[inp.k]||""}
+                onChange={e => setNums(p=>({...p,[inp.k]:e.target.value}))}
+                style={{ width:140, border:`1px solid ${BD}`, borderRadius:6, padding:"8px 10px", fontSize:14, fontFamily:sans, outline:"none" }} />
+              <span style={{ fontSize:12, color:"#718096", fontFamily:sans }}>{inp.unit}</span>
+            </div>
+          </div>
+        ))}
+
+        {/* ── TIPO: grace_calc (GRACE 2.0) ── */}
+        {sc.type === "grace_calc" && (sc.fields||[]).map(f => (
+          <div key={f.k} style={{ marginBottom:12 }}>
+            <label style={{ fontSize:12, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 }}>{f.label}</label>
+            {f.type === "number" && (
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <input type="number" placeholder={f.ph} value={nums[f.k]||""}
+                  onChange={e => setNums(p=>({...p,[f.k]:e.target.value}))}
+                  style={{ width:130, border:`1px solid ${BD}`, borderRadius:6, padding:"7px 10px", fontSize:14, fontFamily:sans, outline:"none" }} />
+                <span style={{ fontSize:12, color:"#718096", fontFamily:sans }}>{f.unit}</span>
+              </div>
+            )}
+            {f.type === "select" && (
+              <select value={selects[f.k]||"1"}
+                onChange={e => setSelects(p=>({...p,[f.k]:e.target.value}))}
+                style={{ width:"100%", border:`1px solid ${BD}`, borderRadius:6, padding:"7px 10px", fontSize:13, fontFamily:sans, outline:"none", background:"#fff" }}>
+                {f.options.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
+              </select>
+            )}
+            {f.type === "bool" && (
+              <label style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
+                <input type="checkbox" checked={bools[f.k]===true}
+                  onChange={() => setBools(p=>({...p,[f.k]:!p[f.k]}))}
+                  style={{ width:16, height:16, accentColor:color, cursor:"pointer", flexShrink:0 }} />
+                <span style={{ fontSize:13, color:"#2D3748", fontFamily:sans }}>Presente</span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#718096", fontFamily:sans, background:"#EDF2F7", padding:"1px 8px", borderRadius:12, marginLeft:"auto" }}>+{f.pts} pts</span>
+              </label>
+            )}
+          </div>
+        ))}
+
+        {/* ── TIPO: nihss_scale (NIHSS completo) ── */}
+        {sc.type === "nihss_scale" && (sc.items||[]).map(it => (
+          <div key={it.k} style={{ marginBottom:12, borderBottom:`1px solid #F0F4F8`, paddingBottom:12 }}>
+            <div style={{ fontSize:13, color:"#1A202C", fontFamily:sans, fontWeight:700, marginBottom:2 }}>{it.label}</div>
+            {it.detail && <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginBottom:6, lineHeight:1.4 }}>{it.detail}</div>}
+            <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              {it.options.map(o => (
+                <label key={o.v} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", padding:"4px 8px", borderRadius:6,
+                  background: parseInt(nihssVals[it.k])===o.v ? light : "transparent",
+                  border: parseInt(nihssVals[it.k])===o.v ? `1px solid ${border}55` : "1px solid transparent" }}>
+                  <input type="radio" name={`nihss_${it.k}`} value={o.v}
+                    checked={parseInt(nihssVals[it.k])===o.v}
+                    onChange={() => setNihssVals(p=>({...p,[it.k]:o.v}))}
+                    style={{ accentColor:color, cursor:"pointer", flexShrink:0 }} />
+                  <span style={{ fontSize:12, color:"#2D3748", fontFamily:sans, flex:1 }}>{o.label}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: parseInt(nihssVals[it.k])===o.v ? color : "#A0AEC0", fontFamily:sans, background:"#EDF2F7", padding:"1px 7px", borderRadius:12 }}>{o.v}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* ── RESULTADO ── */}
+        <div style={{ marginTop:14, padding:"12px 14px", background:interp.bg, borderRadius:8, border:`1px solid ${interp.color}44` }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:interp.color, fontFamily:"sans-serif" }}>{interp.label}</span>
-            <span style={{ fontSize:22, fontWeight:900, color:interp.color, fontFamily:"sans-serif" }}>
+            <span style={{ fontSize:13, fontWeight:700, color:interp.color, fontFamily:sans, flex:1, marginRight:8 }}>{interp.label}</span>
+            <span style={{ fontSize:24, fontWeight:900, color:interp.color, fontFamily:sans, flexShrink:0 }}>
               {sc.type==="calc" ? total.toFixed(1) : total} {sc.unit||"pts"}
             </span>
           </div>
-          <div style={{ fontSize:12, color:interp.color, fontFamily:"sans-serif", lineHeight:1.6 }}>{interp.text}</div>
+          <div style={{ fontSize:12, color:interp.color, fontFamily:sans, lineHeight:1.6 }}>{interp.text}</div>
         </div>
       </div>
     </div>
