@@ -475,6 +475,152 @@ const P = [
     ],
     scores:[],
   },
+  {
+    id:"hidroeletroliticos", label:"Distúrbios Hidroeletrolíticos", icon:"🧪", cat:"Emergência",
+    color:"#0F766E", light:"#F0FDFA", border:"#14B8A6",
+    sub:"Correção de distúrbios do sódio, potássio, cálcio e magnésio na emergência · Diretrizes 2023–2024",
+    cascade:[
+      {
+        step:1, phase:"HIPERCALEMIA — K⁺ > 5,5 mEq/L", alert:true,
+        items:[
+          "ECG IMEDIATO: ondas T apiculadas (precoce) → PR longo → QRS alargado → padrão sinusoidal → FV (tardia)",
+          "Classificar: Leve K⁺ 5,5–6,0 | Moderada 6,0–6,5 | Grave ≥ 6,5 mEq/L ou com alterações no ECG",
+          "PASSO 1 — ESTABILIZAR membrana cardíaca: Gluconato de Cálcio 10% 1 g (10 mL) IV em 2–3 min — repetir em 5 min se ECG persistir",
+          "PASSO 2 — REDISTRIBUIR K⁺ para intracelular: Insulina Regular 10 UI IV + Glicose 50% 50 mL (se gli < 250 mg/dL) — reduz K⁺ em 0,5–1,5 mEq/L em 15–30 min",
+          "PASSO 2b — Salbutamol 10–20 mg nebulizado (adjuvante — reduz K⁺ em 0,5–1,0 mEq/L)",
+          "PASSO 2c — Bicarbonato de Sódio 8,4%: 50 mEq IV em 15 min — eficaz APENAS se acidose metabólica grave associada",
+          "PASSO 3 — ELIMINAR K⁺ do organismo: Furosemida 40–80 mg IV (se diurese preservada) | Resina de troca iônica VO (Patiromer 8,4 g OU Zircônio ciclossolicato de sódio 10 g) | Diálise de urgência se refratário ou anúria",
+          "Monitorar K⁺ a cada 1–2h. Suspender drogas hipercalemiantes: IECA, BRA, poupadores de K⁺",
+          "ATENÇÃO: Kayexalate (poliestireno sulfato de sódio) — evidência de eficácia questionável e risco de necrose intestinal — NÃO usar rotineiramente",
+        ],
+        decision:{ q:"K⁺ ≥ 6,5 mEq/L ou alteração no ECG?", yes:"→ Gluconato de Cálcio IV IMEDIATO + Insulina/Glicose + considerar diálise emergencial", no:"→ Redistribuição + eliminação conforme protocolo acima" }
+      },
+      {
+        step:2, phase:"HIPOCALEMIA — K⁺ < 3,5 mEq/L", alert:false,
+        items:[
+          "Classificar: Leve 3,0–3,5 | Moderada 2,5–3,0 | Grave < 2,5 mEq/L ou com sintomas/ECG",
+          "ECG: onda U proeminente, ST deprimido, achatamento de onda T, prolongamento de QT",
+          "REPOR K⁺: Cloreto de Potássio (KCl) IV",
+          "Veia periférica: máx 20 mEq/h (concentração máx 40 mEq/L)",
+          "Veia central: até 40 mEq/h (concentração máx 200 mEq/L) — monitorização contínua de ECG",
+          "NUNCA administrar KCl em bolus IV — risco de PCR",
+          "Hipocalemia grave sintomática (K⁺ < 2,5): 40 mEq/h em veia central com ECG contínuo",
+          "Hipocalemia refratária: verificar e repor Mg²⁺ — hipomagnesemia perpetua hipocalemia",
+          "NÃO repor em Soro Glicosado — estimula insulina e agrava hipocalemia",
+          "Fórmula de reposição total: Déficit K⁺ (mEq) = (K⁺ alvo − K⁺ atual) × peso × 0,4",
+        ],
+        decision:null
+      },
+      {
+        step:3, phase:"HIPONATREMIA — Na⁺ < 135 mEq/L", alert:true,
+        items:[
+          "Classificar gravidade: Leve 130–135 | Moderada 125–129 | Grave < 125 mEq/L",
+          "Classificar por SINTOMAS: assintomática vs sintomática (náusea, cefaleia, confusão, convulsão, coma)",
+          "HIPONATREMIA GRAVE SINTOMÁTICA (convulsão / coma): NaCl 3% hipertônico 100–150 mL IV em 10–20 min — repetir até 3x se sintomas persistirem",
+          "Alvo imediato: elevar Na⁺ em 4–6 mEq/L nas primeiras 6h (suficiente para reverter sintomas neurológicos agudos)",
+          "CORREÇÃO MÁXIMA SEGURA: 8–10 mEq/L em 24h (máx 18 mEq/L em 48h)",
+          "NUNCA corrigir > 12 mEq/L em 24h — risco de Síndrome de Desmielinização Osmótica (SDO / mielinólise pontina)",
+          "Hiponatremia crônica (> 48h) ou causa desconhecida: correção MAIS LENTA — máx 8 mEq/L/24h",
+          "Monitorar Na⁺ sérico a cada 2h nas primeiras 24h",
+          "Pacientes de ALTO RISCO para SDO (K⁺ baixo, desnutrição, alcoolismo, hepatopatia): alvo ainda mais cauteloso — 6 mEq/L/24h. Considerar Desmopressina 2–4 mcg IV/SC para 'frear' correção excessiva",
+          "Tratar causa: SIADH → restrição hídrica 500–1.000 mL/dia; IC → otimizar; hipotireoidismo → T4",
+        ],
+        decision:{ q:"Sintomas neurológicos graves (convulsão / coma)?", yes:"→ NaCl 3% 100 mL IV em 10 min IMEDIATO — repetir até melhora (máx 3x)", no:"→ Correção gradual conforme causa e cronicidade — Evitar > 8 mEq/L/24h" }
+      },
+      {
+        step:4, phase:"HIPERNATREMIA — Na⁺ > 145 mEq/L", alert:false,
+        items:[
+          "Classificar: Leve 145–149 | Moderada 150–154 | Grave ≥ 155 mEq/L",
+          "Sempre indica déficit de água livre — calcular déficit: [(Na⁺ atual/140) − 1] × (0,6 × peso kg)",
+          "Repor com Água livre oral/SNG (preferencial) OU Soro Glicosado 5% IV OU SF 0,45% IV",
+          "CORREÇÃO MÁXIMA SEGURA: reduzir Na⁺ em ≤ 10 mEq/L por 24h",
+          "Correção rápida (> 12 mEq/L/24h) causa EDEMA CEREBRAL — irreversível",
+          "Velocidade orientada: calcular mL/h de SG5% para corrigir déficit em 48–72h",
+          "Monitorar Na⁺ a cada 4–6h inicialmente",
+          "Hipernatremia aguda (< 24h, ex: EHH): pode tolerar correção um pouco mais rápida — mas nunca > 1 mEq/L/h",
+          "Tratar causa: diabetes insipidus → Desmopressina 2–4 mcg SC/IV; perdas renais → SF + reposição de volume",
+        ],
+        decision:null
+      },
+      {
+        step:5, phase:"HIPOCALCEMIA — Ca²⁺ total < 8,5 mg/dL (iônico < 1,12 mmol/L)", alert:true,
+        items:[
+          "Corrigir Ca²⁺ pelo albumin: Ca²⁺ corrigido = Ca²⁺ medido + 0,8 × (4 − albumina g/dL)",
+          "Ou dosar Ca²⁺ iônico (livre) — mais confiável em pacientes críticos",
+          "SINTOMÁTICA GRAVE (tetania, convulsão, QT longo, hipotensão, laringospasmo): Gluconato de Cálcio 10% 1–2 g (10–20 mL) IV em 10 min",
+          "Repetir até resolução dos sintomas agudos. Manutenção: 0,5–1,5 mg de Ca elementar/kg/h IV",
+          "ASSSINTOMÁTICA/LEVE: Carbonato de Cálcio VO 1–3 g/dia em 2–3 doses",
+          "Sempre repor Magnésio se hipomagnesemia associada — é causa de hipocalcemia refratária",
+          "Vitamina D: Colecalciferol 50.000 UI/semana se hipovitaminose D confirmada",
+          "Hipoparatireoidismo: Calcitriol 0,25–2 mcg/dia VO + Ca²⁺ oral",
+          "ECG: monitorar QTc — hipocalcemia prolonga QT → risco de TdP",
+        ],
+        decision:null
+      },
+      {
+        step:6, phase:"HIPERCALCEMIA — Ca²⁺ total > 10,5 mg/dL (iônico > 1,32 mmol/L)", alert:false,
+        items:[
+          "Classificar: Leve 10,5–12,0 | Moderada 12,0–14,0 | Grave > 14,0 mg/dL",
+          "TRATAMENTO DE URGÊNCIA (Ca²⁺ > 14 mg/dL ou sintomático grave): SF 0,9% 200–500 mL/h IV (hiper-hidratação vigorosa) — 1ª medida",
+          "Furosemida 20–40 mg IV após hidratação adequada (NÃO antes — agrava depleção)",
+          "Bifosfonatos: Ácido Zoledrônico 4 mg IV em 15 min (início de ação em 24–72h — efeito máximo em 4–7 dias)",
+          "Alternativa: Pamidronato 60–90 mg IV em 4h",
+          "Calcitonina 4–8 UI/kg SC/IM 12/12h — início rápido (4–6h) mas taquifilaxia em 48h",
+          "Hipercalcemia grave com DRC ou refratária: Hemodiálise com banho de cálcio baixo",
+          "Causas: hiperparatireoidismo (1ª), neoplasias (PTHrP), granulomatoses, hipervitaminose D",
+          "Denosumab: opção em hipercalcemia neoplásica refratária a bifosfonatos",
+        ],
+        decision:null
+      },
+      {
+        step:7, phase:"HIPOMAGNESEMIA — Mg²⁺ < 1,7 mg/dL (< 0,7 mmol/L)", alert:false,
+        items:[
+          "Causa frequente de hipocalemia e hipocalcemia REFRATÁRIAS à reposição isolada",
+          "Sintomas: fraqueza muscular, cãibras, arritmias (TdP), tremor, nistagmo, convulsão",
+          "ECG: prolongamento de QT, torsades de pointes",
+          "REPOSIÇÃO IV (grave/sintomática): MgSO₄ 2 g (4 mL da solução 50%) IV em 15–30 min → manutenção 6 g em 24h",
+          "Torsades de Pointes: MgSO₄ 2 g IV em 2 min (bolus rápido de emergência)",
+          "Reposição VO (leve/moderada assintomática): Óxido de Magnésio 400 mg VO 2–3x/dia",
+          "Monitorar: reflexo patelar (desaparece se Mg²⁺ > 7 mEq/L — sinal de toxicidade), FR, diurese",
+          "Antídoto da toxicidade por MgSO₄: Gluconato de Cálcio 1 g IV imediato",
+          "Causas comuns: diuréticos, IBP prolongado, alcoolismo, diarreia crônica, aminoglicosídeos, anfotericina",
+        ],
+        decision:null
+      },
+      {
+        step:8, phase:"DISTÚRBIOS DO FÓSFORO — Hipofosfatemia e Hiperfosfatemia", alert:false,
+        items:[
+          "Hipofosfatemia grave < 1,0 mg/dL: fraqueza muscular grave, insuficiência respiratória, rabdomiólise, hemólise",
+          "Repor Fosfato de Potássio (K₂PO₄): 0,08–0,16 mmol/kg IV em 6h (hipofosfatemia grave)",
+          "Leve a moderada (1,0–2,5 mg/dL): Fosfato de sódio/potássio VO",
+          "Hiperfosfatemia > 5,5 mg/dL: restrição alimentar, quelantes de fósforo (Carbonato de Ca²⁺, Sevelamer)",
+          "Hemodiálise em hiperfosfatemia grave com DRC",
+          "SEMPRE verificar e corrigir fósforo em CAD e síndrome de realimentação",
+        ],
+        decision:null
+      },
+    ],
+    drugs:[
+      { name:"Gluconato de Cálcio 10%", cat:"Eletrólito / Estabilizador de membrana", dose:"1 g (10 mL) IV em 2–3 min. Repetir em 5 min se ECG persistir. Manutenção: 0,5–1,5 mg Ca/kg/h IV.", via:"IV lento (2–3 min) — NUNCA bolus rápido", ind:"Hipercalemia com ECG alterado, hipocalcemia sintomática, hipermagnesemia", ci:"Hipercalcemia, intoxicação digitálica (relativo)", obs:"Não confundir com Cloreto de Cálcio: CaCl₂ tem 3x mais Ca elementar — preferir em PCR. Gluconato: via periférica. CaCl₂: preferencialmente central." },
+      { name:"Cloreto de Cálcio (CaCl₂) 10%", cat:"Eletrólito / Estabilizador de membrana", dose:"1 g (10 mL) IV em 2–3 min — contém 3x mais Ca elementar que Gluconato", via:"IV lento — preferencialmente acesso central (esclerosante)", ind:"PCR com hipercalemia, hipocalcemia grave, intoxicação por BCC", ci:"Hipercalcemia", obs:"Preferencial ao gluconato em PCR. Pode causar necrose se extravasar em veia periférica." },
+      { name:"Cloreto de Potássio (KCl)", dose:"Periférica: 20 mEq/h em 40 mEq/L | Central: até 40 mEq/h em 200 mEq/L", cat:"Eletrólito", via:"IV diluído — NUNCA bolus puro", ind:"Hipocalemia sintomática ou K⁺ < 3,0 mEq/L", ci:"K⁺ ≥ 4,5, anúria grave sem monitorização", obs:"NUNCA infundir KCl puro IV — parada cardíaca. ECG contínuo em veia central. Não diluir em SG (estimula insulina)." },
+      { name:"NaCl 3% Hipertônico", cat:"Cristaloide hipertônico", dose:"100–150 mL IV em 10–20 min (hiponatremia grave sintomática). Repetir até 3x.", via:"IV em veia periférica calibrosa ou central", ind:"Hiponatremia grave com sintomas neurológicos (convulsão, coma)", ci:"Hipernatremia, hiperosmolaridade, ICC descompensada grave", obs:"Alvo: elevar Na⁺ 4–6 mEq/L nas primeiras 6h. Máximo seguro: 8–10 mEq/L/24h para evitar SDO." },
+      { name:"Sulfato de Magnésio (MgSO₄) 50%", cat:"Eletrólito", dose:"Hipomagnesemia grave: 2 g IV em 15–30 min → manutenção 6 g em 24h. TdP: 2 g IV em 2 min.", via:"IV diluído em 100 mL SF ou SG5%", ind:"Hipomagnesemia, Torsades de Pointes, eclampsia, asma grave", ci:"BAV, miastenia gravis, anúria grave", obs:"Monitorar reflexo patelar e FR. Antídoto da toxicidade: Gluconato de Cálcio 1 g IV." },
+      { name:"Ácido Zoledrônico", cat:"Bifosfonato IV", dose:"4 mg IV em 15 min (solução em 100 mL SF ou SG5%)", via:"IV em 15 min", ind:"Hipercalcemia moderada a grave (> 12 mg/dL) — especialmente neoplásica", ci:"ClCr < 35 mL/min, gestação", obs:"Início de ação 24–72h. Efeito máximo 4–7 dias. Hidratação adequada ANTES da infusão." },
+      { name:"Insulina Regular + Glicose 50%", cat:"Redistribuidor de K⁺", dose:"Insulina 10 UI IV bolus + Glicose 50% 50 mL IV (se gli < 250 mg/dL)", via:"IV bolus (insulina separada da glicose)", ind:"Hipercalemia — redistribui K⁺ para intracelular em 15–30 min", ci:"Hipoglicemia grave ativa", obs:"Reduz K⁺ em 0,5–1,5 mEq/L. Monitorar glicemia a cada 1h por 6h (risco de hipoglicemia)." },
+      { name:"Furosemida", cat:"Diurético de alça", dose:"Hipercalemia: 40–80 mg IV | Hipercalcemia: 20–40 mg IV após hidratação", via:"IV bolus lento", ind:"Eliminação de K⁺ (hipercalemia com diurese preservada), hipercalcemia após hidratação", ci:"Hipovolemia não corrigida, anúria total", obs:"Na hipercalcemia: SEMPRE hidratar com SF 0,9% antes de furosemida. Furosemida sem hidratação agrava a hipercalcemia." },
+    ],
+    antidotes:[
+      { agent:"Hipercalemia grave com ECG alterado", antidote:"Gluconato de Cálcio 10%", dose:"1 g (10 mL) IV em 2–3 min — repetir em 5 min se ECG persistir", notes:"Estabiliza membrana cardíaca — NÃO reduz K⁺ sérico. Efeito em 1–3 min, dura 30–60 min." },
+      { agent:"Hiponatremia grave sintomática", antidote:"NaCl 3% hipertônico", dose:"100 mL IV em 10 min — repetir até 3x até melhora dos sintomas", notes:"Alvo: +4–6 mEq/L nas primeiras 6h. Máx 8–10 mEq/L/24h para evitar SDO." },
+      { agent:"Hipocalcemia sintomática (tetania / PCR)", antidote:"Gluconato de Cálcio ou CaCl₂", dose:"Gluconato: 1–2 g IV em 10 min | CaCl₂: 1 g IV em 2–3 min (preferencial em PCR)", notes:"Repor Mg²⁺ associado se hipomagnesemia — é causa de hipocalcemia refratária." },
+      { agent:"Torsades de Pointes por Hipomagnesemia", antidote:"MgSO₄ 50%", dose:"2 g IV em 2 min (bolus rápido de emergência)", notes:"Mesmo se Mg²⁺ normal — MgSO₄ é antiarrítmico direto no TdP." },
+      { agent:"Toxicidade por MgSO₄ (hipermagnesemia iatrogênica)", antidote:"Gluconato de Cálcio", dose:"1 g (10 mL da solução 10%) IV em 3 min", notes:"Reverter: depressão respiratória, apneia, bradiarritmia. Suporte ventilatório se necessário." },
+      { agent:"Hipercalcemia grave (> 14 mg/dL)", antidote:"Hidratação + Ácido Zoledrônico", dose:"SF 0,9% 200–500 mL/h IV + Zoledrônico 4 mg IV em 15 min", notes:"Bifosfonato é o tratamento definitivo. Efeito máximo em 4–7 dias. Calcitonina para efeito mais rápido (mas taquifilaxia)." },
+      { agent:"Hipercalemia refratária / anúria", antidote:"Hemodiálise de urgência", dose:"Indicação imediata: K⁺ ≥ 6,5 + anúria OU K⁺ ≥ 7,0 independente da diurese", notes:"Tratamento mais efetivo e definitivo. Acionar Nefrologia imediatamente." },
+    ],
+    scores:[],
+  },
 ];
 
 // ─── DRUG DOSE FORMULAS ────────────────────────────────────────────────────────
@@ -493,6 +639,12 @@ const FORMULAS = {
   "Valproato de Sódio|convulsoes": w => { const d=Math.min(w*40,3000); return { result:`${d.toFixed(0)} mg IV em 10 min`, details:[`${w} kg × 40 mg/kg = ${d.toFixed(0)} mg (máx 3.000 mg)`, `Velocidade: ${(d/10).toFixed(0)} mg/min`] }; },
   "Levetiracetam|convulsoes": w => { const d=Math.min(w*60,4500); return { result:`${d.toFixed(0)} mg IV em 10 min`, details:[`${w} kg × 60 mg/kg = ${d.toFixed(0)} mg (máx 4.500 mg)`] }; },
   "Adrenalina IM|amax4": w => { const d=w>=25?0.5:w>=10?0.3:0.15; return { result:`${d} mg IM (${w} kg)`, details:[w>=25?`Adulto / criança > 25 kg: 0,5 mg IM`:w>=10?`Criança 10–25 kg: 0,3 mg IM`:`Criança < 10 kg: 0,15 mg IM`, "Face anterolateral da coxa — músculo vasto lateral", "Repetir a cada 5 min se sem resposta"] }; },
+  // Hidroeletrolíticos
+  "Gluconato de Cálcio 10%|hidroeletroliticos": w => ({ result:`1–2 g IV em 10 min (dose fixa)`, details:["1 g = 10 mL da solução 10%", "Manutenção: 0,5 mg Ca/kg/h IV", `Para ${w} kg: manutenção ~${(w*0.5).toFixed(0)}–${(w*1.5).toFixed(0)} mg/h de Ca elementar`] }),
+  "Cloreto de Potássio (KCl)|hidroeletroliticos": w => { const deficit=(3.5-2.5)*w*0.4; return { result:`Déficit estimado (K⁺ 2,5→3,5): ~${deficit.toFixed(0)} mEq`, details:[`Fórmula: (K⁺ alvo − K⁺ atual) × ${w} kg × 0,4`, `Periférica: máx 20 mEq/h em 40 mEq/L`, `Central: até 40 mEq/h em 200 mEq/L`, "NUNCA KCl puro IV"] }; },
+  "NaCl 3% Hipertônico|hidroeletroliticos": w => ({ result:`100–150 mL IV em 10–20 min (dose fixa)`, details:["Repetir até 3x até melhora dos sintomas", `Alvo: elevar Na⁺ 4–6 mEq/L nas primeiras 6h`, "Máx SEGURO: 8–10 mEq/L em 24h"] }),
+  "Insulina Regular + Glicose 50%|hidroeletroliticos": w => ({ result:`10 UI insulina IV + 50 mL de Glicose 50% IV`, details:["Dose fixa independente do peso", "Reduz K⁺ em 0,5–1,5 mEq/L em 15–30 min", "Monitorar glicemia horária por 6h"] }),
+  "Sulfato de Magnésio (MgSO₄) 50%|hidroeletroliticos": w => ({ result:`2 g IV (grave) ou 2 g IV rápido (TdP)`, details:["2 g = 4 mL da solução 50% diluídos em 100 mL SF", "TdP: 2 g IV em 2 min (bolus emergência)", `Manutenção: 6 g em 24h IV`] }),
   "Adrenalina IV Push Dose|amax4": w => ({ result:`${(w*0.001).toFixed(3)} mg = ${(w*0.01).toFixed(1)} mL (sol. 100mcg/mL)`, details:[`1 mcg/kg × ${w} kg = ${w} mcg por bolus`, `Solução 100 mcg/mL: ${(w*0.01).toFixed(1)} mL por dose`, "Repetir a cada 30s se deterioração", `Dose de PCR: 1 mg = 10 mL da solução 100 mcg/mL`] }),
   "Adrenalina IV Contínua|amax4": w => ({ result:`${(w*0.1).toFixed(1)}–${(w*1).toFixed(0)} mcg/min IV`, details:[`Início: ${(w*0.1).toFixed(1)} mcg/min (0,1 mcg/kg/min)`, `Máximo habitual: ${(w*0.5).toFixed(1)} mcg/min (0,5 mcg/kg/min)`] }),
   "Cetamina|amax4": w => ({ result:`${(w*1.5).toFixed(0)}–${(w*2).toFixed(0)} mg IV (indução IOT)`, details:[`Indução ISR: ${w} kg × 1,5–2 mg/kg = ${(w*1.5).toFixed(0)}–${(w*2).toFixed(0)} mg IV`, `Sedação leve: ${(w*0.5).toFixed(0)} mg IV (0,5 mg/kg)`] }),
@@ -854,491 +1006,4 @@ function ScoreWidget({ scoreKey, color, light, border }) {
         {/* ── TIPO: calc (Osmolaridade) ── */}
         {sc.type === "calc" && (sc.inputs||[]).map(inp => (
           <div key={inp.k} style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 }}>{inp.label}</label>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <input type="number" placeholder={inp.ph} value={nums[inp.k]||""}
-                onChange={e => setNums(p=>({...p,[inp.k]:e.target.value}))}
-                style={{ width:140, border:`1px solid ${BD}`, borderRadius:6, padding:"8px 10px", fontSize:14, fontFamily:sans, outline:"none" }} />
-              <span style={{ fontSize:12, color:"#718096", fontFamily:sans }}>{inp.unit}</span>
-            </div>
-          </div>
-        ))}
-
-        {/* ── TIPO: grace_calc (GRACE 2.0) ── */}
-        {sc.type === "grace_calc" && (sc.fields||[]).map(f => (
-          <div key={f.k} style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 }}>{f.label}</label>
-            {f.type === "number" && (
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <input type="number" placeholder={f.ph} value={nums[f.k]||""}
-                  onChange={e => setNums(p=>({...p,[f.k]:e.target.value}))}
-                  style={{ width:130, border:`1px solid ${BD}`, borderRadius:6, padding:"7px 10px", fontSize:14, fontFamily:sans, outline:"none" }} />
-                <span style={{ fontSize:12, color:"#718096", fontFamily:sans }}>{f.unit}</span>
-              </div>
-            )}
-            {f.type === "select" && (
-              <select value={selects[f.k]||"1"}
-                onChange={e => setSelects(p=>({...p,[f.k]:e.target.value}))}
-                style={{ width:"100%", border:`1px solid ${BD}`, borderRadius:6, padding:"7px 10px", fontSize:13, fontFamily:sans, outline:"none", background:"#fff" }}>
-                {f.options.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
-              </select>
-            )}
-            {f.type === "bool" && (
-              <label style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
-                <input type="checkbox" checked={bools[f.k]===true}
-                  onChange={() => setBools(p=>({...p,[f.k]:!p[f.k]}))}
-                  style={{ width:16, height:16, accentColor:color, cursor:"pointer", flexShrink:0 }} />
-                <span style={{ fontSize:13, color:"#2D3748", fontFamily:sans }}>Presente</span>
-                <span style={{ fontSize:11, fontWeight:700, color:"#718096", fontFamily:sans, background:"#EDF2F7", padding:"1px 8px", borderRadius:12, marginLeft:"auto" }}>+{f.pts} pts</span>
-              </label>
-            )}
-          </div>
-        ))}
-
-        {/* ── TIPO: nihss_scale (NIHSS completo) ── */}
-        {sc.type === "nihss_scale" && (sc.items||[]).map(it => (
-          <div key={it.k} style={{ marginBottom:12, borderBottom:`1px solid #F0F4F8`, paddingBottom:12 }}>
-            <div style={{ fontSize:13, color:"#1A202C", fontFamily:sans, fontWeight:700, marginBottom:2 }}>{it.label}</div>
-            {it.detail && <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginBottom:6, lineHeight:1.4 }}>{it.detail}</div>}
-            <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-              {it.options.map(o => (
-                <label key={o.v} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", padding:"4px 8px", borderRadius:6,
-                  background: parseInt(nihssVals[it.k])===o.v ? light : "transparent",
-                  border: parseInt(nihssVals[it.k])===o.v ? `1px solid ${border}55` : "1px solid transparent" }}>
-                  <input type="radio" name={`nihss_${it.k}`} value={o.v}
-                    checked={parseInt(nihssVals[it.k])===o.v}
-                    onChange={() => setNihssVals(p=>({...p,[it.k]:o.v}))}
-                    style={{ accentColor:color, cursor:"pointer", flexShrink:0 }} />
-                  <span style={{ fontSize:12, color:"#2D3748", fontFamily:sans, flex:1 }}>{o.label}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color: parseInt(nihssVals[it.k])===o.v ? color : "#A0AEC0", fontFamily:sans, background:"#EDF2F7", padding:"1px 7px", borderRadius:12 }}>{o.v}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {/* ── RESULTADO ── */}
-        <div style={{ marginTop:14, padding:"12px 14px", background:interp.bg, borderRadius:8, border:`1px solid ${interp.color}44` }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:interp.color, fontFamily:sans, flex:1, marginRight:8 }}>{interp.label}</span>
-            <span style={{ fontSize:24, fontWeight:900, color:interp.color, fontFamily:sans, flexShrink:0 }}>
-              {sc.type==="calc" ? total.toFixed(1) : total} {sc.unit||"pts"}
-            </span>
-          </div>
-          <div style={{ fontSize:12, color:interp.color, fontFamily:sans, lineHeight:1.6 }}>{interp.text}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── DOSE CALCULATOR ──────────────────────────────────────────────────────────
-function DoseCalc({ drugName, protocolId, color, light, border }) {
-  const [w, setW] = useState("");
-  const key = `${drugName}|${protocolId}`;
-  const fn = FORMULAS[key];
-  const calc = fn && w && parseFloat(w) > 0 ? fn(parseFloat(w)) : null;
-  return (
-    <div style={{ marginTop:12, background:light, border:`1px solid ${border}55`, borderRadius:8, padding:"10px 14px" }}>
-      <div style={{ fontSize:11, color:color, fontFamily:"sans-serif", fontWeight:700, marginBottom:8 }}>⚖️ Calculadora de Dose por Peso</div>
-      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <input type="number" placeholder="Peso (kg)" min={1} max={300} value={w} onChange={e=>setW(e.target.value)}
-          style={{ width:110, border:"1px solid #CBD5E0", borderRadius:6, padding:"6px 10px", fontSize:13, fontFamily:"sans-serif", outline:"none", background:"#fff" }} />
-        <span style={{ fontSize:12, color:"#718096", fontFamily:"sans-serif" }}>kg</span>
-        {!fn && w && <span style={{ fontSize:12, color:"#A0AEC0", fontFamily:"sans-serif", fontStyle:"italic" }}>Dose fixa — ver campo Dose acima</span>}
-      </div>
-      {calc && (
-        <div style={{ marginTop:10, background:"#fff", border:`1px solid ${border}44`, borderRadius:6, padding:"10px 12px" }}>
-          <div style={{ fontSize:15, fontWeight:700, color:color, fontFamily:"sans-serif", marginBottom:6 }}>{calc.result}</div>
-          {calc.details.map((d,i) => (
-            <div key={i} style={{ fontSize:12, color:"#4A5568", fontFamily:"sans-serif", lineHeight:1.5, display:"flex", gap:6 }}>
-              <span style={{ color:border, flexShrink:0 }}>·</span>{d}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function App() {
-  const [proto, setProto] = useState(null);
-  const [tab, setTab] = useState("cascade");
-  const [open, setOpen] = useState(null);
-  const [cat, setCat] = useState("Todos");
-  const [q, setQ] = useState("");
-  const [checks, setChecks] = useState({});
-  const [clMode, setClMode] = useState(false);
-
-  const cur = P.find(p => p.id === proto);
-
-  const filtered = P.filter(p => {
-    if (cat !== "Todos" && p.cat !== cat) return false;
-    if (!q.trim()) return true;
-    const ql = q.toLowerCase();
-    return p.label.toLowerCase().includes(ql)
-      || p.sub.toLowerCase().includes(ql)
-      || p.drugs.some(d => d.name.toLowerCase().includes(ql) || d.ind.toLowerCase().includes(ql) || d.cat.toLowerCase().includes(ql))
-      || p.antidotes.some(a => a.agent.toLowerCase().includes(ql) || a.antidote.toLowerCase().includes(ql))
-      || p.cascade.some(s => s.phase.toLowerCase().includes(ql) || s.items.some(it => it.toLowerCase().includes(ql)));
-  });
-
-  const openProto = id => { setProto(id); setTab("cascade"); setOpen(null); setChecks({}); setClMode(false); };
-  const toggleCheck = i => setChecks(p => ({...p,[i]:!p[i]}));
-  const done = cur ? cur.cascade.filter((_,i)=>checks[i]).length : 0;
-
-  const F = "#F7F9FC", W = "#FFFFFF", BD = "#E2E8F0", T = "#2D3748", S = "#718096";
-  const serif = "'Georgia','Times New Roman',serif";
-  const sans = "sans-serif";
-
-  const Label = ({txt}) => (
-    <div style={{ fontSize:10, color:S, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{txt}</div>
-  );
-
-  return (
-    <div style={{ minHeight:"100vh", background:F, fontFamily:serif, color:"#1A202C", overflowX:"hidden" }}>
-
-      {/* HEADER */}
-      <div style={{ background:W, borderBottom:`1px solid ${BD}`, position:"sticky", top:0, zIndex:200, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
-        <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 16px" }}>
-          <div className="hdr-inner" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-              {proto && (
-                <button onClick={()=>setProto(null)} style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"4px 8px", borderRadius:6 }}>
-                  ← Voltar
-                </button>
-              )}
-              <div>
-                <div style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"#1A202C" }}>Protocolos de Emergência</div>
-                <div style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
-              </div>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:"#48BB78" }} />
-              <span style={{ fontSize:11, color:S, fontFamily:sans }}>Atualizado 2025</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="page-pad" style={{ maxWidth:1100, margin:"0 auto" }}>
-
-        {/* ── INDEX ── */}
-        {!proto && (
-          <>
-            <div style={{ paddingTop:24, paddingBottom:16 }}>
-              <input value={q} onChange={e=>setQ(e.target.value)}
-                placeholder="🔍 Pesquisar protocolo, medicamento, sigla ou condição..."
-                style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid #CBD5E0`, borderRadius:8, padding:"10px 16px", fontSize:14, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)", marginBottom:12 }} />
-              <div className="cat-row">
-                {CATS.map(c => (
-                  <button key={c} onClick={()=>setCat(c)} style={{
-                    padding:"5px 13px", borderRadius:20, border:"1px solid",
-                    borderColor: cat===c ? "#2B6CB0" : "#CBD5E0",
-                    background: cat===c ? "#EBF8FF" : W,
-                    color: cat===c ? "#2B6CB0" : "#4A5568",
-                    fontSize:12, fontFamily:sans, fontWeight: cat===c ? 700 : 400, cursor:"pointer",
-                  }}>{c}</button>
-                ))}
-              </div>
-              {q.trim() && (
-                <div style={{ marginTop:8, fontSize:12, color:S, fontFamily:sans }}>
-                  {filtered.length===0 ? `Sem resultados para "${q}"` : `${filtered.length} protocolo(s) encontrado(s) para "${q}"`}
-                </div>
-              )}
-            </div>
-
-            <div className="proto-grid">
-              {filtered.map(p => (
-                <button key={p.id} onClick={()=>openProto(p.id)} className="proto-card"
-                  style={{ background:W, border:`1px solid ${BD}`, borderLeft:`4px solid ${p.border}`, borderRadius:10, cursor:"pointer", textAlign:"left", fontFamily:serif, boxShadow:"0 1px 4px rgba(0,0,0,.04)", width:"100%", transition:"all .18s" }}
-                  onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.1)";e.currentTarget.style.transform="translateY(-2px)"}}
-                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)";e.currentTarget.style.transform="translateY(0)"}}>
-                  <div className="proto-card-inner" style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-                    <div style={{ fontSize:28, lineHeight:1 }}>{p.icon}</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
-                        <div style={{ fontFamily:serif, fontSize:15, fontWeight:700, color:"#1A202C", lineHeight:1.3 }}>{p.label}</div>
-                        <span style={{ fontSize:10, background:p.light, color:p.color, border:`1px solid ${p.border}44`, padding:"2px 8px", borderRadius:20, fontFamily:sans, fontWeight:600, whiteSpace:"nowrap", marginLeft:8, flexShrink:0 }}>{p.cat}</span>
-                      </div>
-                      <div style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5, marginBottom:10 }}>{p.sub}</div>
-                      <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-                        <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>📋 {p.cascade.length} etapas</span>
-                        <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>💊 {p.drugs.length} fármacos</span>
-                        {p.antidotes.length>0 && <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>🧪 {p.antidotes.length} antídotos</span>}
-                        {p.scores.length>0 && <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>📊 {p.scores.length} escore(s)</span>}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"#744210", lineHeight:1.6 }}>
-              <strong>⚕️ Nota de uso clínico:</strong> Sistema baseado nas diretrizes <strong>AHA/ACLS 2020–2025</strong>, Surviving Sepsis Campaign 2021 e SBC. As decisões terapêuticas são de responsabilidade exclusiva do médico assistente.
-            </div>
-          </>
-        )}
-
-        {/* ── PROTOCOL DETAIL ── */}
-        {proto && cur && (
-          <div style={{ paddingTop:20, paddingBottom:60 }}>
-
-            {/* Protocol header */}
-            <div className="proto-hdr" style={{ background:W, border:`1px solid ${BD}`, borderLeft:`5px solid ${cur.border}`, borderRadius:10, marginBottom:20, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-                <div style={{ fontSize:38 }}>{cur.icon}</div>
-                <div>
-                  <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
-                  <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"#1A202C", marginBottom:3 }}>{cur.label}</div>
-                  <div style={{ fontSize:13, color:S, fontFamily:sans }}>{cur.sub}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="tabs-row">
-              {[
-                { k:"cascade", lbl:`📋 Cascata (${cur.cascade.length})` },
-                { k:"drugs", lbl:`💊 Medicamentos (${cur.drugs.length})` },
-                ...(cur.antidotes.length>0 ? [{ k:"antidotes", lbl:`🧪 Antídotos (${cur.antidotes.length})` }] : []),
-                ...(cur.scores.length>0 ? [{ k:"scores", lbl:`📊 Escores (${cur.scores.length})` }] : []),
-              ].map(t => (
-                <button key={t.k} onClick={()=>setTab(t.k)} className="tab-btn" style={{
-                  background: tab===t.k ? cur.light : "transparent",
-                  color: tab===t.k ? cur.color : S,
-                  fontWeight: tab===t.k ? 700 : 400,
-                  borderLeft: tab===t.k ? `2px solid ${cur.border}` : "2px solid transparent",
-                }}>{t.lbl}</button>
-              ))}
-            </div>
-
-            {/* ── CASCADE TAB ── */}
-            {tab === "cascade" && (
-              <div>
-                {/* Checklist bar */}
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, padding:"10px 14px", background:W, border:`1px solid ${BD}`, borderRadius:8 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                    <span style={{ fontSize:13, fontFamily:sans, color:"#4A5568" }}>
-                      {clMode ? `✅ Checklist — ${done}/${cur.cascade.length} etapas` : "Modo leitura"}
-                    </span>
-                    {clMode && done>0 && (
-                      <div style={{ background:"#E2E8F0", borderRadius:20, height:6, width:70, overflow:"hidden", flexShrink:0 }}>
-                        <div style={{ height:6, background:cur.border, width:`${(done/cur.cascade.length)*100}%`, transition:"width .3s" }} />
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                    {clMode && done>0 && (
-                      <button onClick={()=>setChecks({})} style={{ padding:"4px 10px", border:`1px solid ${BD}`, borderRadius:6, background:W, color:S, fontSize:11, fontFamily:sans, cursor:"pointer" }}>Limpar</button>
-                    )}
-                    <button onClick={()=>{setClMode(m=>!m);setChecks({});}} style={{
-                      padding:"5px 12px", border:`1px solid ${clMode?cur.border:"#CBD5E0"}`,
-                      borderRadius:6, background:clMode?cur.light:W, color:clMode?cur.color:"#4A5568",
-                      fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer",
-                    }}>{clMode?"✓ Checklist ON":"☐ Ativar Checklist"}</button>
-                  </div>
-                </div>
-
-                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                  {cur.cascade.map((step, idx) => {
-                    const isOpen = open===idx;
-                    const isDone = !!checks[idx];
-                    return (
-                      <div key={idx} style={{ background:W, border:`1px solid ${isDone&&clMode?cur.border:BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)", opacity:isDone&&clMode?.75:1, transition:"all .2s" }}>
-                        <button onClick={()=>setOpen(isOpen?null:idx)} className="step-hdr" style={{
-                          width:"100%", border:"none", cursor:"pointer", textAlign:"left",
-                          display:"flex", alignItems:"center", gap:12, fontFamily:serif,
-                          background: isOpen?(step.alert?"#FFF5F5":"#F7FAFC"):(isDone&&clMode?cur.light:W),
-                          borderBottom: isOpen?`1px solid ${BD}`:"none", transition:"background .15s",
-                        }}>
-                          {clMode && (
-                            <div onClick={e=>{e.stopPropagation();toggleCheck(idx);}} style={{
-                              width:22, height:22, borderRadius:6, flexShrink:0,
-                              border:`2px solid ${isDone?cur.border:"#CBD5E0"}`,
-                              background: isDone?cur.light:W,
-                              display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
-                            }}>
-                              {isDone && <span style={{ color:cur.color, fontSize:13, fontWeight:900 }}>✓</span>}
-                            </div>
-                          )}
-                          <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, fontFamily:sans,
-                            background:step.alert?"#FED7D7":cur.light, border:`2px solid ${step.alert?"#FC8181":cur.border}`,
-                            color:step.alert?"#C53030":cur.color }}>
-                            {step.step}
-                          </div>
-                          <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                              {step.alert && <span style={{ fontSize:10, background:"#FED7D7", color:"#C53030", border:"1px solid #FC8181", padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>ATENÇÃO</span>}
-                              {isDone&&clMode && <span style={{ fontSize:10, background:cur.light, color:cur.color, border:`1px solid ${cur.border}55`, padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>CONCLUÍDO</span>}
-                              <span style={{ fontSize:10, color:step.alert?"#9B2C2C":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
-                            </div>
-                          </div>
-                          <span style={{ color:"#A0AEC0", fontSize:12, transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}>▼</span>
-                        </button>
-
-                        {isOpen && (
-                          <div className="step-body">
-                            {step.items.length>0 && (
-                              <div style={{ marginBottom:step.decision?16:0 }}>
-                                {step.items.map((it,i) => (
-                                  <div key={i} style={{ display:"flex", gap:12, paddingTop:9, paddingBottom:9, borderBottom:i<step.items.length-1?`1px solid #F0F4F8`:"none" }}>
-                                    <div style={{ width:6, height:6, borderRadius:"50%", background:cur.border, marginTop:7, flexShrink:0 }} />
-                                    <span style={{ fontSize:14, lineHeight:1.65, color:T, fontFamily:sans }}>{it}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {step.decision && (
-                              <div style={{ background:"#F7FAFC", border:`1px solid ${BD}`, borderRadius:8, padding:"14px 16px", marginTop:step.items.length>0?12:0 }}>
-                                <div style={{ fontSize:13, fontWeight:700, color:T, fontFamily:sans, marginBottom:8 }}>🔀 Ponto de Decisão</div>
-                                <div style={{ fontSize:13, color:"#4A5568", fontFamily:sans, marginBottom:10, fontStyle:"italic" }}>{step.decision.q}</div>
-                                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                                  <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
-                                    <span style={{ fontSize:11, background:"#C6F6D5", color:"#276749", border:"1px solid #9AE6B4", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>SIM</span>
-                                    <span style={{ fontSize:13, color:T, fontFamily:sans }}>{step.decision.yes}</span>
-                                  </div>
-                                  <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
-                                    <span style={{ fontSize:11, background:"#FED7D7", color:"#9B2C2C", border:"1px solid #FC8181", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>NÃO</span>
-                                    <span style={{ fontSize:13, color:T, fontFamily:sans }}>{step.decision.no}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ── DRUGS TAB ── */}
-            {tab==="drugs" && (
-              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                {cur.drugs.map((d,i) => (
-                  <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
-                    <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"12px 18px" }}>
-                      <div style={{ fontFamily:serif, fontSize:16, fontWeight:700, color:"#1A202C" }}>{d.name}</div>
-                      <div style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:600 }}>{d.cat}</div>
-                    </div>
-                    <div className="drug-body">
-                      <div className="drug-grid">
-                        <div><Label txt="Dose" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.dose}</div></div>
-                        <div><Label txt="Via de Administração" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.via}</div></div>
-                      </div>
-                      <div style={{ marginBottom:10 }}><Label txt="Indicação" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.ind}</div></div>
-                      <div style={{ marginBottom:d.obs?10:0 }}><Label txt="Contraindicações" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.ci}</div></div>
-                      {d.obs && (
-                        <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:6, padding:"10px 12px", marginBottom:10 }}>
-                          <div style={{ fontSize:11, color:"#744210", fontFamily:sans, fontWeight:700, marginBottom:3 }}>⚠️ Observação Clínica</div>
-                          <div style={{ fontSize:13, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>{d.obs}</div>
-                        </div>
-                      )}
-                      <DoseCalc drugName={d.name} protocolId={cur.id} color={cur.color} light={cur.light} border={cur.border} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── ANTIDOTES TAB ── */}
-            {tab==="antidotes" && cur.antidotes.length>0 && (
-              <div>
-                {/* Desktop table */}
-                <div className="ant-table-wrap" style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
-                  <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                    <thead>
-                      <tr style={{ background:cur.light, borderBottom:`2px solid ${cur.border}44` }}>
-                        {["Agente / Tóxico","Antídoto","Dose / Regime","Observações Clínicas"].map(h => (
-                          <th key={h} style={{ padding:"11px 14px", textAlign:"left", fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cur.antidotes.map((r,i) => (
-                        <tr key={i} style={{ borderBottom:i<cur.antidotes.length-1?`1px solid #F0F4F8`:"none", background:i%2===0?W:"#FAFBFC" }}>
-                          <td style={{ padding:"11px 14px", fontSize:13, fontFamily:sans, fontWeight:600, color:T, verticalAlign:"top" }}>{r.agent}</td>
-                          <td style={{ padding:"11px 14px", verticalAlign:"top" }}>
-                            <span style={{ fontSize:13, fontFamily:sans, fontWeight:700, color:cur.color, background:cur.light, padding:"2px 10px", borderRadius:20, display:"inline-block" }}>{r.antidote}</span>
-                          </td>
-                          <td style={{ padding:"11px 14px", fontSize:13, fontFamily:sans, color:T, lineHeight:1.5, verticalAlign:"top" }}>{r.dose}</td>
-                          <td style={{ padding:"11px 14px", fontSize:12, fontFamily:sans, color:S, lineHeight:1.6, verticalAlign:"top" }}>{r.notes}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {/* Mobile cards */}
-                <div className="ant-cards-wrap" style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                  {cur.antidotes.map((r,i) => (
-                    <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden" }}>
-                      <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:14, fontWeight:700, color:"#1A202C", fontFamily:sans }}>{r.agent}</span>
-                        <span style={{ fontSize:12, fontWeight:700, color:cur.color, background:W, border:`1px solid ${cur.border}55`, padding:"2px 10px", borderRadius:20, fontFamily:sans }}>{r.antidote}</span>
-                      </div>
-                      <div style={{ padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
-                        <div><Label txt="Dose / Regime" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{r.dose}</div></div>
-                        <div><Label txt="Observações" /><div style={{ fontSize:13, color:S, fontFamily:sans, lineHeight:1.5 }}>{r.notes}</div></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── SCORES TAB ── */}
-            {tab==="scores" && cur.scores.length>0 && (
-              <div>
-                <div style={{ background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:sans, fontSize:12, color:"#2C5282" }}>
-                  ℹ️ Escores clínicos validados para este protocolo. Marque os critérios presentes e veja a interpretação clínica automática.
-                </div>
-                {cur.scores.map(sk => (
-                  <ScoreWidget key={sk} scoreKey={sk} color={cur.color} light={cur.light} border={cur.border} />
-                ))}
-              </div>
-            )}
-
-          </div>
-        )}
-      </div>
-
-      <style>{`
-        * { box-sizing: border-box; }
-        button:focus { outline: 2px solid #4299E1; outline-offset: 2px; }
-
-        .hdr-inner { padding-top:14px; padding-bottom:14px; }
-        .page-pad { padding: 0 20px; }
-        .proto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; padding-bottom:32px; }
-        .proto-card-inner { padding: 18px 20px; }
-        .proto-hdr { padding: 20px 24px; }
-        .cat-row { display:flex; gap:8px; flex-wrap:wrap; }
-        .tabs-row { display:flex; background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:4px; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:20px; }
-        .tab-btn { padding:8px 16px; border-radius:6px; border:none; font-size:13px; font-family:sans-serif; cursor:pointer; transition:all .15s; white-space:nowrap; flex-shrink:0; }
-        .step-hdr { padding: 14px 18px; }
-        .step-body { padding: 16px 18px 18px; }
-        .drug-body { padding: 14px 18px; }
-        .drug-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
-        .ant-table-wrap { display:block; }
-        .ant-cards-wrap { display:none; }
-
-        @media (max-width: 640px) {
-          .hdr-inner { padding-top:12px; padding-bottom:12px; }
-          .page-pad { padding: 0 12px; }
-          .proto-grid { grid-template-columns:1fr; gap:10px; }
-          .proto-card-inner { padding: 14px 14px; }
-          .proto-hdr { padding: 14px 14px; }
-          .tab-btn { padding:7px 10px; font-size:11px; flex:1; text-align:center; }
-          .step-hdr { padding: 12px 12px; }
-          .step-body { padding: 12px 12px 14px; }
-          .drug-body { padding: 12px 12px; }
-          .drug-grid { grid-template-columns:1fr; gap:10px; }
-          .ant-table-wrap { display:none; }
-          .ant-cards-wrap { display:flex; flex-direction:column; gap:12px; }
-        }
-      `}</style>
-    </div>
-  );
-}
+            <label style={{ fontSize:12, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 }}>{inp.label}</labe
