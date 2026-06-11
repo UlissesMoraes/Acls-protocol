@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── DADOS DOS PROTOCOLOS (resumidos para garantir render) ────────────────────
 const P = [
@@ -1085,18 +1085,22 @@ function ScoreWidget({ scoreKey, color, light, border }) {
 }
 
 // ─── DOSE CALCULATOR ──────────────────────────────────────────────────────────
-function DoseCalc({ drugName, protocolId, color, light, border }) {
-  const [w, setW] = useState("");
+function DoseCalc({ drugName, protocolId, color, light, border, globalW }) {
+  const [local, setLocal] = useState("");
   const key = `${drugName}|${protocolId}`;
   const fn = FORMULAS[key];
+  const w = local !== "" ? local : (globalW || "");
+  const usingGlobal = local === "" && !!globalW;
   const calc = fn && w && parseFloat(w) > 0 ? fn(parseFloat(w)) : null;
   return (
     <div style={{ marginTop:12, background:light, border:`1px solid ${border}55`, borderRadius:8, padding:"10px 14px" }}>
       <div style={{ fontSize:11, color:color, fontFamily:"sans-serif", fontWeight:700, marginBottom:8 }}>⚖️ Calculadora de Dose por Peso</div>
-      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        <input type="number" placeholder="Peso (kg)" min={1} max={300} value={w} onChange={e=>setW(e.target.value)}
-          style={{ width:110, border:"1px solid #CBD5E0", borderRadius:6, padding:"6px 10px", fontSize:13, fontFamily:"sans-serif", outline:"none", background:"#fff" }} />
+      <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+        <input type="number" inputMode="decimal" placeholder="Peso (kg)" min={1} max={300} value={w} onChange={e=>setLocal(e.target.value)}
+          aria-label={`Peso do paciente para cálculo de dose de ${drugName}`}
+          style={{ width:110, border:"1px solid #CBD5E0", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:"sans-serif", outline:"none", background:"#fff" }} />
         <span style={{ fontSize:12, color:"#718096", fontFamily:"sans-serif" }}>kg</span>
+        {usingGlobal && <span style={{ fontSize:11, color:color, fontFamily:"sans-serif", background:"#fff", border:`1px solid ${border}44`, padding:"2px 8px", borderRadius:12 }}>usando peso do paciente</span>}
         {!fn && w && <span style={{ fontSize:12, color:"#A0AEC0", fontFamily:"sans-serif", fontStyle:"italic" }}>Dose fixa — ver campo Dose acima</span>}
       </div>
       {calc && (
@@ -1117,11 +1121,12 @@ function DoseCalc({ drugName, protocolId, color, light, border }) {
 export default function App() {
   const [proto, setProto] = useState(null);
   const [tab, setTab] = useState("cascade");
-  const [open, setOpen] = useState(null);
+  const [openSteps, setOpenSteps] = useState({});
   const [cat, setCat] = useState("Todos");
   const [q, setQ] = useState("");
   const [checks, setChecks] = useState({});
   const [clMode, setClMode] = useState(false);
+  const [weight, setWeight] = useState("");
 
   const cur = P.find(p => p.id === proto);
 
@@ -1136,9 +1141,23 @@ export default function App() {
       || p.cascade.some(s => s.phase.toLowerCase().includes(ql) || s.items.some(it => it.toLowerCase().includes(ql)));
   });
 
-  const openProto = id => { setProto(id); setTab("cascade"); setOpen(null); setChecks({}); setClMode(false); };
+  const openProto = id => {
+    setProto(id); setTab("cascade"); setOpenSteps({}); setChecks({}); setClMode(false);
+    window.scrollTo({ top:0 });
+    window.history.pushState({ proto:id }, "");
+  };
+
+  // Botão "voltar" do navegador/celular retorna ao índice em vez de sair do app
+  useEffect(() => {
+    const onPop = () => setProto(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const toggleCheck = i => setChecks(p => ({...p,[i]:!p[i]}));
   const done = cur ? cur.cascade.filter((_,i)=>checks[i]).length : 0;
+  const allOpen = cur ? cur.cascade.every((_,i)=>openSteps[i]) : false;
+  const toggleAllSteps = () => setOpenSteps(allOpen ? {} : Object.fromEntries(cur.cascade.map((_,i)=>[i,true])));
 
   const F = "#F7F9FC", W = "#FFFFFF", BD = "#E2E8F0", T = "#2D3748", S = "#718096";
   const serif = "'Georgia','Times New Roman',serif";
@@ -1157,7 +1176,8 @@ export default function App() {
           <div className="hdr-inner" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
               {proto && (
-                <button onClick={()=>setProto(null)} style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"4px 8px", borderRadius:6 }}>
+                <button onClick={()=>window.history.back()} aria-label="Voltar ao índice de protocolos"
+                  style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"8px 10px", borderRadius:6, minHeight:40 }}>
                   ← Voltar
                 </button>
               )}
@@ -1166,9 +1186,17 @@ export default function App() {
                 <div style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
               </div>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:"#48BB78" }} />
-              <span style={{ fontSize:11, color:S, fontFamily:sans }}>Atualizado 2025</span>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div className="upd-badge" style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{ width:8, height:8, borderRadius:"50%", background:"#48BB78" }} />
+                <span style={{ fontSize:11, color:S, fontFamily:sans }}>Atualizado 2025</span>
+              </div>
+              {proto !== "pcr" && (
+                <button onClick={()=>openProto("pcr")} aria-label="Acesso rápido — Parada Cardiorrespiratória"
+                  style={{ background:"#C53030", color:"#fff", border:"none", borderRadius:8, padding:"8px 14px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, minHeight:38, boxShadow:"0 1px 4px rgba(197,48,48,.35)", whiteSpace:"nowrap" }}>
+                  🚨 PCR
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1180,9 +1208,16 @@ export default function App() {
         {!proto && (
           <>
             <div style={{ paddingTop:24, paddingBottom:16 }}>
-              <input value={q} onChange={e=>setQ(e.target.value)}
-                placeholder="🔍 Pesquisar protocolo, medicamento, sigla ou condição..."
-                style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid #CBD5E0`, borderRadius:8, padding:"10px 16px", fontSize:14, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)", marginBottom:12 }} />
+              <div style={{ position:"relative", marginBottom:12 }}>
+                <input value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
+                  aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
+                  placeholder="🔍 Pesquisar protocolo, medicamento, sigla ou condição..."
+                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid #CBD5E0`, borderRadius:8, padding:"12px 44px 12px 16px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
+                {q && (
+                  <button onClick={()=>setQ("")} aria-label="Limpar pesquisa"
+                    style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"#EDF2F7", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"#4A5568", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+                )}
+              </div>
               <div className="cat-row">
                 {CATS.map(c => (
                   <button key={c} onClick={()=>setCat(c)} style={{
@@ -1239,12 +1274,21 @@ export default function App() {
 
             {/* Protocol header */}
             <div className="proto-hdr" style={{ background:W, border:`1px solid ${BD}`, borderLeft:`5px solid ${cur.border}`, borderRadius:10, marginBottom:20, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-                <div style={{ fontSize:38 }}>{cur.icon}</div>
-                <div>
-                  <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
-                  <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"#1A202C", marginBottom:3 }}>{cur.label}</div>
-                  <div style={{ fontSize:13, color:S, fontFamily:sans }}>{cur.sub}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap", justifyContent:"space-between" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
+                  <div style={{ fontSize:38 }}>{cur.icon}</div>
+                  <div>
+                    <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
+                    <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"#1A202C", marginBottom:3 }}>{cur.label}</div>
+                    <div style={{ fontSize:13, color:S, fontFamily:sans }}>{cur.sub}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
+                  <label htmlFor="peso-paciente" style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}>⚖️ Peso do paciente</label>
+                  <input id="peso-paciente" type="number" inputMode="decimal" min={1} max={300} placeholder="—" value={weight}
+                    onChange={e=>setWeight(e.target.value)}
+                    style={{ width:72, border:"1px solid #CBD5E0", borderRadius:6, padding:"7px 8px", fontSize:16, fontFamily:sans, outline:"none", background:"#fff" }} />
+                  <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg</span>
                 </div>
               </div>
             </div>
@@ -1281,9 +1325,12 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                  <div style={{ display:"flex", gap:8, flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
+                    <button onClick={toggleAllSteps} style={{ padding:"5px 12px", border:`1px solid #CBD5E0`, borderRadius:6, background:W, color:"#4A5568", fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer", minHeight:32 }}>
+                      {allOpen ? "− Recolher tudo" : "+ Expandir tudo"}
+                    </button>
                     {clMode && done>0 && (
-                      <button onClick={()=>setChecks({})} style={{ padding:"4px 10px", border:`1px solid ${BD}`, borderRadius:6, background:W, color:S, fontSize:11, fontFamily:sans, cursor:"pointer" }}>Limpar</button>
+                      <button onClick={()=>setChecks({})} style={{ padding:"4px 10px", border:`1px solid ${BD}`, borderRadius:6, background:W, color:S, fontSize:11, fontFamily:sans, cursor:"pointer", minHeight:32 }}>Limpar</button>
                     )}
                     <button onClick={()=>{setClMode(m=>!m);setChecks({});}} style={{
                       padding:"5px 12px", border:`1px solid ${clMode?cur.border:"#CBD5E0"}`,
@@ -1295,11 +1342,11 @@ export default function App() {
 
                 <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
                   {cur.cascade.map((step, idx) => {
-                    const isOpen = open===idx;
+                    const isOpen = !!openSteps[idx];
                     const isDone = !!checks[idx];
                     return (
                       <div key={idx} style={{ background:W, border:`1px solid ${isDone&&clMode?cur.border:BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)", opacity:isDone&&clMode?.75:1, transition:"all .2s" }}>
-                        <button onClick={()=>setOpen(isOpen?null:idx)} className="step-hdr" style={{
+                        <button onClick={()=>setOpenSteps(p=>({...p,[idx]:!p[idx]}))} className="step-hdr" aria-expanded={isOpen} style={{
                           width:"100%", border:"none", cursor:"pointer", textAlign:"left",
                           display:"flex", alignItems:"center", gap:12, fontFamily:serif,
                           background: isOpen?(step.alert?"#FFF5F5":"#F7FAFC"):(isDone&&clMode?cur.light:W),
@@ -1389,7 +1436,7 @@ export default function App() {
                           <div style={{ fontSize:13, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>{d.obs}</div>
                         </div>
                       )}
-                      <DoseCalc drugName={d.name} protocolId={cur.id} color={cur.color} light={cur.light} border={cur.border} />
+                      <DoseCalc drugName={d.name} protocolId={cur.id} color={cur.color} light={cur.light} border={cur.border} globalW={weight} />
                     </div>
                   </div>
                 ))}
@@ -1453,6 +1500,10 @@ export default function App() {
               </div>
             )}
 
+            <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:8, padding:"10px 14px", marginTop:24, fontFamily:sans, fontSize:11, color:"#744210", lineHeight:1.6 }}>
+              ⚕️ Ferramenta de apoio à decisão clínica. Confira doses, vias e contraindicações antes de prescrever — a responsabilidade terapêutica é do médico assistente.
+            </div>
+
           </div>
         )}
       </div>
@@ -1479,11 +1530,12 @@ export default function App() {
         @media (max-width: 640px) {
           .hdr-inner { padding-top:12px; padding-bottom:12px; }
           .page-pad { padding: 0 12px; }
+          .upd-badge { display:none; }
           .proto-grid { grid-template-columns:1fr; gap:10px; }
           .proto-card-inner { padding: 14px 14px; }
           .proto-hdr { padding: 14px 14px; }
-          .tab-btn { padding:7px 10px; font-size:11px; flex:1; text-align:center; }
-          .step-hdr { padding: 12px 12px; }
+          .tab-btn { padding:7px 10px; font-size:11px; flex:1; text-align:center; min-height:44px; }
+          .step-hdr { padding: 12px 12px; min-height:48px; }
           .step-body { padding: 12px 12px 14px; }
           .drug-body { padding: 12px 12px; }
           .drug-grid { grid-template-columns:1fr; gap:10px; }
