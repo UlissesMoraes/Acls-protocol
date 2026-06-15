@@ -1,0 +1,14 @@
+{
+  "name": "Protocolos ACLS 2025",
+  "short_name": "ACLS 2025",
+  "description": "Protocolos de emergência, calculadoras e escores clínicos — ACLS 2025",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F9FC",
+  "theme_color": "#C53030",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -17,17 +17,39 @@ Sistema clínico de referência rápida para sala de emergência, baseado nas di
 | Estado Hiperosmolar (EHH) | Endocrinologia |
 | AVC / Síndromes Neurológicas | Neurologia |
 | Síndrome Convulsiva | Neurologia |
+| Anafilaxia / Asma Grave (AMAX4) | Emergência |
+| Distúrbios Hidroeletrolíticos | Emergência |
 
 ## ✨ Funcionalidades
 
-- **📋 Cascata Clínica** — fluxo step-by-step com pontos de decisão SIM/NÃO
+- **📋 Cascata Clínica** — fluxo step-by-step com pontos de decisão SIM/NÃO, múltiplas etapas abertas e "expandir tudo"
 - **☐ Checklist Operacional** — marcar etapas durante o atendimento
 - **💊 Medicamentos** — dose, via, indicação, contraindicações, observações clínicas
-- **⚖️ Calculadora de Dose** — inserir peso e calcular dose em tempo real
+- **⚖️ Peso do paciente** — informado uma vez e propagado a todas as calculadoras de dose
 - **🧪 Antídotos** — tabela completa por protocolo
-- **📊 Escores Interativos** — qSOFA, GRACE, CHA₂DS₂-VASc, NIHSS, Osmolaridade
-- **🔍 Busca** — pesquisa em medicamentos, siglas, condições e cascata
-- **📱 Responsivo** — mobile-first, adaptado para uso na beira do leito
+- **🔍 Busca** — protocolos, medicamentos, siglas e condições, com atalho direto para fármacos
+- **⭐ Favoritos & 🕐 Recentes** — acesso rápido aos protocolos mais usados (persistidos)
+- **📱 PWA / Offline** — instalável na tela inicial e funcional sem internet
+
+### 🧰 Ferramentas & Calculadoras (Hub dedicado)
+
+- **Bomba de Infusão** — conversão bidirecional dose ↔ mL/h para vasoativos, sedação e insulina, com diluições usuais editáveis
+- **Modo Código (RCP)** — cronômetro de PCR, ciclos de 2 min, metrônomo de compressões (110 bpm), timer de adrenalina e **log de eventos exportável**
+- **17 escores e fórmulas clínicas** — qSOFA, SOFA, GRACE, CHA₂DS₂-VASc, HAS-BLED, HEART, NIHSS, GCS, Wells (TEP), QTc, ClCr (Cockcroft-Gault), Osmolaridade, Na⁺/Ca²⁺ corrigidos, Ânion Gap, déficit de água livre e de potássio
+
+## 🏗️ Arquitetura
+
+```
+src/
+├── data/          # Conteúdo clínico (separado da UI, revisável sem mexer em componentes)
+│   ├── protocols.js   # Protocolos, cascatas, fármacos e antídotos
+│   ├── scores.js      # Definição declarativa dos escores/calculadoras
+│   ├── formulas.js    # Fórmulas de dose por peso
+│   └── tools.js       # Catálogo do Hub de Ferramentas
+├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer
+├── hooks/         # usePersistentState (localStorage)
+└── App.jsx        # Navegação, índice, detalhe de protocolo e Hub de ferramentas
+```
 
 ## 🚀 Instalação e execução local
 
