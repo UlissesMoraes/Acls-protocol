@@ -31,9 +31,13 @@ export default function App() {
   const [theme, setTheme] = usePersistentState("acls.theme", "light");
 
   const [updateReady, setUpdateReady] = useState(false);
-  const { canInstall, promptInstall, isIOS, isStandalone } = useInstallPrompt();
-  const [iosHint, setIosHint] = useState(false);
+  const { canInstall, promptInstall, isIOS, isAndroid, isStandalone, showInstall } = useInstallPrompt();
+  const [installHelp, setInstallHelp] = useState(false);
   const [installDismissed, setInstallDismissed] = usePersistentState("acls.installDismissed", false);
+  const onInstallClick = async () => {
+    if (canInstall) { const r = await promptInstall(); if (r !== "accepted") setInstallHelp(false); }
+    else setInstallHelp(true);
+  };
 
   // Aplica o tema ao documento e atualiza a cor da barra do navegador
   useEffect(() => {
@@ -164,17 +168,35 @@ export default function App() {
   return (
     <div style={{ minHeight:"100vh", background:F, fontFamily:serif, color:"var(--text-strong)", overflowX:"hidden" }}>
 
-      {/* Instrução de instalação no iOS (sem prompt nativo) */}
-      {iosHint && (
-        <div onClick={()=>setIosHint(false)} style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      {/* Instrução de instalação manual (quando não há prompt nativo) */}
+      {installHelp && (
+        <div onClick={()=>setInstallHelp(false)} style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
           <div onClick={e=>e.stopPropagation()} style={{ background:"var(--surface)", borderRadius:"14px 14px 0 0", padding:"20px", maxWidth:460, width:"100%", boxShadow:"0 -4px 24px rgba(0,0,0,.25)" }}>
-            <div style={{ fontFamily:serif, fontSize:18, fontWeight:700, color:"var(--text-strong)", marginBottom:10 }}>📲 Instalar no iPhone/iPad</div>
+            <div style={{ fontFamily:serif, fontSize:18, fontWeight:700, color:"var(--text-strong)", marginBottom:10 }}>
+              📲 {isIOS ? "Instalar no iPhone/iPad" : "Adicionar à tela inicial"}
+            </div>
             <ol style={{ margin:"0 0 16px 18px", padding:0, fontSize:14, color:"var(--text)", fontFamily:sans, lineHeight:1.9 }}>
-              <li>Toque no botão <strong>Compartilhar</strong> (ícone de seta para cima) no Safari.</li>
-              <li>Role e toque em <strong>“Adicionar à Tela de Início”</strong>.</li>
-              <li>Confirme em <strong>“Adicionar”</strong>.</li>
+              {isIOS ? (
+                <>
+                  <li>No <strong>Safari</strong>, toque no botão <strong>Compartilhar</strong> (seta para cima).</li>
+                  <li>Role e toque em <strong>“Adicionar à Tela de Início”</strong>.</li>
+                  <li>Confirme em <strong>“Adicionar”</strong>.</li>
+                </>
+              ) : isAndroid ? (
+                <>
+                  <li>No <strong>Chrome</strong>, toque no menu <strong>⋮</strong> (canto superior direito).</li>
+                  <li>Toque em <strong>“Instalar app”</strong> ou <strong>“Adicionar à tela inicial”</strong>.</li>
+                  <li>Confirme em <strong>“Instalar”</strong>.</li>
+                </>
+              ) : (
+                <>
+                  <li>Abra o menu do navegador (⋮ ou ⋯).</li>
+                  <li>Escolha <strong>“Instalar app”</strong> / <strong>“Adicionar à tela inicial”</strong>.</li>
+                  <li>Use um navegador compatível (Chrome/Edge) e acesse por <strong>HTTPS</strong>.</li>
+                </>
+              )}
             </ol>
-            <button onClick={()=>setIosHint(false)} style={{ width:"100%", background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:14, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>Entendi</button>
+            <button onClick={()=>setInstallHelp(false)} style={{ width:"100%", background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:14, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>Entendi</button>
           </div>
         </div>
       )}
@@ -206,8 +228,8 @@ export default function App() {
               </button>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {(canInstall || isIOS) && !isStandalone && (
-                <button onClick={()=> canInstall ? promptInstall() : setIosHint(true)} aria-label="Instalar aplicativo"
+              {showInstall && (
+                <button onClick={onInstallClick} aria-label="Instalar aplicativo"
                   style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
                   📲 Instalar
                 </button>
@@ -268,14 +290,14 @@ export default function App() {
             </div>
 
             {/* Banner de instalação do app */}
-            {(canInstall || isIOS) && !isStandalone && !installDismissed && !q.trim() && (
+            {showInstall && !installDismissed && !q.trim() && (
               <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(135deg,#E9F7EF,#EBF5FB)", border:"1px solid #9AE6B4", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
                 <img src="/icon-192.png" alt="" width={44} height={44} style={{ borderRadius:10, flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Instalar na tela inicial</div>
                   <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Acesso em 1 toque e funciona offline na sala de emergência.</div>
                 </div>
-                <button onClick={()=> canInstall ? promptInstall() : setIosHint(true)}
+                <button onClick={onInstallClick}
                   style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontFamily:sans, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
                   {canInstall ? "Instalar" : "Como instalar"}
                 </button>

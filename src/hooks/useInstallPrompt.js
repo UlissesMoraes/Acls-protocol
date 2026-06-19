@@ -10,9 +10,9 @@ export default function useInstallPrompt() {
     typeof window !== "undefined" &&
     (window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true);
 
-  const isIOS =
-    typeof navigator !== "undefined" &&
-    /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  const isIOS = /iphone|ipad|ipod/i.test(ua) && !(typeof window !== "undefined" && window.MSStream);
+  const isAndroid = /android/i.test(ua);
 
   useEffect(() => {
     const onPrompt = e => { e.preventDefault(); setDeferred(e); };
@@ -34,10 +34,12 @@ export default function useInstallPrompt() {
   };
 
   return {
-    canInstall: !!deferred,        // Android/desktop: prompt nativo disponível
+    canInstall: !!deferred,            // prompt nativo disponível (Android/desktop)
     promptInstall,
     installed,
-    isIOS: isIOS && !isStandalone, // iOS precisa de instrução manual
+    isIOS,
+    isAndroid,
     isStandalone,
+    showInstall: !isStandalone && !installed, // exibir afford. de instalação
   };
 }
