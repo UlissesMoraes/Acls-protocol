@@ -7,6 +7,7 @@ import DoseCalc from "./components/DoseCalc.jsx";
 import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
+import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import { deburr, expandQuery } from "./utils/format.js";
 
 // Data da última revisão do conteúdo clínico (governança/rastreabilidade)
@@ -30,6 +31,9 @@ export default function App() {
   const [theme, setTheme] = usePersistentState("acls.theme", "light");
 
   const [updateReady, setUpdateReady] = useState(false);
+  const { canInstall, promptInstall, isIOS, isStandalone } = useInstallPrompt();
+  const [iosHint, setIosHint] = useState(false);
+  const [installDismissed, setInstallDismissed] = usePersistentState("acls.installDismissed", false);
 
   // Aplica o tema ao documento e atualiza a cor da barra do navegador
   useEffect(() => {
@@ -160,6 +164,21 @@ export default function App() {
   return (
     <div style={{ minHeight:"100vh", background:F, fontFamily:serif, color:"var(--text-strong)", overflowX:"hidden" }}>
 
+      {/* Instrução de instalação no iOS (sem prompt nativo) */}
+      {iosHint && (
+        <div onClick={()=>setIosHint(false)} style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"var(--surface)", borderRadius:"14px 14px 0 0", padding:"20px", maxWidth:460, width:"100%", boxShadow:"0 -4px 24px rgba(0,0,0,.25)" }}>
+            <div style={{ fontFamily:serif, fontSize:18, fontWeight:700, color:"var(--text-strong)", marginBottom:10 }}>📲 Instalar no iPhone/iPad</div>
+            <ol style={{ margin:"0 0 16px 18px", padding:0, fontSize:14, color:"var(--text)", fontFamily:sans, lineHeight:1.9 }}>
+              <li>Toque no botão <strong>Compartilhar</strong> (ícone de seta para cima) no Safari.</li>
+              <li>Role e toque em <strong>“Adicionar à Tela de Início”</strong>.</li>
+              <li>Confirme em <strong>“Adicionar”</strong>.</li>
+            </ol>
+            <button onClick={()=>setIosHint(false)} style={{ width:"100%", background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:14, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>Entendi</button>
+          </div>
+        </div>
+      )}
+
       {/* Toast de atualização do PWA */}
       {updateReady && (
         <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", zIndex:500, background:"#1A202C", color:"#fff", borderRadius:10, padding:"10px 12px 10px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 20px rgba(0,0,0,.3)", maxWidth:"92vw" }}>
@@ -187,6 +206,12 @@ export default function App() {
               </button>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              {(canInstall || isIOS) && !isStandalone && (
+                <button onClick={()=> canInstall ? promptInstall() : setIosHint(true)} aria-label="Instalar aplicativo"
+                  style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
+                  📲 Instalar
+                </button>
+              )}
               <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} aria-label={theme==="dark"?"Ativar modo claro":"Ativar modo escuro"}
                 style={{ background:"var(--surface-2)", color:"var(--text)", border:`1px solid ${BD}`, borderRadius:8, padding:"8px 10px", fontSize:14, cursor:"pointer", minHeight:38, lineHeight:1 }}>
                 {theme==="dark" ? "☀️" : "🌙"}
@@ -241,6 +266,23 @@ export default function App() {
                 </div>
               )}
             </div>
+
+            {/* Banner de instalação do app */}
+            {(canInstall || isIOS) && !isStandalone && !installDismissed && !q.trim() && (
+              <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(135deg,#E9F7EF,#EBF5FB)", border:"1px solid #9AE6B4", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
+                <img src="/icon-192.png" alt="" width={44} height={44} style={{ borderRadius:10, flexShrink:0 }} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Instalar na tela inicial</div>
+                  <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Acesso em 1 toque e funciona offline na sala de emergência.</div>
+                </div>
+                <button onClick={()=> canInstall ? promptInstall() : setIosHint(true)}
+                  style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"9px 16px", fontSize:13, fontFamily:sans, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
+                  {canInstall ? "Instalar" : "Como instalar"}
+                </button>
+                <button onClick={()=>setInstallDismissed(true)} aria-label="Dispensar"
+                  style={{ background:"none", border:"none", color:"var(--muted)", fontSize:16, cursor:"pointer", padding:"4px 6px", flexShrink:0 }}>✕</button>
+              </div>
+            )}
 
             {/* Atalhos diretos para fármacos encontrados */}
             {drugHits.length>0 && (

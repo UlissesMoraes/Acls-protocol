@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "node --test",
     "validate": "node scripts/validate-data.mjs",
-    "check": "node scripts/validate-data.mjs && node --test"
+    "check": "node scripts/validate-data.mjs && node --test",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

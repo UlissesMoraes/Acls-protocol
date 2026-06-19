@@ -30,7 +30,7 @@ Sistema clínico de referência rápida para sala de emergência, baseado nas di
 - **🧪 Antídotos** — tabela completa por protocolo
 - **🔍 Busca** — protocolos, medicamentos, siglas e condições, com atalho direto para fármacos
 - **⭐ Favoritos & 🕐 Recentes** — acesso rápido aos protocolos mais usados (persistidos)
-- **📱 PWA / Offline** — instalável na tela inicial e funcional sem internet, com aviso de nova versão
+- **📱 PWA instalável** — "Instalar app" no Android/Chrome (ícones PNG 192/512 + maskable), botão e banner de instalação in-app, instrução guiada no iOS, funciona offline e avisa quando há nova versão
 - **🌙 Modo escuro** — alterna claro/escuro (persistido) para plantões noturnos
 - **🔍 Busca tolerante** — ignora acentos e entende sinônimos (ex: epinefrina = adrenalina)
 - **🇧🇷 Entrada pt-BR** — calculadoras aceitam vírgula decimal (ex: creatinina `1,4`)
