@@ -7,6 +7,10 @@ import DoseCalc from "./components/DoseCalc.jsx";
 import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
+import { deburr, expandQuery } from "./utils/format.js";
+
+// Data da última revisão do conteúdo clínico (governança/rastreabilidade)
+const REV = "junho/2026";
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -23,26 +27,56 @@ export default function App() {
   const [weight, setWeight] = usePersistentState("acls.weight", "");
   const [recents, setRecents] = usePersistentState("acls.recents", []);
   const [favs, setFavs] = usePersistentState("acls.favs", []);
+  const [theme, setTheme] = usePersistentState("acls.theme", "light");
+
+  const [updateReady, setUpdateReady] = useState(false);
+
+  // Aplica o tema ao documento e atualiza a cor da barra do navegador
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#1A212B" : "#C53030");
+  }, [theme]);
+
+  // Aviso de nova versão disponível (PWA)
+  useEffect(() => {
+    const onUpdate = () => setUpdateReady(true);
+    window.addEventListener("sw-update", onUpdate);
+    return () => window.removeEventListener("sw-update", onUpdate);
+  }, []);
+  const applyUpdate = () => {
+    if (navigator.serviceWorker)
+      navigator.serviceWorker.getRegistration().then(r => r?.waiting?.postMessage({ type: "SKIP_WAITING" }));
+  };
 
   const cur = P.find(p => p.id === proto);
 
-  const matchProto = (p, ql) =>
-    p.label.toLowerCase().includes(ql)
-    || p.sub.toLowerCase().includes(ql)
-    || p.drugs.some(d => d.name.toLowerCase().includes(ql) || d.ind.toLowerCase().includes(ql) || d.cat.toLowerCase().includes(ql))
-    || p.antidotes.some(a => a.agent.toLowerCase().includes(ql) || a.antidote.toLowerCase().includes(ql))
-    || p.cascade.some(s => s.phase.toLowerCase().includes(ql) || s.items.some(it => it.toLowerCase().includes(ql)));
+  const terms = expandQuery(q);
+  // Texto completo do protocolo, deburrado uma vez por filtragem
+  const protoHaystack = p => deburr([
+    p.label, p.sub, p.cat,
+    ...p.drugs.flatMap(d => [d.name, d.ind, d.cat]),
+    ...p.antidotes.flatMap(a => [a.agent, a.antidote]),
+    ...p.cascade.flatMap(s => [s.phase, ...s.items]),
+  ].join(" "));
+  const matchProto = p => { const h = protoHaystack(p); return terms.some(t => h.includes(t)); };
 
-  const filtered = P.filter(p => {
-    if (cat !== "Todos" && p.cat !== cat) return false;
-    if (!q.trim()) return true;
-    return matchProto(p, q.toLowerCase());
-  });
+  // Ordem de exibição: emergências tempo-dependentes primeiro
+  const ORDER = ["pcr","amax4","taquiarritmias","bradiarritmias","iamcssst","iamssst","avc","convulsoes","sepse","vasoativas","cad","hhns","hidroeletroliticos","intoxicacoes"];
+  const rank = id => { const i = ORDER.indexOf(id); return i === -1 ? 999 : i; };
+
+  const filtered = P
+    .filter(p => {
+      if (cat !== "Todos" && p.cat !== cat) return false;
+      if (!terms.length) return true;
+      return matchProto(p);
+    })
+    .sort((a, b) => rank(a.id) - rank(b.id));
 
   // Fármaco específico encontrado na busca → atalho direto para a aba de medicamentos
   const drugHits = q.trim().length >= 3
     ? P.flatMap(p => p.drugs
-        .filter(d => d.name.toLowerCase().includes(q.toLowerCase()))
+        .filter(d => terms.some(t => deburr(d.name).includes(t)))
         .map(d => ({ proto:p, drug:d })))
         .slice(0, 6)
     : [];
@@ -77,7 +111,7 @@ export default function App() {
   const recentProtos = recents.map(id => P.find(p=>p.id===id)).filter(Boolean);
   const favProtos = favs.map(id => P.find(p=>p.id===id)).filter(Boolean);
 
-  const F = "#F7F9FC", W = "#FFFFFF", BD = "#E2E8F0", T = "#2D3748", S = "#718096";
+  const F = "var(--bg)", W = "var(--surface)", BD = "var(--border)", T = "var(--text)", S = "var(--muted)";
   const serif = "'Georgia','Times New Roman',serif";
   const sans = "sans-serif";
 
@@ -91,37 +125,49 @@ export default function App() {
 
   const renderCard = p => {
     const isFav = favs.includes(p.id);
+    const open = () => openProto(p.id);
     return (
-      <button key={p.id} onClick={()=>openProto(p.id)} className="proto-card"
-        style={{ position:"relative", background:W, border:`1px solid ${BD}`, borderLeft:`4px solid ${p.border}`, borderRadius:10, cursor:"pointer", textAlign:"left", fontFamily:serif, boxShadow:"0 1px 4px rgba(0,0,0,.04)", width:"100%", transition:"all .18s" }}
+      <div key={p.id} role="button" tabIndex={0} onClick={open}
+        onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } }}
+        aria-label={`Abrir protocolo ${p.label}`} className="proto-card"
+        style={{ position:"relative", background:"var(--surface)", border:`1px solid var(--border)`, borderLeft:`4px solid ${p.border}`, borderRadius:10, cursor:"pointer", textAlign:"left", fontFamily:serif, boxShadow:"0 1px 4px rgba(0,0,0,.04)", width:"100%", transition:"all .18s" }}
         onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.1)";e.currentTarget.style.transform="translateY(-2px)"}}
         onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)";e.currentTarget.style.transform="translateY(0)"}}>
-        <span onClick={e=>toggleFav(p.id,e)} role="button" aria-label={isFav?"Remover dos favoritos":"Adicionar aos favoritos"}
-          style={{ position:"absolute", top:8, right:8, fontSize:18, lineHeight:1, cursor:"pointer", color:isFav?"#D4AC0D":"#CBD5E0", padding:4, zIndex:2 }}>
+        <button type="button" onClick={e=>toggleFav(p.id,e)} aria-pressed={isFav} aria-label={isFav?`Remover ${p.label} dos favoritos`:`Adicionar ${p.label} aos favoritos`}
+          style={{ position:"absolute", top:6, right:6, fontSize:18, lineHeight:1, cursor:"pointer", color:isFav?"#D4AC0D":"var(--muted-2)", background:"none", border:"none", padding:6, zIndex:2 }}>
           {isFav ? "★" : "☆"}
-        </span>
+        </button>
         <div className="proto-card-inner" style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
           <div style={{ fontSize:28, lineHeight:1 }}>{p.icon}</div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
-              <div style={{ fontFamily:serif, fontSize:15, fontWeight:700, color:"#1A202C", lineHeight:1.3, paddingRight:24 }}>{p.label}</div>
+              <div style={{ fontFamily:serif, fontSize:15, fontWeight:700, color:"var(--text-strong)", lineHeight:1.3, paddingRight:24 }}>{p.label}</div>
             </div>
             <span style={{ fontSize:10, background:p.light, color:p.color, border:`1px solid ${p.border}44`, padding:"2px 8px", borderRadius:20, fontFamily:sans, fontWeight:600, whiteSpace:"nowrap", display:"inline-block", marginBottom:8 }}>{p.cat}</span>
-            <div style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5, marginBottom:10 }}>{p.sub}</div>
+            <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans, lineHeight:1.5, marginBottom:10 }}>{p.sub}</div>
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-              <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>📋 {p.cascade.length} etapas</span>
-              <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>💊 {p.drugs.length} fármacos</span>
-              {p.antidotes.length>0 && <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>🧪 {p.antidotes.length} antídotos</span>}
-              {p.scores.length>0 && <span style={{ fontSize:11, color:"#4A5568", fontFamily:sans }}>📊 {p.scores.length} escore(s)</span>}
+              <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>📋 {p.cascade.length} etapas</span>
+              <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>💊 {p.drugs.length} fármacos</span>
+              {p.antidotes.length>0 && <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>🧪 {p.antidotes.length} antídotos</span>}
+              {p.scores.length>0 && <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>📊 {p.scores.length} escore(s)</span>}
             </div>
           </div>
         </div>
-      </button>
+      </div>
     );
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:F, fontFamily:serif, color:"#1A202C", overflowX:"hidden" }}>
+    <div style={{ minHeight:"100vh", background:F, fontFamily:serif, color:"var(--text-strong)", overflowX:"hidden" }}>
+
+      {/* Toast de atualização do PWA */}
+      {updateReady && (
+        <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", zIndex:500, background:"#1A202C", color:"#fff", borderRadius:10, padding:"10px 12px 10px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 20px rgba(0,0,0,.3)", maxWidth:"92vw" }}>
+          <span style={{ fontSize:13, fontFamily:sans }}>🔄 Nova versão disponível</span>
+          <button onClick={applyUpdate} style={{ background:"#48BB78", color:"#fff", border:"none", borderRadius:6, padding:"7px 14px", fontSize:13, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>Atualizar</button>
+          <button onClick={()=>setUpdateReady(false)} aria-label="Dispensar" style={{ background:"none", border:"none", color:"#A0AEC0", fontSize:16, cursor:"pointer", padding:"4px 6px" }}>✕</button>
+        </div>
+      )}
 
       {/* HEADER */}
       <div style={{ background:W, borderBottom:`1px solid ${BD}`, position:"sticky", top:0, zIndex:200, boxShadow:"0 1px 4px rgba(0,0,0,.06)" }}>
@@ -136,14 +182,18 @@ export default function App() {
               )}
               <button onClick={()=>{ setProto(null); setTools(false); window.scrollTo({top:0}); pushView({}); }} aria-label="Início"
                 style={{ background:"none", border:"none", textAlign:"left", cursor:"pointer", padding:0 }}>
-                <div style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"#1A202C" }}>Protocolos de Emergência</div>
+                <div style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>Protocolos de Emergência</div>
                 <div style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
               </button>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} aria-label={theme==="dark"?"Ativar modo claro":"Ativar modo escuro"}
+                style={{ background:"var(--surface-2)", color:"var(--text)", border:`1px solid ${BD}`, borderRadius:8, padding:"8px 10px", fontSize:14, cursor:"pointer", minHeight:38, lineHeight:1 }}>
+                {theme==="dark" ? "☀️" : "🌙"}
+              </button>
               {!tools && (
-                <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras"
-                  style={{ background:"#EBF8FF", color:"#2B6CB0", border:"1px solid #BEE3F8", borderRadius:8, padding:"8px 14px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
+                <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras" className="tool-btn"
+                  style={{ background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 14px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
                   🧰 Ferramentas
                 </button>
               )}
@@ -168,19 +218,19 @@ export default function App() {
                 <input value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
                   aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
                   placeholder="🔍 Pesquisar protocolo, medicamento, sigla ou condição..."
-                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid #CBD5E0`, borderRadius:8, padding:"12px 44px 12px 16px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
+                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:8, padding:"12px 44px 12px 16px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
                 {q && (
                   <button onClick={()=>setQ("")} aria-label="Limpar pesquisa"
-                    style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"#EDF2F7", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"#4A5568", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+                    style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"var(--border-2)", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"var(--text)", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
                 )}
               </div>
               <div className="cat-row">
                 {CATS.map(c => (
                   <button key={c} onClick={()=>setCat(c)} style={{
                     padding:"5px 13px", borderRadius:20, border:"1px solid",
-                    borderColor: cat===c ? "#2B6CB0" : "#CBD5E0",
+                    borderColor: cat===c ? "#2B6CB0" : "var(--input-border)",
                     background: cat===c ? "#EBF8FF" : W,
-                    color: cat===c ? "#2B6CB0" : "#4A5568",
+                    color: cat===c ? "#2B6CB0" : "var(--text)",
                     fontSize:12, fontFamily:sans, fontWeight: cat===c ? 700 : 400, cursor:"pointer",
                   }}>{c}</button>
                 ))}
@@ -200,7 +250,7 @@ export default function App() {
                   {drugHits.map(({proto:p,drug:d},i) => (
                     <button key={i} onClick={()=>openProto(p.id,"drugs")}
                       style={{ background:W, border:`1px solid ${p.border}55`, borderLeft:`3px solid ${p.border}`, borderRadius:8, padding:"8px 12px", cursor:"pointer", textAlign:"left", fontFamily:sans }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:"#1A202C" }}>{d.name}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)" }}>{d.name}</div>
                       <div style={{ fontSize:11, color:S }}>{p.label}</div>
                     </button>
                   ))}
@@ -214,7 +264,7 @@ export default function App() {
                 style={{ width:"100%", marginBottom:16, background:"linear-gradient(135deg,#EBF8FF,#E6FFFA)", border:"1px solid #BEE3F8", borderRadius:12, padding:"16px 18px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", alignItems:"center", gap:14 }}>
                 <span style={{ fontSize:30 }}>🧰</span>
                 <span style={{ flex:1, minWidth:0 }}>
-                  <span style={{ display:"block", fontSize:15, fontWeight:700, color:"#1A202C" }}>Ferramentas & Calculadoras</span>
+                  <span style={{ display:"block", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</span>
                   <span style={{ display:"block", fontSize:12, color:S, marginTop:2 }}>Bomba de infusão · Modo Código RCP · {Object.keys(SCORES_DEF).length} escores e fórmulas clínicas</span>
                 </span>
                 <span style={{ fontSize:20, color:"#2B6CB0" }}>→</span>
@@ -254,7 +304,7 @@ export default function App() {
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:8 }}>
               <span style={{ fontSize:34 }}>🧰</span>
               <div>
-                <div style={{ fontFamily:serif, fontSize:22, fontWeight:700, color:"#1A202C" }}>Ferramentas & Calculadoras</div>
+                <div style={{ fontFamily:serif, fontSize:22, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</div>
                 <div style={{ fontSize:13, color:S, fontFamily:sans }}>Cálculos de beira-leito e escores validados — independentes do protocolo</div>
               </div>
             </div>
@@ -264,7 +314,7 @@ export default function App() {
               <label htmlFor="peso-tools" style={{ fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}>⚖️ Peso do paciente</label>
               <input id="peso-tools" type="number" inputMode="decimal" min={1} max={300} placeholder="kg" value={weight}
                 onChange={e=>setWeight(e.target.value)}
-                style={{ width:90, border:"1px solid #CBD5E0", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"#fff" }} />
+                style={{ width:90, border:"1px solid var(--input-border)", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
               <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg — usado nas calculadoras por peso</span>
             </div>
 
@@ -296,15 +346,18 @@ export default function App() {
                   <div style={{ fontSize:38 }}>{cur.icon}</div>
                   <div>
                     <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
-                    <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"#1A202C", marginBottom:3 }}>{cur.label}</div>
-                    <div style={{ fontSize:13, color:S, fontFamily:sans }}>{cur.sub}</div>
+                    <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"var(--text-strong)", marginBottom:3 }}>{cur.label}</div>
+                    <div style={{ fontSize:13, color:S, fontFamily:sans, marginBottom:6 }}>{cur.sub}</div>
+                    <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:10, color:cur.color, background:cur.light, border:`1px solid ${cur.border}44`, padding:"2px 8px", borderRadius:12, fontFamily:sans, fontWeight:600 }}>
+                      ✔ Revisado em {REV}
+                    </span>
                   </div>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
                   <label htmlFor="peso-paciente" style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}>⚖️ Peso do paciente</label>
                   <input id="peso-paciente" type="number" inputMode="decimal" min={1} max={300} placeholder="—" value={weight}
                     onChange={e=>setWeight(e.target.value)}
-                    style={{ width:72, border:"1px solid #CBD5E0", borderRadius:6, padding:"7px 8px", fontSize:16, fontFamily:sans, outline:"none", background:"#fff" }} />
+                    style={{ width:72, border:"1px solid var(--input-border)", borderRadius:6, padding:"7px 8px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
                   <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg</span>
                 </div>
               </div>
@@ -333,25 +386,25 @@ export default function App() {
                 {/* Checklist bar */}
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14, padding:"10px 14px", background:W, border:`1px solid ${BD}`, borderRadius:8 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                    <span style={{ fontSize:13, fontFamily:sans, color:"#4A5568" }}>
+                    <span style={{ fontSize:13, fontFamily:sans, color:"var(--text)" }}>
                       {clMode ? `✅ Checklist — ${done}/${cur.cascade.length} etapas` : "Modo leitura"}
                     </span>
                     {clMode && done>0 && (
-                      <div style={{ background:"#E2E8F0", borderRadius:20, height:6, width:70, overflow:"hidden", flexShrink:0 }}>
+                      <div style={{ background:"var(--border)", borderRadius:20, height:6, width:70, overflow:"hidden", flexShrink:0 }}>
                         <div style={{ height:6, background:cur.border, width:`${(done/cur.cascade.length)*100}%`, transition:"width .3s" }} />
                       </div>
                     )}
                   </div>
                   <div style={{ display:"flex", gap:8, flexShrink:0, flexWrap:"wrap", justifyContent:"flex-end" }}>
-                    <button onClick={toggleAllSteps} style={{ padding:"5px 12px", border:`1px solid #CBD5E0`, borderRadius:6, background:W, color:"#4A5568", fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer", minHeight:32 }}>
+                    <button onClick={toggleAllSteps} style={{ padding:"5px 12px", border:`1px solid var(--input-border)`, borderRadius:6, background:W, color:"var(--text)", fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer", minHeight:32 }}>
                       {allOpen ? "− Recolher tudo" : "+ Expandir tudo"}
                     </button>
                     {clMode && done>0 && (
                       <button onClick={()=>setChecks({})} style={{ padding:"4px 10px", border:`1px solid ${BD}`, borderRadius:6, background:W, color:S, fontSize:11, fontFamily:sans, cursor:"pointer", minHeight:32 }}>Limpar</button>
                     )}
                     <button onClick={()=>{setClMode(m=>!m);setChecks({});}} style={{
-                      padding:"5px 12px", border:`1px solid ${clMode?cur.border:"#CBD5E0"}`,
-                      borderRadius:6, background:clMode?cur.light:W, color:clMode?cur.color:"#4A5568",
+                      padding:"5px 12px", border:`1px solid ${clMode?cur.border:"var(--input-border)"}`,
+                      borderRadius:6, background:clMode?cur.light:W, color:clMode?cur.color:"var(--text)",
                       fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer",
                     }}>{clMode?"✓ Checklist ON":"☐ Ativar Checklist"}</button>
                   </div>
@@ -366,13 +419,13 @@ export default function App() {
                         <button onClick={()=>setOpenSteps(p=>({...p,[idx]:!p[idx]}))} className="step-hdr" aria-expanded={isOpen} style={{
                           width:"100%", border:"none", cursor:"pointer", textAlign:"left",
                           display:"flex", alignItems:"center", gap:12, fontFamily:serif,
-                          background: isOpen?(step.alert?"#FFF5F5":"#F7FAFC"):(isDone&&clMode?cur.light:W),
+                          background: isOpen?(step.alert?"#FFF5F5":"var(--surface-2)"):(isDone&&clMode?cur.light:W),
                           borderBottom: isOpen?`1px solid ${BD}`:"none", transition:"background .15s",
                         }}>
                           {clMode && (
                             <div onClick={e=>{e.stopPropagation();toggleCheck(idx);}} style={{
                               width:22, height:22, borderRadius:6, flexShrink:0,
-                              border:`2px solid ${isDone?cur.border:"#CBD5E0"}`,
+                              border:`2px solid ${isDone?cur.border:"var(--input-border)"}`,
                               background: isDone?cur.light:W,
                               display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
                             }}>
@@ -391,7 +444,7 @@ export default function App() {
                               <span style={{ fontSize:10, color:step.alert?"#9B2C2C":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
                             </div>
                           </div>
-                          <span style={{ color:"#A0AEC0", fontSize:12, transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}>▼</span>
+                          <span style={{ color:"var(--muted-2)", fontSize:12, transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}>▼</span>
                         </button>
 
                         {isOpen && (
@@ -407,9 +460,9 @@ export default function App() {
                               </div>
                             )}
                             {step.decision && (
-                              <div style={{ background:"#F7FAFC", border:`1px solid ${BD}`, borderRadius:8, padding:"14px 16px", marginTop:step.items.length>0?12:0 }}>
+                              <div style={{ background:"var(--surface-2)", border:`1px solid ${BD}`, borderRadius:8, padding:"14px 16px", marginTop:step.items.length>0?12:0 }}>
                                 <div style={{ fontSize:13, fontWeight:700, color:T, fontFamily:sans, marginBottom:8 }}>🔀 Ponto de Decisão</div>
-                                <div style={{ fontSize:13, color:"#4A5568", fontFamily:sans, marginBottom:10, fontStyle:"italic" }}>{step.decision.q}</div>
+                                <div style={{ fontSize:13, color:"var(--text)", fontFamily:sans, marginBottom:10, fontStyle:"italic" }}>{step.decision.q}</div>
                                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                                   <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
                                     <span style={{ fontSize:11, background:"#C6F6D5", color:"#276749", border:"1px solid #9AE6B4", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>SIM</span>
@@ -437,14 +490,14 @@ export default function App() {
                 {cur.drugs.map((d,i) => (
                   <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
                     <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"12px 18px" }}>
-                      <div style={{ fontFamily:serif, fontSize:16, fontWeight:700, color:"#1A202C" }}>{d.name}</div>
+                      <div style={{ fontFamily:serif, fontSize:16, fontWeight:700, color:"var(--text-strong)" }}>{d.name}</div>
                       <div style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:600 }}>{d.cat}</div>
                     </div>
                     <div className="drug-body">
                       {d.dilui && (
                         <div style={{ background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"10px 12px", marginBottom:12 }}>
                           <Label txt="💧 Diluição padrão" />
-                          <div style={{ fontSize:13, color:"#1A202C", fontFamily:sans, fontWeight:600, lineHeight:1.5 }}>{d.dilui}</div>
+                          <div style={{ fontSize:13, color:"var(--text-strong)", fontFamily:sans, fontWeight:600, lineHeight:1.5 }}>{d.dilui}</div>
                         </div>
                       )}
                       <div className="drug-grid">
@@ -498,7 +551,7 @@ export default function App() {
                   {cur.antidotes.map((r,i) => (
                     <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden" }}>
                       <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:14, fontWeight:700, color:"#1A202C", fontFamily:sans }}>{r.agent}</span>
+                        <span style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>{r.agent}</span>
                         <span style={{ fontSize:12, fontWeight:700, color:cur.color, background:W, border:`1px solid ${cur.border}55`, padding:"2px 10px", borderRadius:20, fontFamily:sans }}>{r.antidote}</span>
                       </div>
                       <div style={{ padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
@@ -532,8 +585,24 @@ export default function App() {
       </div>
 
       <style>{`
+        :root, [data-theme="light"] {
+          --bg:#F7F9FC; --surface:#FFFFFF; --surface-2:#F7FAFC;
+          --border:#E2E8F0; --border-2:#EDF2F7;
+          --text-strong:#1A202C; --text:#2D3748; --muted:#718096; --muted-2:#A0AEC0;
+          --input-bg:#FFFFFF; --input-border:#CBD5E0;
+          --chip-tool-bg:#EBF8FF; --chip-tool-fg:#2B6CB0; --chip-tool-bd:#BEE3F8;
+        }
+        [data-theme="dark"] {
+          --bg:#0E1217; --surface:#1A212B; --surface-2:#222C38;
+          --border:#2C3744; --border-2:#283341;
+          --text-strong:#F1F5F9; --text:#DCE3EC; --muted:#94A3B8; --muted-2:#64748B;
+          --input-bg:#10161D; --input-border:#3A4654;
+          --chip-tool-bg:#15293B; --chip-tool-fg:#7CC0F0; --chip-tool-bd:#2A4A66;
+        }
+        html, body { background: var(--bg); }
         * { box-sizing: border-box; }
-        button:focus { outline: 2px solid #4299E1; outline-offset: 2px; }
+        button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
+        button:focus:not(:focus-visible) { outline: none; }
 
         .hdr-inner { padding-top:14px; padding-bottom:14px; }
         .page-pad { padding: 0 20px; }
@@ -541,7 +610,7 @@ export default function App() {
         .proto-card-inner { padding: 18px 20px; }
         .proto-hdr { padding: 20px 24px; }
         .cat-row { display:flex; gap:8px; flex-wrap:wrap; }
-        .tabs-row { display:flex; background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:4px; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:20px; }
+        .tabs-row { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:20px; }
         .tab-btn { padding:8px 16px; border-radius:6px; border:none; font-size:13px; font-family:sans-serif; cursor:pointer; transition:all .15s; white-space:nowrap; flex-shrink:0; }
         .step-hdr { padding: 14px 18px; }
         .step-body { padding: 16px 18px 18px; }

@@ -30,7 +30,22 @@ Sistema clínico de referência rápida para sala de emergência, baseado nas di
 - **🧪 Antídotos** — tabela completa por protocolo
 - **🔍 Busca** — protocolos, medicamentos, siglas e condições, com atalho direto para fármacos
 - **⭐ Favoritos & 🕐 Recentes** — acesso rápido aos protocolos mais usados (persistidos)
-- **📱 PWA / Offline** — instalável na tela inicial e funcional sem internet
+- **📱 PWA / Offline** — instalável na tela inicial e funcional sem internet, com aviso de nova versão
+- **🌙 Modo escuro** — alterna claro/escuro (persistido) para plantões noturnos
+- **🔍 Busca tolerante** — ignora acentos e entende sinônimos (ex: epinefrina = adrenalina)
+- **🇧🇷 Entrada pt-BR** — calculadoras aceitam vírgula decimal (ex: creatinina `1,4`)
+- **🔆 Wake Lock** — a tela não apaga durante o Modo Código (RCP)
+
+## 🧪 Qualidade e testes
+
+```bash
+npm run validate   # valida integridade dos dados clínicos (schema)
+npm test           # testes unitários das fórmulas de dose e escores (node:test)
+npm run check      # validação + testes (use no CI / pré-commit)
+```
+
+As fórmulas de dose e os escores são funções puras com cobertura de testes —
+qualquer regressão em um cálculo de medicamento é detectada antes do deploy.
 
 ### 🧰 Ferramentas & Calculadoras (Hub dedicado)
 

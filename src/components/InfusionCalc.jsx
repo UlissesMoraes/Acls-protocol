@@ -44,14 +44,14 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
 
   const pickDrug = id => { setDrugId(id); setAmount(""); setVol(""); setDose(""); setRate(""); };
 
-  const inputStyle = { border:"1px solid #CBD5E0", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"#fff", width:"100%", boxSizing:"border-box" };
-  const lblStyle = { fontSize:11, color:"#718096", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 };
+  const inputStyle = { border:"1px solid var(--input-border)", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--surface)", width:"100%", boxSizing:"border-box" };
+  const lblStyle = { fontSize:11, color:"var(--muted)", fontFamily:sans, fontWeight:700, display:"block", marginBottom:4 };
 
   return (
-    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
+    <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
       <div style={{ background:light, borderBottom:`1px solid ${border}33`, padding:"12px 16px" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"#1A202C" }}>Bomba de Infusão — Dose ↔ mL/h</div>
-        <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginTop:2 }}>Drogas vasoativas e sedação · conversão bidirecional</div>
+        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Bomba de Infusão — Dose ↔ mL/h</div>
+        <div style={{ fontSize:11, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Drogas vasoativas e sedação · conversão bidirecional</div>
       </div>
 
       <div style={{ padding:"14px 16px" }}>
@@ -64,18 +64,18 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
           {DRIPS.map(d => (
             <button key={d.id} onClick={()=>pickDrug(d.id)} style={{
               padding:"6px 12px", borderRadius:20, border:"1px solid", cursor:"pointer", fontSize:12, fontFamily:sans, minHeight:32,
-              borderColor: drugId===d.id ? border : "#CBD5E0",
-              background: drugId===d.id ? light : "#fff",
-              color: drugId===d.id ? color : "#4A5568",
+              borderColor: drugId===d.id ? border : "var(--input-border)",
+              background: drugId===d.id ? light : "var(--surface)",
+              color: drugId===d.id ? color : "var(--text)",
               fontWeight: drugId===d.id ? 700 : 400,
             }}>{d.name}</button>
           ))}
         </div>
 
         {/* Faixa terapêutica e preparo usual */}
-        <div style={{ background:"#F7FAFC", border:"1px solid #E2E8F0", borderRadius:8, padding:"10px 12px", marginBottom:14 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:"#1A202C", fontFamily:sans, marginBottom:4 }}>{drug.name} — {drug.range}</div>
-          <div style={{ fontSize:12, color:"#718096", fontFamily:sans }}>Preparo usual: {drug.prep}</div>
+        <div style={{ background:"var(--surface-2)", border:"1px solid var(--border)", borderRadius:8, padding:"10px 12px", marginBottom:14 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", fontFamily:sans, marginBottom:4 }}>{drug.name} — {drug.range}</div>
+          <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans }}>Preparo usual: {drug.prep}</div>
         </div>
 
         {/* Diluição editável + peso */}
@@ -96,7 +96,7 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
           )}
         </div>
 
-        <div style={{ fontSize:12, color:"#4A5568", fontFamily:sans, marginBottom:14 }}>
+        <div style={{ fontSize:12, color:"var(--text)", fontFamily:sans, marginBottom:14 }}>
           Concentração: <strong>{conc > 0 ? `${conc % 1 === 0 ? conc : conc.toFixed(1)} ${drug.doseUnit.split("/")[0]}/mL` : "—"}</strong>
         </div>
 
@@ -111,18 +111,18 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
           <div style={{ background:light, border:`1px solid ${border}44`, borderRadius:8, padding:"12px" }}>
             <label style={{ ...lblStyle, color }}>Dose prescrita ({drug.doseUnit})</label>
             <input type="number" inputMode="decimal" placeholder="Ex: 0.1" value={dose} onChange={e=>setDose(e.target.value)} style={inputStyle} />
-            <div style={{ marginTop:10, fontSize:12, color:"#718096", fontFamily:sans }}>Programar bomba em:</div>
+            <div style={{ marginTop:10, fontSize:12, color:"var(--muted)", fontFamily:sans }}>Programar bomba em:</div>
             <div style={{ fontSize:24, fontWeight:900, color, fontFamily:sans }}>
               {mlh !== null && !needW ? `${mlh.toFixed(1)} mL/h` : "—"}
             </div>
           </div>
-          <div style={{ background:"#F7FAFC", border:"1px solid #E2E8F0", borderRadius:8, padding:"12px" }}>
+          <div style={{ background:"var(--surface-2)", border:"1px solid var(--border)", borderRadius:8, padding:"12px" }}>
             <label style={lblStyle}>Conferir bomba (mL/h)</label>
             <input type="number" inputMode="decimal" placeholder="Ex: 10" value={rate} onChange={e=>setRate(e.target.value)} style={inputStyle} />
-            <div style={{ marginTop:10, fontSize:12, color:"#718096", fontFamily:sans }}>Dose entregue:</div>
-            <div style={{ fontSize:24, fontWeight:900, color:"#2D3748", fontFamily:sans }}>
+            <div style={{ marginTop:10, fontSize:12, color:"var(--muted)", fontFamily:sans }}>Dose entregue:</div>
+            <div style={{ fontSize:24, fontWeight:900, color:"var(--text)", fontFamily:sans }}>
               {doseFromRate !== null && !needW ? `${doseFromRate < 1 ? doseFromRate.toFixed(3) : doseFromRate.toFixed(2)}` : "—"}
-              {doseFromRate !== null && !needW && <span style={{ fontSize:13, fontWeight:600, color:"#718096" }}> {drug.doseUnit}</span>}
+              {doseFromRate !== null && !needW && <span style={{ fontSize:13, fontWeight:600, color:"var(--muted)" }}> {drug.doseUnit}</span>}
             </div>
           </div>
         </div>

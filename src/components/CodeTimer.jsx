@@ -30,6 +30,22 @@ export default function CodeTimer() {
     return () => clearInterval(id);
   }, [running]);
 
+  // Wake Lock — impede a tela de apagar durante a ressuscitação
+  useEffect(() => {
+    if (!running || !("wakeLock" in navigator)) return;
+    let lock = null;
+    const acquire = async () => {
+      try { lock = await navigator.wakeLock.request("screen"); } catch { /* negado/indisponível */ }
+    };
+    acquire();
+    const onVisible = () => { if (document.visibilityState === "visible") acquire(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (lock) { lock.release().catch(() => {}); lock = null; }
+    };
+  }, [running]);
+
   // Metrônomo de compressões (Web Audio)
   useEffect(() => {
     if (!metroOn || !running) return;
@@ -84,10 +100,10 @@ export default function CodeTimer() {
   const epis = events.filter(e => e.label.startsWith("Adrenalina")).length;
 
   return (
-    <div style={{ background:"#fff", border:"1px solid #E2E8F0", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
+    <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
       <div style={{ background:"#FDEDEC", borderBottom:"1px solid #C0392B33", padding:"12px 16px" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"#1A202C" }}>⏱️ Modo Código — Timers de RCP</div>
-        <div style={{ fontSize:11, color:"#718096", fontFamily:sans, marginTop:2 }}>Cronômetro do atendimento · ciclos de 2 min · metrônomo {BPM} bpm · log de eventos</div>
+        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>⏱️ Modo Código — Timers de RCP</div>
+        <div style={{ fontSize:11, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Cronômetro do atendimento · ciclos de 2 min · metrônomo {BPM} bpm · log de eventos</div>
       </div>
 
       <div style={{ padding:"14px 16px" }}>
@@ -151,24 +167,24 @@ export default function CodeTimer() {
             )}
 
             {/* Log de eventos */}
-            <div style={{ border:"1px solid #E2E8F0", borderRadius:8, overflow:"hidden", marginBottom:12 }}>
-              <div style={{ background:"#F7FAFC", padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid #E2E8F0" }}>
-                <span style={{ fontSize:12, fontWeight:700, color:"#4A5568", fontFamily:sans }}>📋 Log do atendimento ({events.length})</span>
-                <button onClick={copyLog} style={{ padding:"4px 12px", borderRadius:6, border:"1px solid #CBD5E0", background:"#fff", fontSize:11, fontFamily:sans, fontWeight:600, cursor:"pointer", color:"#4A5568" }}>
+            <div style={{ border:"1px solid var(--border)", borderRadius:8, overflow:"hidden", marginBottom:12 }}>
+              <div style={{ background:"var(--surface-2)", padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:"1px solid var(--border)" }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"var(--text)", fontFamily:sans }}>📋 Log do atendimento ({events.length})</span>
+                <button onClick={copyLog} style={{ padding:"4px 12px", borderRadius:6, border:"1px solid var(--input-border)", background:"var(--surface)", fontSize:11, fontFamily:sans, fontWeight:600, cursor:"pointer", color:"var(--text)" }}>
                   {copied ? "✓ Copiado!" : "Copiar log"}
                 </button>
               </div>
               <div style={{ maxHeight:200, overflowY:"auto" }}>
                 {[...events].reverse().map((e, i) => (
-                  <div key={events.length - i} style={{ display:"flex", gap:10, padding:"7px 12px", borderBottom:"1px solid #F0F4F8", fontSize:12, fontFamily:sans }}>
+                  <div key={events.length - i} style={{ display:"flex", gap:10, padding:"7px 12px", borderBottom:"1px solid var(--border-2)", fontSize:12, fontFamily:sans }}>
                     <span style={{ fontWeight:700, color:"#2B6CB0", fontVariantNumeric:"tabular-nums", flexShrink:0 }}>{fmt(e.t)}</span>
-                    <span style={{ color:"#2D3748" }}>{e.label}</span>
+                    <span style={{ color:"var(--text)" }}>{e.label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button onClick={reset} style={{ padding:"8px 14px", borderRadius:6, border:"1px solid #CBD5E0", background:"#fff", fontSize:12, fontFamily:sans, color:"#718096", cursor:"pointer" }}>
+            <button onClick={reset} style={{ padding:"8px 14px", borderRadius:6, border:"1px solid var(--input-border)", background:"var(--surface)", fontSize:12, fontFamily:sans, color:"var(--muted)", cursor:"pointer" }}>
               ↺ Reiniciar (limpa o registro)
             </button>
           </>
