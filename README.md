@@ -19,6 +19,7 @@ Sistema clínico de referência rápida para sala de emergência, baseado nas di
 | Síndrome Convulsiva | Neurologia |
 | Anafilaxia / Asma Grave (AMAX4) | Emergência |
 | Distúrbios Hidroeletrolíticos | Emergência |
+| Drogas Vasoativas e Inotrópicos | Emergência |
 
 ## ✨ Funcionalidades
 

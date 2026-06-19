@@ -441,6 +441,12 @@ export default function App() {
                       <div style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:600 }}>{d.cat}</div>
                     </div>
                     <div className="drug-body">
+                      {d.dilui && (
+                        <div style={{ background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"10px 12px", marginBottom:12 }}>
+                          <Label txt="💧 Diluição padrão" />
+                          <div style={{ fontSize:13, color:"#1A202C", fontFamily:sans, fontWeight:600, lineHeight:1.5 }}>{d.dilui}</div>
+                        </div>
+                      )}
                       <div className="drug-grid">
                         <div><Label txt="Dose" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.dose}</div></div>
                         <div><Label txt="Via de Administração" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.via}</div></div>
