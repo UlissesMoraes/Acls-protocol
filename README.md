@@ -51,7 +51,7 @@ qualquer regressão em um cálculo de medicamento é detectada antes do deploy.
 ### 🧰 Ferramentas & Calculadoras (Hub dedicado)
 
 - **Bomba de Infusão** — conversão bidirecional dose ↔ mL/h para vasoativos, sedação e insulina, com diluições usuais editáveis
-- **Modo Código (RCP)** — cronômetro de PCR, ciclos de 2 min, metrônomo de compressões (110 bpm), timer de adrenalina e **log de eventos exportável**
+- **Copiloto de RCP (ACLS)** — guia passo a passo por ritmo, ciclos de 2 min, metrônomo de compressões (110 bpm), timer de adrenalina e **log de eventos exportável**
 - **17 escores e fórmulas clínicas** — qSOFA, SOFA, GRACE, CHA₂DS₂-VASc, HAS-BLED, HEART, NIHSS, GCS, Wells (TEP), QTc, ClCr (Cockcroft-Gault), Osmolaridade, Na⁺/Ca²⁺ corrigidos, Ânion Gap, déficit de água livre e de potássio
 
 ## 🏗️ Arquitetura
