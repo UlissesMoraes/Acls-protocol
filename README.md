@@ -35,6 +35,7 @@ Sistema clínico de referência rápida para sala de emergência, baseado nas di
 - **🔍 Busca tolerante** — ignora acentos e entende sinônimos (ex: epinefrina = adrenalina)
 - **🇧🇷 Entrada pt-BR** — calculadoras aceitam vírgula decimal (ex: creatinina `1,4`)
 - **🔆 Wake Lock** — a tela não apaga durante o Modo Código (RCP)
+- **🛰️ Conteúdo vivo** — protocolos atualizáveis via backend (Supabase) sem republicar o app, com validação, cache offline e fallback embutido
 
 ## 🧪 Qualidade e testes
 
@@ -62,10 +63,41 @@ src/
 │   ├── scores.js      # Definição declarativa dos escores/calculadoras
 │   ├── formulas.js    # Fórmulas de dose por peso
 │   └── tools.js       # Catálogo do Hub de Ferramentas
+│   └── remoteContent.js # Busca/valida/mescla protocolos do backend (Supabase)
 ├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer
-├── hooks/         # usePersistentState (localStorage)
+├── hooks/         # usePersistentState, useInstallPrompt, useProtocols
+├── config.js      # URL + chave pública do Supabase (com fallback embutido)
 └── App.jsx        # Navegação, índice, detalhe de protocolo e Hub de ferramentas
 ```
+
+## 🛰️ Conteúdo vivo (backend Supabase)
+
+Os protocolos podem ser atualizados **sem republicar o app**. O conteúdo clínico
+(etapas, fármacos, doses, indicações) é servido pela tabela `public.protocols` no
+Supabase; a **lógica de escores e fórmulas permanece no código** (não é seguro
+executar código vindo de fora).
+
+Estratégia em camadas (à prova de falhas para a sala de emergência):
+
+1. **Embutido** no build — instantâneo e sempre disponível (funciona offline).
+2. **Cache** do último conteúdo remoto válido (offline-first).
+3. **Busca remota** em segundo plano → **valida** cada protocolo → mescla (remoto
+   tem prioridade por `id`) → atualiza a tela e o cache. Conteúdo malformado é
+   descartado, mantendo o embutido.
+
+Editar um protocolo = editar uma linha em **Table editor → protocols** no painel
+do Supabase. A mudança aparece para os usuários na próxima abertura (online), com
+um aviso "Conteúdo atualizado".
+
+**Seed inicial** (popular a tabela com os 14 protocolos atuais), uma única vez:
+
+```bash
+npm run content:seed-sql        # gera supabase/seed.sql
+# Cole o conteúdo de supabase/seed.sql no SQL Editor do Supabase e execute.
+```
+
+Configuração via `.env` (opcional — há fallback embutido): veja `.env.example`.
+Para desligar o backend e usar só o conteúdo embutido: `VITE_REMOTE_CONTENT=off`.
 
 ## 🚀 Instalação e execução local
 

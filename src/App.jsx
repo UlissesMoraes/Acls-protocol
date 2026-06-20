@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { P, CATS } from "./data/protocols.js";
+import { CATS } from "./data/protocols.js";
 import { SCORES_DEF } from "./data/scores.js";
 import { TOOL_GROUPS } from "./data/tools.js";
 import ScoreWidget from "./components/ScoreWidget.jsx";
@@ -8,6 +8,7 @@ import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
+import useProtocols from "./hooks/useProtocols.js";
 import { deburr, expandQuery } from "./utils/format.js";
 
 // Data da última revisão do conteúdo clínico (governança/rastreabilidade)
@@ -57,7 +58,8 @@ export default function App() {
       navigator.serviceWorker.getRegistration().then(r => r?.waiting?.postMessage({ type: "SKIP_WAITING" }));
   };
 
-  const cur = P.find(p => p.id === proto);
+  const { protocols, updated: contentUpdated, dismissUpdated } = useProtocols();
+  const cur = protocols.find(p => p.id === proto);
 
   const terms = expandQuery(q);
   // Texto completo do protocolo, deburrado uma vez por filtragem
@@ -73,7 +75,7 @@ export default function App() {
   const ORDER = ["pcr","amax4","taquiarritmias","bradiarritmias","iamcssst","iamssst","avc","convulsoes","sepse","vasoativas","cad","hhns","hidroeletroliticos","intoxicacoes"];
   const rank = id => { const i = ORDER.indexOf(id); return i === -1 ? 999 : i; };
 
-  const filtered = P
+  const filtered = protocols
     .filter(p => {
       if (cat !== "Todos" && p.cat !== cat) return false;
       if (!terms.length) return true;
@@ -83,7 +85,7 @@ export default function App() {
 
   // Fármaco específico encontrado na busca → atalho direto para a aba de medicamentos
   const drugHits = q.trim().length >= 3
-    ? P.flatMap(p => p.drugs
+    ? protocols.flatMap(p => p.drugs
         .filter(d => terms.some(t => deburr(d.name).includes(t)))
         .map(d => ({ proto:p, drug:d })))
         .slice(0, 6)
@@ -116,8 +118,8 @@ export default function App() {
   const allOpen = cur ? cur.cascade.every((_,i)=>openSteps[i]) : false;
   const toggleAllSteps = () => setOpenSteps(allOpen ? {} : Object.fromEntries(cur.cascade.map((_,i)=>[i,true])));
 
-  const recentProtos = recents.map(id => P.find(p=>p.id===id)).filter(Boolean);
-  const favProtos = favs.map(id => P.find(p=>p.id===id)).filter(Boolean);
+  const recentProtos = recents.map(id => protocols.find(p=>p.id===id)).filter(Boolean);
+  const favProtos = favs.map(id => protocols.find(p=>p.id===id)).filter(Boolean);
 
   const F = "var(--bg)", W = "var(--surface)", BD = "var(--border)", T = "var(--text)", S = "var(--muted)";
   const serif = "'Georgia','Times New Roman',serif";
@@ -198,6 +200,14 @@ export default function App() {
             </ol>
             <button onClick={()=>setInstallHelp(false)} style={{ width:"100%", background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:14, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>Entendi</button>
           </div>
+        </div>
+      )}
+
+      {/* Toast de conteúdo atualizado (backend) */}
+      {contentUpdated && (
+        <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", zIndex:500, background:"#2F855A", color:"#fff", borderRadius:10, padding:"10px 12px 10px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 20px rgba(0,0,0,.3)", maxWidth:"92vw" }}>
+          <span style={{ fontSize:13, fontFamily:sans }}>✅ Conteúdo dos protocolos atualizado</span>
+          <button onClick={dismissUpdated} aria-label="Dispensar" style={{ background:"none", border:"none", color:"#C6F6D5", fontSize:16, cursor:"pointer", padding:"4px 6px" }}>✕</button>
         </div>
       )}
 
