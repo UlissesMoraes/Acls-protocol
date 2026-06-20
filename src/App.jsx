@@ -415,19 +415,19 @@ export default function App() {
 
             {/* Protocol header */}
             <div className="proto-hdr" style={{ background:W, border:`1px solid ${BD}`, borderLeft:`5px solid ${cur.border}`, borderRadius:10, marginBottom:20, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap", justifyContent:"space-between" }}>
+              <div className="proto-hdr-row" style={{ display:"flex", alignItems:"center", gap:16, justifyContent:"space-between" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
-                  <div style={{ fontSize:38 }}>{cur.icon}</div>
-                  <div>
+                  <div style={{ fontSize:38, flexShrink:0 }}>{cur.icon}</div>
+                  <div style={{ minWidth:0 }}>
                     <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
-                    <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"var(--text-strong)", marginBottom:3 }}>{cur.label}</div>
-                    <div style={{ fontSize:13, color:S, fontFamily:sans, marginBottom:6 }}>{cur.sub}</div>
+                    <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"var(--text-strong)", marginBottom:3, overflowWrap:"break-word" }}>{cur.label}</div>
+                    <div style={{ fontSize:13, color:S, fontFamily:sans, marginBottom:6, overflowWrap:"break-word" }}>{cur.sub}</div>
                     <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:10, color:cur.color, background:cur.light, border:`1px solid ${cur.border}44`, padding:"2px 8px", borderRadius:12, fontFamily:sans, fontWeight:600 }}>
                       ✔ Revisado em {REV}
                     </span>
                   </div>
                 </div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
+                <div className="weight-box" style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
                   <label htmlFor="peso-paciente" style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}>⚖️ Peso do paciente</label>
                   <input id="peso-paciente" type="number" inputMode="decimal" min={1} max={300} placeholder="—" value={weight}
                     onChange={e=>setWeight(e.target.value)}
@@ -658,7 +658,33 @@ export default function App() {
         )}
       </div>
 
+      {/* RODAPÉ — créditos */}
+      <footer style={{ borderTop:`1px solid ${BD}`, background:"var(--surface)", padding:"30px 20px 42px", textAlign:"center" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <svg className="ecg-line" width="120" height="26" viewBox="0 0 120 26" fill="none" style={{ marginBottom:10, opacity:.9 }} aria-hidden="true">
+            <path d="M0 13 H34 l5 -9 l6 18 l5 -13 l4 6 H78 l5 -10 l6 16 H120"
+              stroke="#C53030" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div style={{ fontFamily:serif, fontSize:15, color:"var(--text)", marginBottom:4 }}>
+            Idealizado pelo <strong style={{ color:"var(--text-strong)" }}>Dr. Maurício Moraes</strong>
+          </div>
+          <div style={{ fontSize:13, color:"var(--muted)", fontFamily:sans }}>
+            Desenvolvido pela{" "}
+            <span style={{ fontWeight:800, letterSpacing:".02em", background:"linear-gradient(90deg,#2B6CB0,#0E7490)", WebkitBackgroundClip:"text", backgroundClip:"text", color:"transparent" }}>
+              Prime Automate
+            </span>
+          </div>
+          <div style={{ fontSize:11, color:"var(--muted-2)", fontFamily:sans, marginTop:14 }}>
+            Protocolos de Emergência · ACLS 2025 · © {new Date().getFullYear()}
+          </div>
+        </div>
+      </footer>
+
       <style>{`
+        .ecg-line path { stroke-dasharray: 240; stroke-dashoffset: 240; animation: ecg 2.4s ease-in-out infinite; }
+        @keyframes ecg { 0% { stroke-dashoffset: 240; } 55% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity:.35; } }
+        @media (prefers-reduced-motion: reduce) { .ecg-line path { animation: none; stroke-dashoffset: 0; } }
+
         :root, [data-theme="light"] {
           --bg:#F7F9FC; --surface:#FFFFFF; --surface-2:#F7FAFC;
           --border:#E2E8F0; --border-2:#EDF2F7;
@@ -699,6 +725,8 @@ export default function App() {
           .btn-label { display:none; }            /* botões viram só ícone no mobile */
           .hdr-title { font-size:15px; line-height:1.2; }
           .hdr-sub { display:none; }
+          .proto-hdr-row { flex-direction:column; align-items:stretch; gap:14px; }
+          .weight-box { width:100%; justify-content:flex-start; }
           .page-pad { padding: 0 12px; }
           .upd-badge { display:none; }
           .proto-grid { grid-template-columns:1fr; gap:10px; }
