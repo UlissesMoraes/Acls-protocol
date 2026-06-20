@@ -10,7 +10,7 @@ import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
 import { deburr, expandQuery } from "./utils/format.js";
-import { ProtoIcon, Icons } from "./icons.jsx";
+import { ProtoIcon, Icons, TOOL_META } from "./icons.jsx";
 
 // Data da última revisão do conteúdo clínico (governança/rastreabilidade)
 const REV = "junho/2026";
@@ -19,6 +19,7 @@ const REV = "junho/2026";
 export default function App() {
   const [proto, setProto] = useState(null);
   const [tools, setTools] = useState(false);
+  const [tool, setTool] = useState(null);
   const [tab, setTab] = useState("cascade");
   const [openSteps, setOpenSteps] = useState({});
   const [cat, setCat] = useState("Todos");
@@ -96,7 +97,7 @@ export default function App() {
   const pushView = state => window.history.pushState(state, "");
   const searchRef = useRef(null);
 
-  const goHome = () => { setProto(null); setTools(false); window.scrollTo({ top:0 }); pushView({}); };
+  const goHome = () => { setProto(null); setTools(false); setTool(null); window.scrollTo({ top:0 }); pushView({}); };
   const goSearch = () => { goHome(); setTimeout(() => searchRef.current?.focus(), 60); };
 
   const openProto = (id, focusTab = "cascade") => {
@@ -105,14 +106,12 @@ export default function App() {
     window.scrollTo({ top:0 });
     pushView({ proto:id });
   };
-  const openTools = (anchor) => {
-    setTools(true); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true });
-    if (anchor) setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior:"smooth", block:"start" }), 140);
-  };
+  const openTools = () => { setTools(true); setTool(null); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true }); };
+  const openTool = (id) => { setTools(true); setTool(id); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true, tool:id }); };
   const QUICK_TOOLS = [
-    { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", anchor:"tool-code" },
-    { Ic:Icons.Drug,  color:"#0E7490", label:"Bomba de Infusão", sub:"Dose ↔ mL/h", anchor:"tool-infusion" },
-    { Ic:Icons.Score, color:"#2B6CB0", label:"Escores", sub:`${Object.keys(SCORES_DEF).length} validados`, anchor:"tools-scores" },
+    { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", id:"code" },
+    { Ic:Icons.Drug,  color:"#0E7490", label:"Bomba de Infusão", sub:"Dose ↔ mL/h", id:"infusion" },
+    { Ic:Icons.Score, color:"#2B6CB0", label:"Escores", sub:`${Object.keys(SCORES_DEF).length} validados`, id:null },
   ];
 
   // Botão "voltar" do navegador/celular navega dentro do app em vez de sair
@@ -121,6 +120,7 @@ export default function App() {
       const s = e.state || {};
       setProto(s.proto || null);
       setTools(!!s.tools);
+      setTool(s.tool || null);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -254,7 +254,7 @@ export default function App() {
               )}
               <button onClick={()=>{ setProto(null); setTools(false); window.scrollTo({top:0}); pushView({}); }} aria-label="Início"
                 style={{ background:"none", border:"none", textAlign:"left", cursor:"pointer", padding:0, minWidth:0 }}>
-                <div className="hdr-title" style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>{tools ? "Ferramentas & Calculadoras" : "Protocolos de Emergência"}</div>
+                <div className="hdr-title" style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>{tools ? (tool ? (TOOL_META[tool]?.short || "Ferramenta") : "Ferramentas & Calculadoras") : "Protocolos de Emergência"}</div>
                 <div className="hdr-sub" style={{ fontSize:11, color:S, fontFamily:sans }}>{tools ? "Acesso rápido. Decisão segura." : "Condutas rápidas. Decisões seguras."}</div>
               </button>
             </div>
@@ -373,7 +373,7 @@ export default function App() {
                 </div>
                 <div className="quick-grid">
                   {QUICK_TOOLS.map(t => (
-                    <button key={t.label} onClick={()=>openTools(t.anchor)} className="quick-card"
+                    <button key={t.label} onClick={()=>t.id?openTool(t.id):openTools()} className="quick-card"
                       style={{ background:W, border:`1px solid ${BD}`, borderRadius:12, padding:"14px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", flexDirection:"column", gap:8, boxShadow:"var(--shadow-sm)", transition:"all .15s" }}>
                       <span style={{ width:40, height:40, borderRadius:10, background:tint(t.color,16), display:"flex", alignItems:"center", justifyContent:"center" }}>
                         <t.Ic size={21} color={t.color} />
@@ -428,50 +428,78 @@ export default function App() {
           </>
         )}
 
-        {/* ── TOOLS HUB ── */}
-        {tools && (
+        {/* ── TOOLS — CATÁLOGO ── */}
+        {tools && !tool && (
           <div style={{ paddingTop:20, paddingBottom:60 }}>
-            {/* Acesso rápido — salta para a ferramenta */}
-            <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:14, WebkitOverflowScrolling:"touch" }}>
-              {[
-                { Ic:Icons.Siren, color:"#C53030", lbl:"Copiloto RCP", anchor:"tool-code" },
-                { Ic:Icons.Drug,  color:"#0E7490", lbl:"Bomba de Infusão", anchor:"tool-infusion" },
-                { Ic:Icons.Score, color:"#2B6CB0", lbl:"Escores", anchor:"tools-scores" },
-              ].map(c => (
-                <button key={c.lbl} onClick={()=>document.getElementById(c.anchor)?.scrollIntoView({behavior:"smooth",block:"start"})}
-                  style={{ display:"flex", alignItems:"center", gap:7, flexShrink:0, padding:"8px 14px", borderRadius:20, border:`1px solid ${c.color}44`, background:tint(c.color,12), color:c.color, fontFamily:sans, fontSize:12, fontWeight:700, cursor:"pointer" }}>
-                  <c.Ic size={15} /> {c.lbl}
-                </button>
-              ))}
-            </div>
-
-            {/* Peso global compartilhado pelas ferramentas */}
-            <div style={{ display:"flex", alignItems:"center", gap:8, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:10, padding:"10px 14px", marginBottom:20, flexWrap:"wrap" }}>
-              <label htmlFor="peso-tools" style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}><Icons.Scale size={15} /> Peso do paciente</label>
-              <input id="peso-tools" type="number" inputMode="decimal" min={1} max={300} placeholder="kg" value={weight}
-                onChange={e=>setWeight(e.target.value)}
-                style={{ width:90, border:"1px solid var(--input-border)", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
-              <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg — usado nas calculadoras por peso</span>
-            </div>
-
-            {TOOL_GROUPS.map((group, gi) => (
-              <div key={group.cat} id={gi===TOOL_GROUPS.findIndex(g=>g.items[0]?.kind==="score") ? "tools-scores" : undefined} style={{ marginBottom:24, scrollMarginTop:70 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${group.border}33` }}>
+            {TOOL_GROUPS.map(group => (
+              <div key={group.cat} style={{ marginBottom:22 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
                   {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat}
                 </div>
-                {group.items.map(item => {
-                  if (item.kind === "infusion") return <div key={item.id} id="tool-infusion" style={{ marginBottom:14, scrollMarginTop:70 }}><InfusionCalc globalW={weight} /></div>;
-                  if (item.kind === "code") return <div key={item.id} id="tool-code" style={{ marginBottom:14, scrollMarginTop:70 }}><CodeTimer /></div>;
-                  return <ScoreWidget key={item.id} scoreKey={item.id} color={group.color} light={tint(group.color)} border={group.border} globalW={weight} />;
-                })}
+                <div className="tool-cat-grid">
+                  {group.items.map(item => {
+                    const meta = TOOL_META[item.id] || {};
+                    const Ic = meta.Ic || Icons.Score;
+                    const crit = group.cat==="Fluxo crítico";
+                    return (
+                      <button key={item.id} onClick={()=>openTool(item.id)} className="tool-card"
+                        style={{ display:"flex", flexDirection:"column", gap:9, padding:"14px", borderRadius:14, cursor:"pointer", textAlign:"left", fontFamily:sans,
+                          background: crit ? tint(group.color,12) : W, border:`1px solid ${crit?group.border+"66":BD}`, boxShadow:"var(--shadow-sm)", transition:"all .15s" }}>
+                        <span style={{ width:42, height:42, borderRadius:11, background:tint(group.color,16), display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          <Ic size={22} color={group.color} />
+                        </span>
+                        <span style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", lineHeight:1.2 }}>{meta.short || item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
 
-            <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"var(--warn-fg)", lineHeight:1.6 }}>
-              <strong>⚕️ Aviso:</strong> Calculadoras são apoio à decisão. Confira sempre doses, diluições e contraindicações — a responsabilidade terapêutica é do médico assistente.
+            <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:W, border:`1px solid ${BD}`, borderRadius:12, padding:"12px 14px", marginBottom:32, boxShadow:"var(--shadow-sm)" }}>
+              <Icons.Alert size={18} color="var(--warn-fg)" style={{ flexShrink:0, marginTop:1 }} />
+              <span style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5 }}>Calculadoras são apoio à decisão. Confira sempre doses, diluições e contraindicações — a responsabilidade é do médico assistente.</span>
             </div>
           </div>
         )}
+
+        {/* ── TOOLS — FERRAMENTA DEDICADA ── */}
+        {tools && tool && (() => {
+          let kind = "score", gcolor = "#2B6CB0", gborder = "#2B6CB0", gcat = "";
+          for (const g of TOOL_GROUPS) { const it = g.items.find(i => i.id === tool); if (it) { kind = it.kind || "score"; gcolor = g.color; gborder = g.border; gcat = g.cat; break; } }
+          const meta = TOOL_META[tool] || {};
+          const needsWeight = kind === "infusion" || (kind === "score" && (SCORES_DEF[tool]?.inputs || []).some(i => i.k === "peso"));
+          return (
+            <div style={{ paddingTop:16, paddingBottom:60 }}>
+              <button onClick={()=>window.history.back()} style={{ display:"flex", alignItems:"center", gap:5, background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"6px 0", marginBottom:8 }}>
+                <Icons.ArrowLeft size={17} /> Ferramentas
+              </button>
+              <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+                <span style={{ width:46, height:46, borderRadius:12, background:tint(gcolor,16), display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  {meta.Ic ? <meta.Ic size={24} color={gcolor} /> : <Icons.Score size={24} color={gcolor} />}
+                </span>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontFamily:serif, fontSize:20, fontWeight:700, color:"var(--text-strong)" }}>{meta.short || "Ferramenta"}</div>
+                  <div style={{ fontSize:12, color:S, fontFamily:sans }}>{gcat}</div>
+                </div>
+              </div>
+
+              {needsWeight && (
+                <div style={{ display:"flex", alignItems:"center", gap:8, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:10, padding:"10px 14px", marginBottom:16, flexWrap:"wrap" }}>
+                  <label htmlFor="peso-tool" style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}><Icons.Scale size={15} /> Peso do paciente</label>
+                  <input id="peso-tool" type="number" inputMode="decimal" min={1} max={300} placeholder="kg" value={weight}
+                    onChange={e=>setWeight(e.target.value)}
+                    style={{ width:90, border:"1px solid var(--input-border)", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
+                  <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg</span>
+                </div>
+              )}
+
+              {kind === "code" && <CodeTimer />}
+              {kind === "infusion" && <InfusionCalc globalW={weight} />}
+              {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
+            </div>
+          );
+        })()}
 
         {/* ── PROTOCOL DETAIL ── */}
         {proto && cur && (
@@ -808,7 +836,9 @@ export default function App() {
         .bottom-nav { display: none; }
         .quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
         .quick-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        @media (hover: none) { .quick-card:active { transform: scale(.98); } }
+        .tool-cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+        .tool-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        @media (hover: none) { .quick-card:active, .tool-card:active { transform: scale(.98); } }
         button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
         button:focus:not(:focus-visible) { outline: none; }
 

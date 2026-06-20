@@ -37,3 +37,26 @@ export const Icons = {
   Star, ChevronDown, Clock, X, Alert: TriangleAlert, Install: Smartphone,
   Protocols: LayoutGrid, Decision: Split, Filter: SlidersHorizontal, ChevronRight, Shield: ShieldCheck,
 };
+
+// Metadados de cada ferramenta para o catálogo (ícone + nome curto)
+export const TOOL_META = {
+  code:      { Ic: Siren,        short: "Copiloto de RCP" },
+  infusion:  { Ic: Syringe,      short: "Bomba de Infusão" },
+  grace:     { Ic: Heart,        short: "GRACE" },
+  chadsvasc: { Ic: HeartPulse,   short: "CHA₂DS₂-VASc" },
+  hasbled:   { Ic: Droplet,      short: "HAS-BLED" },
+  heart:     { Ic: Heart,        short: "HEART" },
+  qtc:       { Ic: Activity,     short: "QTc" },
+  nihss:     { Ic: Brain,        short: "NIHSS" },
+  gcs:       { Ic: Brain,        short: "Glasgow" },
+  qsofa:     { Ic: Activity,     short: "qSOFA" },
+  sofa:      { Ic: Activity,     short: "SOFA" },
+  clcr:      { Ic: FlaskConical, short: "ClCr" },
+  wells:     { Ic: Wind,         short: "Wells (TEP)" },
+  osm:       { Ic: Droplet,      short: "Osmolaridade" },
+  nacorr:    { Ic: FlaskConical, short: "Na⁺ corrigido" },
+  cacorr:    { Ic: FlaskConical, short: "Ca²⁺ corrigido" },
+  aniongap:  { Ic: FlaskConical, short: "Ânion Gap" },
+  h2odef:    { Ic: Droplet,      short: "Déficit de água" },
+  kdef:      { Ic: FlaskConical, short: "Déficit de K⁺" },
+};
