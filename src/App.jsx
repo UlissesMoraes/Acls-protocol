@@ -227,21 +227,21 @@ export default function App() {
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
               {(proto || tools) && (
                 <button onClick={()=>window.history.back()} aria-label="Voltar"
-                  style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"8px 10px", borderRadius:6, minHeight:40 }}>
-                  ← Voltar
+                  style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"8px 10px", borderRadius:6, minHeight:40, whiteSpace:"nowrap" }}>
+                  ←<span className="btn-label"> Voltar</span>
                 </button>
               )}
               <button onClick={()=>{ setProto(null); setTools(false); window.scrollTo({top:0}); pushView({}); }} aria-label="Início"
-                style={{ background:"none", border:"none", textAlign:"left", cursor:"pointer", padding:0 }}>
-                <div style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>Protocolos de Emergência</div>
-                <div style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
+                style={{ background:"none", border:"none", textAlign:"left", cursor:"pointer", padding:0, minWidth:0 }}>
+                <div className="hdr-title" style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>Protocolos de Emergência</div>
+                <div className="hdr-sub" style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
               </button>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div className="hdr-actions" style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
               {showInstall && (
                 <button onClick={onInstallClick} aria-label="Instalar aplicativo"
                   style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
-                  📲 Instalar
+                  📲<span className="btn-label"> Instalar</span>
                 </button>
               )}
               <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} aria-label={theme==="dark"?"Ativar modo claro":"Ativar modo escuro"}
@@ -250,14 +250,14 @@ export default function App() {
               </button>
               {!tools && (
                 <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras" className="tool-btn"
-                  style={{ background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 14px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
-                  🧰 Ferramentas
+                  style={{ background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
+                  🧰<span className="btn-label"> Ferramentas</span>
                 </button>
               )}
               {proto !== "pcr" && (
                 <button onClick={()=>openProto("pcr")} aria-label="Acesso rápido — Parada Cardiorrespiratória"
-                  style={{ background:"#C53030", color:"#fff", border:"none", borderRadius:8, padding:"8px 14px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, minHeight:38, boxShadow:"0 1px 4px rgba(197,48,48,.35)", whiteSpace:"nowrap" }}>
-                  🚨 PCR
+                  style={{ background:"#C53030", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, minHeight:38, boxShadow:"0 1px 4px rgba(197,48,48,.35)", whiteSpace:"nowrap" }}>
+                  🚨<span className="btn-label"> PCR</span>
                 </button>
               )}
             </div>
@@ -301,7 +301,7 @@ export default function App() {
 
             {/* Banner de instalação do app */}
             {showInstall && !installDismissed && !q.trim() && (
-              <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(135deg,#E9F7EF,#EBF5FB)", border:"1px solid #9AE6B4", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", background:"linear-gradient(135deg,#E9F7EF,#EBF5FB)", border:"1px solid #9AE6B4", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
                 <img src="/icon-192.png" alt="" width={44} height={44} style={{ borderRadius:10, flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Instalar na tela inicial</div>
@@ -694,7 +694,11 @@ export default function App() {
         .ant-cards-wrap { display:none; }
 
         @media (max-width: 640px) {
-          .hdr-inner { padding-top:12px; padding-bottom:12px; }
+          .hdr-inner { padding-top:12px; padding-bottom:12px; gap:8px; }
+          .hdr-actions { gap:6px; }
+          .btn-label { display:none; }            /* botões viram só ícone no mobile */
+          .hdr-title { font-size:15px; line-height:1.2; }
+          .hdr-sub { display:none; }
           .page-pad { padding: 0 12px; }
           .upd-badge { display:none; }
           .proto-grid { grid-template-columns:1fr; gap:10px; }
