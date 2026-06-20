@@ -11,6 +11,13 @@ export const TOOL_GROUPS = [
     ],
   },
   {
+    cat: "Inteligência",
+    color: "#7C3AED", light: "#F3EEFD", border: "#7C3AED",
+    items: [
+      { id: "assistant", kind: "assistant", label: "Copiloto Clínico (IA)", sub: "Tire dúvidas de conduta, peça o porquê dos passos e calcule doses conversando — por voz ou texto" },
+    ],
+  },
+  {
     cat: "Beira-leito",
     color: "#0E7490", light: "#ECFEFF", border: "#0891B2",
     items: [

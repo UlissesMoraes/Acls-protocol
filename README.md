@@ -57,6 +57,8 @@ qualquer regressão em um cálculo de medicamento é detectada antes do deploy.
 ## 🏗️ Arquitetura
 
 ```
+api/
+└── ai.js          # Função serverless (Vercel Edge) — proxy seguro p/ OpenAI
 src/
 ├── data/          # Conteúdo clínico (separado da UI, revisável sem mexer em componentes)
 │   ├── protocols.js   # Protocolos, cascatas, fármacos e antídotos
@@ -64,7 +66,8 @@ src/
 │   ├── formulas.js    # Fórmulas de dose por peso
 │   └── tools.js       # Catálogo do Hub de Ferramentas
 │   └── remoteContent.js # Busca/valida/mescla protocolos do backend (Supabase)
-├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer
+├── lib/           # aiClient (streaming SSE) · clinicalContext (base p/ a IA)
+├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer, AIAssistant
 ├── hooks/         # usePersistentState, useInstallPrompt, useProtocols
 ├── config.js      # URL + chave pública do Supabase (com fallback embutido)
 └── App.jsx        # Navegação, índice, detalhe de protocolo e Hub de ferramentas
@@ -98,6 +101,29 @@ npm run content:seed-sql        # gera supabase/seed.sql
 
 Configuração via `.env` (opcional — há fallback embutido): veja `.env.example`.
 Para desligar o backend e usar só o conteúdo embutido: `VITE_REMOTE_CONTENT=off`.
+
+## 🤖 Copiloto Clínico (IA)
+
+Assistente de IA ancorado no **conteúdo dos próprios protocolos** do app (padrão
+RAG). Responde dúvidas de conduta, explica o porquê de cada passo (modo ensino),
+calcula doses conversando e **gera o relatório de parada** a partir do log do
+Copiloto de RCP. Suporta **voz** (falar a pergunta e ouvir a resposta).
+
+**Segurança da chave:** a chave da OpenAI vive **somente** na função serverless
+`api/ai.js` (Vercel Edge), lida de `OPENAI_API_KEY`. O navegador chama `/api/ai`
+na mesma origem — a chave **nunca** entra no bundle do front-end.
+
+Configuração na Vercel (**Project → Settings → Environment Variables**):
+
+| Variável | Obrigatória | Padrão | Função |
+|---|---|---|---|
+| `OPENAI_API_KEY` | ✅ | — | Chave secreta `sk-...` |
+| `OPENAI_MODEL` | — | `gpt-4o-mini` | Modelo de chat |
+| `AI_ALLOWED_ORIGIN` | — | (livre) | Restringe a origem que pode chamar a IA |
+
+> ⚠️ **Não** use o prefixo `VITE_` nessas variáveis — isso as exporia no app.
+> Após adicioná-las, faça um novo deploy. Sem a chave, o app funciona normalmente
+> e o Copiloto exibe um aviso de "não configurado".
 
 ## 🚀 Instalação e execução local
 

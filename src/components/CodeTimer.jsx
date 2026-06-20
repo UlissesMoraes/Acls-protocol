@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Siren, Timer, Zap, Syringe, Pill, TriangleAlert, Wind, Check, ChevronDown, Activity, RotateCcw, Volume2, VolumeX, HeartPulse } from "lucide-react";
+import { Siren, Timer, Zap, Syringe, Pill, TriangleAlert, Wind, Check, ChevronDown, Activity, RotateCcw, Volume2, VolumeX, HeartPulse, Sparkles, FileText, Square } from "lucide-react";
 import { shockableMed, H5, T5, ventilation } from "../data/acls.js";
+import { streamChat, AIConfigError } from "../lib/aiClient.js";
+import { buildRcpLogText } from "../lib/clinicalContext.js";
 
 const sans = "var(--font)";
 const CYCLE_S = 120;   // ciclo de RCP: 2 min
@@ -55,7 +57,12 @@ export default function CodeTimer() {
   const [metroOn, setMetroOn] = useState(false);
   const [showCauses, setShowCauses] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [narrative, setNarrative] = useState("");
+  const [narrating, setNarrating] = useState(false);
+  const [narrErr, setNarrErr] = useState(null);
+  const [narrCopied, setNarrCopied] = useState(false);
   const audioRef = useRef(null);
+  const narrAbort = useRef(null);
 
   const running = startTs !== null && endTs === null;
   const elapsed = startTs ? ((endTs || now) - startTs) / 1000 : 0;
@@ -147,12 +154,40 @@ export default function CodeTimer() {
   };
   const recheck = () => { setPhase("analyze"); log("Reavaliação de ritmo (antecipada)"); };
   const rce = () => { setEndTs(Date.now()); setMetroOn(false); setPhase("idle"); log("RCE — retorno da circulação espontânea · cuidados pós-PCR"); };
-  const reset = () => { setStartTs(null); setEndTs(null); setPhase("idle"); setRhythm(null); setEvents([]); setMetroOn(false); };
+  const reset = () => { setStartTs(null); setEndTs(null); setPhase("idle"); setRhythm(null); setEvents([]); setMetroOn(false); setNarrative(""); setNarrErr(null); narrAbort.current?.abort(); };
 
   const copyLog = async () => {
     const head = `REGISTRO DE RCP — ${new Date(startTs).toLocaleString("pt-BR")}\nDuração: ${fmt(elapsed)}\nChoques: ${shocks} · Adrenalina: ${epiCount} · Amiodarona: ${amioCount}\n\n`;
     const body = events.map(e => `${fmt(e.t)} — ${e.label}`).join("\n");
     try { await navigator.clipboard.writeText(head + body + "\n\nGerado pelo app Protocolos ACLS — conferir antes de registrar em prontuário."); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+  };
+
+  // Gera o relatório de parada (narração) com IA, a partir do log estruturado.
+  const generateNarrative = async () => {
+    if (narrating || !events.length) return;
+    setNarrErr(null); setNarrative("");
+    const logText = buildRcpLogText({
+      startTs, durationStr: fmt(elapsed), shocks, epiCount, amioCount,
+      events: events.map(e => ({ tStr: fmt(e.t), label: e.label })),
+    });
+    setNarrating(true);
+    const ctrl = new AbortController();
+    narrAbort.current = ctrl;
+    try {
+      await streamChat({
+        mode: "narrate", signal: ctrl.signal,
+        messages: [{ role: "user", content: `Gere o relatório de parada a partir deste log:\n\n${logText}` }],
+        onToken: d => setNarrative(prev => prev + d),
+      });
+    } catch (e) {
+      if (e?.name !== "AbortError")
+        setNarrErr(e instanceof AIConfigError ? "IA não configurada no servidor (defina OPENAI_API_KEY na Vercel)." : (e.message || "Falha ao gerar relatório."));
+    } finally {
+      setNarrating(false); narrAbort.current = null;
+    }
+  };
+  const copyNarrative = async () => {
+    try { await navigator.clipboard.writeText(narrative + "\n\nDocumento gerado por assistente — conferir antes de registrar em prontuário."); setNarrCopied(true); setTimeout(() => setNarrCopied(false), 2000); } catch {}
   };
 
   const vent = ventilation(airway);
@@ -366,6 +401,44 @@ export default function CodeTimer() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* RELATÓRIO DE PARADA (IA) */}
+            <div style={{ border: "1px solid color-mix(in srgb,#7C3AED 35%,var(--border))", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+              <div style={{ background: "color-mix(in srgb,#7C3AED 9%,var(--surface))", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, borderBottom: narrative || narrErr || narrating ? "1px solid var(--border)" : "none" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>
+                  <FileText size={15} color="#7C3AED" /> Relatório de parada (IA)
+                </span>
+                {narrating ? (
+                  <button onClick={() => narrAbort.current?.abort()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 6, border: "none", background: "#C53030", color: "#fff", fontSize: 11, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+                    <Square size={11} fill="#fff" /> Parar
+                  </button>
+                ) : (
+                  <button onClick={generateNarrative} disabled={!events.length} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 13px", borderRadius: 7, border: "none", background: events.length ? "#7C3AED" : "var(--border)", color: "#fff", fontSize: 11.5, fontFamily: sans, fontWeight: 700, cursor: events.length ? "pointer" : "default" }}>
+                    <Sparkles size={13} /> {narrative ? "Refazer" : "Gerar"}
+                  </button>
+                )}
+              </div>
+              {(narrative || narrating) && (
+                <div style={{ padding: "12px 14px" }}>
+                  <div style={{ fontSize: 12.5, color: "var(--text)", fontFamily: sans, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    {narrative}{narrating && <span style={{ opacity: .5 }}>▍</span>}
+                  </div>
+                  {narrative && !narrating && (
+                    <button onClick={copyNarrative} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--surface)", fontSize: 11.5, fontFamily: sans, fontWeight: 600, cursor: "pointer", color: "var(--text)" }}>
+                      {narrCopied ? "✓ Copiado!" : "Copiar relatório"}
+                    </button>
+                  )}
+                </div>
+              )}
+              {narrErr && (
+                <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--danger-fg)", fontFamily: sans, background: "var(--danger-bg)" }}>{narrErr}</div>
+              )}
+              {!narrative && !narrating && !narrErr && (
+                <div style={{ padding: "10px 14px", fontSize: 11.5, color: "var(--muted)", fontFamily: sans, lineHeight: 1.5 }}>
+                  Gera um texto cronológico do atendimento (ritmo, choques, medicações, desfecho) pronto para conferência e prontuário.
+                </div>
+              )}
             </div>
 
             <button onClick={reset} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "1px solid var(--input-border)", background: "var(--surface)", fontSize: 12, fontFamily: sans, color: "var(--muted)", cursor: "pointer" }}>

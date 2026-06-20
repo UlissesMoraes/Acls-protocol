@@ -6,6 +6,7 @@ import ScoreWidget from "./components/ScoreWidget.jsx";
 import DoseCalc from "./components/DoseCalc.jsx";
 import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
+import AIAssistant from "./components/AIAssistant.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
@@ -110,6 +111,7 @@ export default function App() {
   const openTool = (id) => { setTools(true); setTool(id); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true, tool:id }); };
   const QUICK_TOOLS = [
     { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", id:"code" },
+    { Ic:Icons.Sparkles, color:"#7C3AED", label:"Copiloto Clínico", sub:"IA · voz e texto", id:"assistant" },
     { Ic:Icons.Drug,  color:"#0E7490", label:"Bomba de Infusão", sub:"Dose ↔ mL/h", id:"infusion" },
     { Ic:Icons.Score, color:"#2B6CB0", label:"Escores", sub:`${Object.keys(SCORES_DEF).length} validados`, id:null },
   ];
@@ -434,7 +436,7 @@ export default function App() {
             {TOOL_GROUPS.map(group => (
               <div key={group.cat} style={{ marginBottom:22 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
-                  {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat}
+                  {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat==="Inteligência" && <Icons.Sparkles size={14} />}{group.cat}
                 </div>
                 <div className="tool-cat-grid">
                   {group.items.map(item => {
@@ -495,6 +497,7 @@ export default function App() {
               )}
 
               {kind === "code" && <CodeTimer />}
+              {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
             </div>
