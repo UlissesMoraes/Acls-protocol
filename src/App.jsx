@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CATS } from "./data/protocols.js";
 import { SCORES_DEF } from "./data/scores.js";
 import { TOOL_GROUPS } from "./data/tools.js";
@@ -93,6 +93,10 @@ export default function App() {
     : [];
 
   const pushView = state => window.history.pushState(state, "");
+  const searchRef = useRef(null);
+
+  const goHome = () => { setProto(null); setTools(false); window.scrollTo({ top:0 }); pushView({}); };
+  const goSearch = () => { goHome(); setTimeout(() => searchRef.current?.focus(), 60); };
 
   const openProto = (id, focusTab = "cascade") => {
     setProto(id); setTools(false); setTab(focusTab); setOpenSteps({}); setChecks({}); setClMode(false);
@@ -254,7 +258,7 @@ export default function App() {
                 {theme==="dark" ? <Icons.Sun size={17} /> : <Icons.Moon size={17} />}
               </button>
               {!tools && (
-                <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras" className="tool-btn"
+                <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras" className="tool-btn hdr-tools-btn"
                   style={{ display:"flex", alignItems:"center", gap:6, background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
                   <Icons.Wrench size={16} /><span className="btn-label">Ferramentas</span>
                 </button>
@@ -278,7 +282,7 @@ export default function App() {
             <div style={{ paddingTop:24, paddingBottom:16 }}>
               <div style={{ position:"relative", marginBottom:12 }}>
                 <Icons.Search size={18} color="var(--muted)" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
-                <input value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
+                <input ref={searchRef} value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
                   aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
                   placeholder="Pesquisar protocolo, medicamento, sigla ou condição..."
                   style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:8, padding:"12px 44px 12px 42px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
@@ -671,6 +675,22 @@ export default function App() {
         )}
       </div>
 
+      {/* BOTTOM NAV (mobile) */}
+      <nav className="bottom-nav" aria-label="Navegação principal">
+        {[
+          { k:"protocolos", Ic:Icons.Protocols, lbl:"Protocolos", active: !tools, onClick: goHome },
+          { k:"buscar",     Ic:Icons.Search,    lbl:"Buscar",     active: false,   onClick: goSearch },
+          { k:"ferramentas",Ic:Icons.Wrench,    lbl:"Ferramentas",active: tools,   onClick: openTools },
+        ].map(it => (
+          <button key={it.k} onClick={it.onClick} aria-current={it.active ? "page" : undefined}
+            style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3, background:"none", border:"none", cursor:"pointer", padding:"8px 4px",
+              color: it.active ? "#C53030" : "var(--muted)", fontFamily:sans, fontSize:10, fontWeight: it.active ? 700 : 500 }}>
+            <it.Ic size={22} strokeWidth={it.active ? 2.3 : 1.9} />
+            {it.lbl}
+          </button>
+        ))}
+      </nav>
+
       {/* RODAPÉ — créditos */}
       <footer style={{ borderTop:`1px solid ${BD}`, background:"var(--surface)", padding:"30px 20px 42px", textAlign:"center" }}>
         <div style={{ maxWidth:1100, margin:"0 auto" }}>
@@ -718,6 +738,7 @@ export default function App() {
         }
         html, body { background: var(--bg); font-family: var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
         * { box-sizing: border-box; }
+        .bottom-nav { display: none; }
         button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
         button:focus:not(:focus-visible) { outline: none; }
 
@@ -756,6 +777,11 @@ export default function App() {
           .drug-grid { grid-template-columns:1fr; gap:10px; }
           .ant-table-wrap { display:none; }
           .ant-cards-wrap { display:flex; flex-direction:column; gap:12px; }
+          .hdr-tools-btn { display:none; }
+          .bottom-nav { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:300;
+            background:var(--surface); border-top:1px solid var(--border); box-shadow:0 -2px 12px rgba(0,0,0,.07);
+            padding-bottom:env(safe-area-inset-bottom,0px); }
+          footer { padding-bottom:88px; }
         }
       `}</style>
     </div>
