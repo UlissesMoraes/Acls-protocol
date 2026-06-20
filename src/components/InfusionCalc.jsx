@@ -56,7 +56,7 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
       </div>
 
       <div style={{ padding:"14px 16px" }}>
-        <div style={{ display:"flex", gap:8, background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>
+        <div style={{ display:"flex", gap:8, background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"var(--warn-fg)", fontFamily:sans, lineHeight:1.5 }}>
           <TriangleAlert size={15} style={{ flexShrink:0, marginTop:1 }} /> <span>Diluições pré-preenchidas são <strong>usuais</strong> — confirme o padrão do seu serviço e ajuste os campos antes de programar a bomba.</span>
         </div>
 

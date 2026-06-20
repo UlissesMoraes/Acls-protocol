@@ -129,6 +129,8 @@ export default function App() {
   const F = "var(--bg)", W = "var(--surface)", BD = "var(--border)", T = "var(--text)", S = "var(--muted)";
   const serif = "var(--font-display)";
   const sans = "var(--font)";
+  // Tinta da cor do protocolo adaptada ao tema (clara no claro, escura no escuro)
+  const tint = (c, p = 14) => `color-mix(in srgb, ${c} ${p}%, var(--surface))`;
 
   const Label = ({txt}) => (
     <div style={{ fontSize:10, color:S, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{txt}</div>
@@ -155,14 +157,14 @@ export default function App() {
           <Icons.Star size={18} fill={isFav?"#D4AC0D":"none"} />
         </button>
         <div className="proto-card-inner" style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:46, height:46, borderRadius:12, background:p.light, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <div style={{ width:46, height:46, borderRadius:12, background:tint(p.color), display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
             <ProtoIcon id={p.id} color={p.color} size={26} />
           </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
               <div style={{ fontFamily:serif, fontSize:15, fontWeight:700, color:"var(--text-strong)", lineHeight:1.3, paddingRight:24 }}>{p.label}</div>
             </div>
-            <span style={{ fontSize:10, background:p.light, color:p.color, border:`1px solid ${p.border}44`, padding:"2px 8px", borderRadius:20, fontFamily:sans, fontWeight:600, whiteSpace:"nowrap", display:"inline-block", marginBottom:8 }}>{p.cat}</span>
+            <span style={{ fontSize:10, background:tint(p.color), color:p.color, border:`1px solid ${p.border}44`, padding:"2px 8px", borderRadius:20, fontFamily:sans, fontWeight:600, whiteSpace:"nowrap", display:"inline-block", marginBottom:8 }}>{p.cat}</span>
             <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans, lineHeight:1.5, marginBottom:10 }}>{p.sub}</div>
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
               <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Cascade size={13} /> {p.cascade.length} etapas</span>
@@ -216,7 +218,7 @@ export default function App() {
       {contentUpdated && (
         <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", zIndex:500, background:"#2F855A", color:"#fff", borderRadius:10, padding:"10px 12px 10px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 20px rgba(0,0,0,.3)", maxWidth:"92vw" }}>
           <span style={{ fontSize:13, fontFamily:sans }}>✅ Conteúdo dos protocolos atualizado</span>
-          <button onClick={dismissUpdated} aria-label="Dispensar" style={{ background:"none", border:"none", color:"#C6F6D5", fontSize:16, cursor:"pointer", padding:"4px 6px" }}>✕</button>
+          <button onClick={dismissUpdated} aria-label="Dispensar" style={{ background:"none", border:"none", color:"var(--ok-bg)", fontSize:16, cursor:"pointer", padding:"4px 6px" }}>✕</button>
         </div>
       )}
 
@@ -296,7 +298,7 @@ export default function App() {
                   <button key={c} onClick={()=>setCat(c)} style={{
                     padding:"5px 13px", borderRadius:20, border:"1px solid",
                     borderColor: cat===c ? "#2B6CB0" : "var(--input-border)",
-                    background: cat===c ? "#EBF8FF" : W,
+                    background: cat===c ? "var(--info-bg)" : W,
                     color: cat===c ? "#2B6CB0" : "var(--text)",
                     fontSize:12, fontFamily:sans, fontWeight: cat===c ? 700 : 400, cursor:"pointer",
                   }}>{c}</button>
@@ -311,7 +313,7 @@ export default function App() {
 
             {/* Banner de instalação do app */}
             {showInstall && !installDismissed && !q.trim() && (
-              <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", background:"linear-gradient(135deg,#E9F7EF,#EBF5FB)", border:"1px solid #9AE6B4", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", background:"var(--ok-bg)", border:"1px solid var(--ok-bd)", borderRadius:12, padding:"14px 16px", marginBottom:16 }}>
                 <img src="/icon-192.png" alt="" width={44} height={44} style={{ borderRadius:10, flexShrink:0 }} />
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Instalar na tela inicial</div>
@@ -345,8 +347,8 @@ export default function App() {
             {/* Ferramentas — CTA */}
             {!q.trim() && (
               <button onClick={openTools}
-                style={{ width:"100%", marginBottom:16, background:"linear-gradient(135deg,#EBF8FF,#E6FFFA)", border:"1px solid #BEE3F8", borderRadius:12, padding:"16px 18px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", alignItems:"center", gap:14 }}>
-                <span style={{ width:48, height:48, borderRadius:12, background:"#fff", border:"1px solid #BEE3F8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                style={{ width:"100%", marginBottom:16, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:12, padding:"16px 18px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", alignItems:"center", gap:14 }}>
+                <span style={{ width:48, height:48, borderRadius:12, background:"var(--surface)", border:"1px solid var(--info-bd)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                   <Icons.Wrench size={24} color="#2B6CB0" />
                 </span>
                 <span style={{ flex:1, minWidth:0 }}>
@@ -378,7 +380,7 @@ export default function App() {
               {filtered.map(renderCard)}
             </div>
 
-            <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"#744210", lineHeight:1.6 }}>
+            <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"var(--warn-fg)", lineHeight:1.6 }}>
               <strong>⚕️ Nota de uso clínico:</strong> Sistema baseado nas diretrizes <strong>AHA/ACLS 2020–2025</strong>, Surviving Sepsis Campaign 2021 e SBC. As decisões terapêuticas são de responsabilidade exclusiva do médico assistente.
             </div>
           </>
@@ -398,7 +400,7 @@ export default function App() {
             </div>
 
             {/* Peso global compartilhado pelas ferramentas */}
-            <div style={{ display:"flex", alignItems:"center", gap:8, background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:10, padding:"10px 14px", marginBottom:20, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:10, padding:"10px 14px", marginBottom:20, flexWrap:"wrap" }}>
               <label htmlFor="peso-tools" style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}><Icons.Scale size={15} /> Peso do paciente</label>
               <input id="peso-tools" type="number" inputMode="decimal" min={1} max={300} placeholder="kg" value={weight}
                 onChange={e=>setWeight(e.target.value)}
@@ -412,12 +414,12 @@ export default function App() {
                 {group.items.map(item => {
                   if (item.kind === "infusion") return <div key={item.id} style={{ marginBottom:14 }}><InfusionCalc globalW={weight} /></div>;
                   if (item.kind === "code") return <div key={item.id} style={{ marginBottom:14 }}><CodeTimer /></div>;
-                  return <ScoreWidget key={item.id} scoreKey={item.id} color={group.color} light={group.light} border={group.border} globalW={weight} />;
+                  return <ScoreWidget key={item.id} scoreKey={item.id} color={group.color} light={tint(group.color)} border={group.border} globalW={weight} />;
                 })}
               </div>
             ))}
 
-            <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"#744210", lineHeight:1.6 }}>
+            <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"var(--warn-fg)", lineHeight:1.6 }}>
               <strong>⚕️ Aviso:</strong> Calculadoras são apoio à decisão. Confira sempre doses, diluições e contraindicações — a responsabilidade terapêutica é do médico assistente.
             </div>
           </div>
@@ -431,19 +433,19 @@ export default function App() {
             <div className="proto-hdr" style={{ background:W, border:`1px solid ${BD}`, borderLeft:`5px solid ${cur.border}`, borderRadius:10, marginBottom:20, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
               <div className="proto-hdr-row" style={{ display:"flex", alignItems:"center", gap:16, justifyContent:"space-between" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
-                  <div style={{ width:58, height:58, borderRadius:14, background:cur.light, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <div style={{ width:58, height:58, borderRadius:14, background:tint(cur.color), display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                     <ProtoIcon id={cur.id} color={cur.color} size={32} />
                   </div>
                   <div style={{ minWidth:0 }}>
                     <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
                     <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"var(--text-strong)", marginBottom:3, overflowWrap:"break-word" }}>{cur.label}</div>
                     <div style={{ fontSize:13, color:S, fontFamily:sans, marginBottom:6, overflowWrap:"break-word" }}>{cur.sub}</div>
-                    <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:10, color:cur.color, background:cur.light, border:`1px solid ${cur.border}44`, padding:"2px 8px", borderRadius:12, fontFamily:sans, fontWeight:600 }}>
+                    <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontSize:10, color:cur.color, background:tint(cur.color), border:`1px solid ${cur.border}44`, padding:"2px 8px", borderRadius:12, fontFamily:sans, fontWeight:600 }}>
                       ✔ Revisado em {REV}
                     </span>
                   </div>
                 </div>
-                <div className="weight-box" style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
+                <div className="weight-box" style={{ display:"flex", alignItems:"center", gap:8, background:tint(cur.color), border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
                   <label htmlFor="peso-paciente" style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}><Icons.Scale size={14} /> Peso do paciente</label>
                   <input id="peso-paciente" type="number" inputMode="decimal" min={1} max={300} placeholder="—" value={weight}
                     onChange={e=>setWeight(e.target.value)}
@@ -463,7 +465,7 @@ export default function App() {
               ].map(t => (
                 <button key={t.k} onClick={()=>setTab(t.k)} className="tab-btn" style={{
                   display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-                  background: tab===t.k ? cur.light : "transparent",
+                  background: tab===t.k ? tint(cur.color) : "transparent",
                   color: tab===t.k ? cur.color : S,
                   fontWeight: tab===t.k ? 700 : 400,
                   borderLeft: tab===t.k ? `2px solid ${cur.border}` : "2px solid transparent",
@@ -495,7 +497,7 @@ export default function App() {
                     )}
                     <button onClick={()=>{setClMode(m=>!m);setChecks({});}} style={{
                       padding:"5px 12px", border:`1px solid ${clMode?cur.border:"var(--input-border)"}`,
-                      borderRadius:6, background:clMode?cur.light:W, color:clMode?cur.color:"var(--text)",
+                      borderRadius:6, background:clMode?tint(cur.color):W, color:clMode?cur.color:"var(--text)",
                       fontSize:12, fontFamily:sans, fontWeight:600, cursor:"pointer",
                     }}>{clMode?"✓ Checklist ON":"☐ Ativar Checklist"}</button>
                   </div>
@@ -510,29 +512,29 @@ export default function App() {
                         <button onClick={()=>setOpenSteps(p=>({...p,[idx]:!p[idx]}))} className="step-hdr" aria-expanded={isOpen} style={{
                           width:"100%", border:"none", cursor:"pointer", textAlign:"left",
                           display:"flex", alignItems:"center", gap:12, fontFamily:serif,
-                          background: isOpen?(step.alert?"#FFF5F5":"var(--surface-2)"):(isDone&&clMode?cur.light:W),
+                          background: isOpen?(step.alert?"color-mix(in srgb,#C53030 8%,var(--surface))":"var(--surface-2)"):(isDone&&clMode?tint(cur.color):W),
                           borderBottom: isOpen?`1px solid ${BD}`:"none", transition:"background .15s",
                         }}>
                           {clMode && (
                             <div onClick={e=>{e.stopPropagation();toggleCheck(idx);}} style={{
                               width:22, height:22, borderRadius:6, flexShrink:0,
                               border:`2px solid ${isDone?cur.border:"var(--input-border)"}`,
-                              background: isDone?cur.light:W,
+                              background: isDone?tint(cur.color):W,
                               display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
                             }}>
                               {isDone && <span style={{ color:cur.color, fontSize:13, fontWeight:900 }}>✓</span>}
                             </div>
                           )}
                           <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, fontFamily:sans,
-                            background:step.alert?"#FED7D7":cur.light, border:`2px solid ${step.alert?"#FC8181":cur.border}`,
-                            color:step.alert?"#C53030":cur.color }}>
+                            background:step.alert?"var(--danger-bg)":tint(cur.color), border:`2px solid ${step.alert?"var(--danger-bd)":cur.border}`,
+                            color:step.alert?"var(--danger-fg)":cur.color }}>
                             {step.step}
                           </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                              {step.alert && <span style={{ fontSize:10, background:"#FED7D7", color:"#C53030", border:"1px solid #FC8181", padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>ATENÇÃO</span>}
-                              {isDone&&clMode && <span style={{ fontSize:10, background:cur.light, color:cur.color, border:`1px solid ${cur.border}55`, padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>CONCLUÍDO</span>}
-                              <span style={{ fontSize:10, color:step.alert?"#9B2C2C":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
+                              {step.alert && <span style={{ fontSize:10, background:"var(--danger-bg)", color:"var(--danger-fg)", border:"1px solid var(--danger-bd)", padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>ATENÇÃO</span>}
+                              {isDone&&clMode && <span style={{ fontSize:10, background:tint(cur.color), color:cur.color, border:`1px solid ${cur.border}55`, padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>CONCLUÍDO</span>}
+                              <span style={{ fontSize:10, color:step.alert?"var(--danger-fg)":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
                             </div>
                           </div>
                           <span style={{ display:"flex", color:"var(--muted-2)", transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}><Icons.ChevronDown size={18} /></span>
@@ -556,11 +558,11 @@ export default function App() {
                                 <div style={{ fontSize:13, color:"var(--text)", fontFamily:sans, marginBottom:10, fontStyle:"italic" }}>{step.decision.q}</div>
                                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                                   <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
-                                    <span style={{ fontSize:11, background:"#C6F6D5", color:"#276749", border:"1px solid #9AE6B4", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>SIM</span>
+                                    <span style={{ fontSize:11, background:"var(--ok-bg)", color:"var(--ok-fg)", border:"1px solid var(--ok-bd)", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>SIM</span>
                                     <span style={{ fontSize:13, color:T, fontFamily:sans }}>{step.decision.yes}</span>
                                   </div>
                                   <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
-                                    <span style={{ fontSize:11, background:"#FED7D7", color:"#9B2C2C", border:"1px solid #FC8181", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>NÃO</span>
+                                    <span style={{ fontSize:11, background:"var(--danger-bg)", color:"var(--danger-fg)", border:"1px solid var(--danger-bd)", padding:"2px 10px", borderRadius:20, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>NÃO</span>
                                     <span style={{ fontSize:13, color:T, fontFamily:sans }}>{step.decision.no}</span>
                                   </div>
                                 </div>
@@ -580,13 +582,13 @@ export default function App() {
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
                 {cur.drugs.map((d,i) => (
                   <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
-                    <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"12px 18px" }}>
+                    <div style={{ background:tint(cur.color), borderBottom:`1px solid ${cur.border}33`, padding:"12px 18px" }}>
                       <div style={{ fontFamily:serif, fontSize:16, fontWeight:700, color:"var(--text-strong)" }}>{d.name}</div>
                       <div style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:600 }}>{d.cat}</div>
                     </div>
                     <div className="drug-body">
                       {d.dilui && (
-                        <div style={{ background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"10px 12px", marginBottom:12 }}>
+                        <div style={{ background:tint(cur.color), border:`1px solid ${cur.border}44`, borderRadius:8, padding:"10px 12px", marginBottom:12 }}>
                           <Label txt="💧 Diluição padrão" />
                           <div style={{ fontSize:13, color:"var(--text-strong)", fontFamily:sans, fontWeight:600, lineHeight:1.5 }}>{d.dilui}</div>
                         </div>
@@ -598,12 +600,12 @@ export default function App() {
                       <div style={{ marginBottom:10 }}><Label txt="Indicação" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.ind}</div></div>
                       <div style={{ marginBottom:d.obs?10:0 }}><Label txt="Contraindicações" /><div style={{ fontSize:13, color:T, fontFamily:sans, lineHeight:1.5 }}>{d.ci}</div></div>
                       {d.obs && (
-                        <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:6, padding:"10px 12px", marginBottom:10 }}>
-                          <div style={{ fontSize:11, color:"#744210", fontFamily:sans, fontWeight:700, marginBottom:3 }}>⚠️ Observação Clínica</div>
-                          <div style={{ fontSize:13, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>{d.obs}</div>
+                        <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:6, padding:"10px 12px", marginBottom:10 }}>
+                          <div style={{ fontSize:11, color:"var(--warn-fg)", fontFamily:sans, fontWeight:700, marginBottom:3 }}>⚠️ Observação Clínica</div>
+                          <div style={{ fontSize:13, color:"var(--warn-fg)", fontFamily:sans, lineHeight:1.5 }}>{d.obs}</div>
                         </div>
                       )}
-                      <DoseCalc drugName={d.name} protocolId={cur.id} color={cur.color} light={cur.light} border={cur.border} globalW={weight} />
+                      <DoseCalc drugName={d.name} protocolId={cur.id} color={cur.color} light={tint(cur.color)} border={cur.border} globalW={weight} />
                     </div>
                   </div>
                 ))}
@@ -617,7 +619,7 @@ export default function App() {
                 <div className="ant-table-wrap" style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
-                      <tr style={{ background:cur.light, borderBottom:`2px solid ${cur.border}44` }}>
+                      <tr style={{ background:tint(cur.color), borderBottom:`2px solid ${cur.border}44` }}>
                         {["Agente / Tóxico","Antídoto","Dose / Regime","Observações Clínicas"].map(h => (
                           <th key={h} style={{ padding:"11px 14px", textAlign:"left", fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em" }}>{h}</th>
                         ))}
@@ -628,7 +630,7 @@ export default function App() {
                         <tr key={i} style={{ borderBottom:i<cur.antidotes.length-1?`1px solid #F0F4F8`:"none", background:i%2===0?W:"#FAFBFC" }}>
                           <td style={{ padding:"11px 14px", fontSize:13, fontFamily:sans, fontWeight:600, color:T, verticalAlign:"top" }}>{r.agent}</td>
                           <td style={{ padding:"11px 14px", verticalAlign:"top" }}>
-                            <span style={{ fontSize:13, fontFamily:sans, fontWeight:700, color:cur.color, background:cur.light, padding:"2px 10px", borderRadius:20, display:"inline-block" }}>{r.antidote}</span>
+                            <span style={{ fontSize:13, fontFamily:sans, fontWeight:700, color:cur.color, background:tint(cur.color), padding:"2px 10px", borderRadius:20, display:"inline-block" }}>{r.antidote}</span>
                           </td>
                           <td style={{ padding:"11px 14px", fontSize:13, fontFamily:sans, color:T, lineHeight:1.5, verticalAlign:"top" }}>{r.dose}</td>
                           <td style={{ padding:"11px 14px", fontSize:12, fontFamily:sans, color:S, lineHeight:1.6, verticalAlign:"top" }}>{r.notes}</td>
@@ -641,7 +643,7 @@ export default function App() {
                 <div className="ant-cards-wrap" style={{ display:"flex", flexDirection:"column", gap:12 }}>
                   {cur.antidotes.map((r,i) => (
                     <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden" }}>
-                      <div style={{ background:cur.light, borderBottom:`1px solid ${cur.border}33`, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ background:tint(cur.color), borderBottom:`1px solid ${cur.border}33`, padding:"10px 14px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <span style={{ fontSize:14, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>{r.agent}</span>
                         <span style={{ fontSize:12, fontWeight:700, color:cur.color, background:W, border:`1px solid ${cur.border}55`, padding:"2px 10px", borderRadius:20, fontFamily:sans }}>{r.antidote}</span>
                       </div>
@@ -658,16 +660,16 @@ export default function App() {
             {/* ── SCORES TAB ── */}
             {tab==="scores" && cur.scores.length>0 && (
               <div>
-                <div style={{ background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:sans, fontSize:12, color:"#2C5282" }}>
+                <div style={{ background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:sans, fontSize:12, color:"var(--info-fg)" }}>
                   ℹ️ Escores clínicos validados para este protocolo. Marque os critérios presentes e veja a interpretação clínica automática.
                 </div>
                 {cur.scores.map(sk => (
-                  <ScoreWidget key={sk} scoreKey={sk} color={cur.color} light={cur.light} border={cur.border} />
+                  <ScoreWidget key={sk} scoreKey={sk} color={cur.color} light={tint(cur.color)} border={cur.border} />
                 ))}
               </div>
             )}
 
-            <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:8, padding:"10px 14px", marginTop:24, fontFamily:sans, fontSize:11, color:"#744210", lineHeight:1.6 }}>
+            <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"10px 14px", marginTop:24, fontFamily:sans, fontSize:11, color:"var(--warn-fg)", lineHeight:1.6 }}>
               ⚕️ Ferramenta de apoio à decisão clínica. Confira doses, vias e contraindicações antes de prescrever — a responsabilidade terapêutica é do médico assistente.
             </div>
 
@@ -724,6 +726,11 @@ export default function App() {
           --text-strong:#1A202C; --text:#2D3748; --muted:#718096; --muted-2:#A0AEC0;
           --input-bg:#FFFFFF; --input-border:#CBD5E0;
           --chip-tool-bg:#EBF8FF; --chip-tool-fg:#2B6CB0; --chip-tool-bd:#BEE3F8;
+          --info-bg:#EBF8FF; --info-bd:#BEE3F8; --info-fg:#2C5282;
+          --warn-bg:#FFFBEB; --warn-bd:#F6E05E; --warn-fg:#744210;
+          --ok-bg:#C6F6D5; --ok-bd:#9AE6B4; --ok-fg:#276749;
+          --danger-bg:#FED7D7; --danger-bd:#FC8181; --danger-fg:#9B2C2C;
+          --shadow-sm:0 1px 3px rgba(0,0,0,.06); --shadow-md:0 4px 16px rgba(0,0,0,.10);
         }
         [data-theme="dark"] {
           --bg:#0E1217; --surface:#1A212B; --surface-2:#222C38;
@@ -731,6 +738,11 @@ export default function App() {
           --text-strong:#F1F5F9; --text:#DCE3EC; --muted:#94A3B8; --muted-2:#64748B;
           --input-bg:#10161D; --input-border:#3A4654;
           --chip-tool-bg:#15293B; --chip-tool-fg:#7CC0F0; --chip-tool-bd:#2A4A66;
+          --info-bg:#13283B; --info-bd:#244B6B; --info-fg:#9FCBEC;
+          --warn-bg:#2E2410; --warn-bd:#5C4A1A; --warn-fg:#E8C766;
+          --ok-bg:#10291B; --ok-bd:#1F5235; --ok-fg:#86E0A6;
+          --danger-bg:#2E1416; --danger-bd:#6B2A2E; --danger-fg:#F4A6A6;
+          --shadow-sm:0 1px 3px rgba(0,0,0,.4); --shadow-md:0 6px 20px rgba(0,0,0,.55);
         }
         :root {
           --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;

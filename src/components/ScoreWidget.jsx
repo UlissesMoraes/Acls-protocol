@@ -54,7 +54,7 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
       <div style={{ padding:"14px 16px" }}>
         {/* Nota clínica */}
         {sc.note && (
-          <div style={{ display:"flex", gap:8, background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#2C5282", fontFamily:sans, lineHeight:1.5 }}>
+          <div style={{ display:"flex", gap:8, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"var(--info-fg)", fontFamily:sans, lineHeight:1.5 }}>
             <Info size={15} style={{ flexShrink:0, marginTop:1 }} /> <span>{sc.note}</span>
           </div>
         )}
