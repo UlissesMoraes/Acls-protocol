@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TriangleAlert } from "lucide-react";
 
 // ─── DROGAS VASOATIVAS E SEDAÇÃO — DILUIÇÕES USUAIS ───────────────────────────
 // factor converte a unidade da solução (mg/UI/mcg) para a unidade da dose.
@@ -19,7 +20,7 @@ const DRIPS = [
   { id:"insulina",name:"Insulina Regular",amount:100, vol:100, amountUnit:"UI",  factor:1,    doseUnit:"UI/kg/h",    perKg:true,  perMin:false, range:"0,05–0,1 UI/kg/h (CAD/EHH)",            prep:"100 UI + 100 mL SF 0,9% (desprezar 30 mL no equipo)" },
 ];
 
-const sans = "sans-serif";
+const sans = "var(--font)";
 const num = v => { const n = parseFloat(String(v).replace(",", ".")); return isNaN(n) ? 0 : n; };
 
 export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF", border="#3182CE" }) {
@@ -50,13 +51,13 @@ export default function InfusionCalc({ globalW, color="#2B6CB0", light="#EBF8FF"
   return (
     <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
       <div style={{ background:light, borderBottom:`1px solid ${border}33`, padding:"12px 16px" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Bomba de Infusão — Dose ↔ mL/h</div>
+        <div style={{ fontFamily:"var(--font-display)", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Bomba de Infusão — Dose ↔ mL/h</div>
         <div style={{ fontSize:11, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Drogas vasoativas e sedação · conversão bidirecional</div>
       </div>
 
       <div style={{ padding:"14px 16px" }}>
-        <div style={{ background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>
-          ⚠️ Diluições pré-preenchidas são <strong>usuais</strong> — confirme o padrão do seu serviço e ajuste os campos antes de programar a bomba.
+        <div style={{ display:"flex", gap:8, background:"#FFFBEB", border:"1px solid #F6E05E", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#744210", fontFamily:sans, lineHeight:1.5 }}>
+          <TriangleAlert size={15} style={{ flexShrink:0, marginTop:1 }} /> <span>Diluições pré-preenchidas são <strong>usuais</strong> — confirme o padrão do seu serviço e ajuste os campos antes de programar a bomba.</span>
         </div>
 
         {/* Seleção da droga */}

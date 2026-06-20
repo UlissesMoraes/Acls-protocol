@@ -10,6 +10,7 @@ import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
 import { deburr, expandQuery } from "./utils/format.js";
+import { ProtoIcon, Icons } from "./icons.jsx";
 
 // Data da última revisão do conteúdo clínico (governança/rastreabilidade)
 const REV = "junho/2026";
@@ -122,15 +123,17 @@ export default function App() {
   const favProtos = favs.map(id => protocols.find(p=>p.id===id)).filter(Boolean);
 
   const F = "var(--bg)", W = "var(--surface)", BD = "var(--border)", T = "var(--text)", S = "var(--muted)";
-  const serif = "'Georgia','Times New Roman',serif";
-  const sans = "sans-serif";
+  const serif = "var(--font-display)";
+  const sans = "var(--font)";
 
   const Label = ({txt}) => (
     <div style={{ fontSize:10, color:S, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{txt}</div>
   );
 
-  const SectionTitle = ({txt}) => (
-    <div style={{ fontSize:12, color:S, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", margin:"4px 0 10px" }}>{txt}</div>
+  const SectionTitle = ({txt, Ic}) => (
+    <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:12, color:S, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", margin:"4px 0 10px" }}>
+      {Ic && <Ic size={14} strokeWidth={2.2} />}{txt}
+    </div>
   );
 
   const renderCard = p => {
@@ -144,11 +147,13 @@ export default function App() {
         onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.1)";e.currentTarget.style.transform="translateY(-2px)"}}
         onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)";e.currentTarget.style.transform="translateY(0)"}}>
         <button type="button" onClick={e=>toggleFav(p.id,e)} aria-pressed={isFav} aria-label={isFav?`Remover ${p.label} dos favoritos`:`Adicionar ${p.label} aos favoritos`}
-          style={{ position:"absolute", top:6, right:6, fontSize:18, lineHeight:1, cursor:"pointer", color:isFav?"#D4AC0D":"var(--muted-2)", background:"none", border:"none", padding:6, zIndex:2 }}>
-          {isFav ? "★" : "☆"}
+          style={{ position:"absolute", top:6, right:6, display:"flex", lineHeight:1, cursor:"pointer", color:isFav?"#D4AC0D":"var(--muted-2)", background:"none", border:"none", padding:6, zIndex:2 }}>
+          <Icons.Star size={18} fill={isFav?"#D4AC0D":"none"} />
         </button>
         <div className="proto-card-inner" style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ fontSize:28, lineHeight:1 }}>{p.icon}</div>
+          <div style={{ width:46, height:46, borderRadius:12, background:p.light, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <ProtoIcon id={p.id} color={p.color} size={26} />
+          </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
               <div style={{ fontFamily:serif, fontSize:15, fontWeight:700, color:"var(--text-strong)", lineHeight:1.3, paddingRight:24 }}>{p.label}</div>
@@ -156,10 +161,10 @@ export default function App() {
             <span style={{ fontSize:10, background:p.light, color:p.color, border:`1px solid ${p.border}44`, padding:"2px 8px", borderRadius:20, fontFamily:sans, fontWeight:600, whiteSpace:"nowrap", display:"inline-block", marginBottom:8 }}>{p.cat}</span>
             <div style={{ fontSize:12, color:"var(--muted)", fontFamily:sans, lineHeight:1.5, marginBottom:10 }}>{p.sub}</div>
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-              <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>📋 {p.cascade.length} etapas</span>
-              <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>💊 {p.drugs.length} fármacos</span>
-              {p.antidotes.length>0 && <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>🧪 {p.antidotes.length} antídotos</span>}
-              {p.scores.length>0 && <span style={{ fontSize:11, color:"var(--text)", fontFamily:sans }}>📊 {p.scores.length} escore(s)</span>}
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Cascade size={13} /> {p.cascade.length} etapas</span>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Drug size={13} /> {p.drugs.length} fármacos</span>
+              {p.antidotes.length>0 && <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Antidote size={13} /> {p.antidotes.length} antídotos</span>}
+              {p.scores.length>0 && <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Score size={13} /> {p.scores.length} escore(s)</span>}
             </div>
           </div>
         </div>
@@ -227,8 +232,8 @@ export default function App() {
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
               {(proto || tools) && (
                 <button onClick={()=>window.history.back()} aria-label="Voltar"
-                  style={{ background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"8px 10px", borderRadius:6, minHeight:40, whiteSpace:"nowrap" }}>
-                  ←<span className="btn-label"> Voltar</span>
+                  style={{ display:"flex", alignItems:"center", gap:4, background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"8px 10px", borderRadius:6, minHeight:40, whiteSpace:"nowrap" }}>
+                  <Icons.ArrowLeft size={18} /><span className="btn-label">Voltar</span>
                 </button>
               )}
               <button onClick={()=>{ setProto(null); setTools(false); window.scrollTo({top:0}); pushView({}); }} aria-label="Início"
@@ -240,24 +245,24 @@ export default function App() {
             <div className="hdr-actions" style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
               {showInstall && (
                 <button onClick={onInstallClick} aria-label="Instalar aplicativo"
-                  style={{ background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
-                  📲<span className="btn-label"> Instalar</span>
+                  style={{ display:"flex", alignItems:"center", gap:6, background:"#2F855A", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
+                  <Icons.Install size={16} /><span className="btn-label">Instalar</span>
                 </button>
               )}
               <button onClick={()=>setTheme(t=>t==="dark"?"light":"dark")} aria-label={theme==="dark"?"Ativar modo claro":"Ativar modo escuro"}
-                style={{ background:"var(--surface-2)", color:"var(--text)", border:`1px solid ${BD}`, borderRadius:8, padding:"8px 10px", fontSize:14, cursor:"pointer", minHeight:38, lineHeight:1 }}>
-                {theme==="dark" ? "☀️" : "🌙"}
+                style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"var(--surface-2)", color:"var(--text)", border:`1px solid ${BD}`, borderRadius:8, padding:"8px 10px", cursor:"pointer", minHeight:38, lineHeight:1 }}>
+                {theme==="dark" ? <Icons.Sun size={17} /> : <Icons.Moon size={17} />}
               </button>
               {!tools && (
                 <button onClick={openTools} aria-label="Abrir ferramentas e calculadoras" className="tool-btn"
-                  style={{ background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
-                  🧰<span className="btn-label"> Ferramentas</span>
+                  style={{ display:"flex", alignItems:"center", gap:6, background:"var(--chip-tool-bg)", color:"var(--chip-tool-fg)", border:"1px solid var(--chip-tool-bd)", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", minHeight:38, whiteSpace:"nowrap" }}>
+                  <Icons.Wrench size={16} /><span className="btn-label">Ferramentas</span>
                 </button>
               )}
               {proto !== "pcr" && (
                 <button onClick={()=>openProto("pcr")} aria-label="Acesso rápido — Parada Cardiorrespiratória"
                   style={{ background:"#C53030", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, minHeight:38, boxShadow:"0 1px 4px rgba(197,48,48,.35)", whiteSpace:"nowrap" }}>
-                  🚨<span className="btn-label"> PCR</span>
+                  <Icons.Siren size={16} /><span className="btn-label">PCR</span>
                 </button>
               )}
             </div>
@@ -272,10 +277,11 @@ export default function App() {
           <>
             <div style={{ paddingTop:24, paddingBottom:16 }}>
               <div style={{ position:"relative", marginBottom:12 }}>
+                <Icons.Search size={18} color="var(--muted)" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
                 <input value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
                   aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
-                  placeholder="🔍 Pesquisar protocolo, medicamento, sigla ou condição..."
-                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:8, padding:"12px 44px 12px 16px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
+                  placeholder="Pesquisar protocolo, medicamento, sigla ou condição..."
+                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:8, padding:"12px 44px 12px 42px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
                 {q && (
                   <button onClick={()=>setQ("")} aria-label="Limpar pesquisa"
                     style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"var(--border-2)", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"var(--text)", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
@@ -319,7 +325,7 @@ export default function App() {
             {/* Atalhos diretos para fármacos encontrados */}
             {drugHits.length>0 && (
               <div style={{ marginBottom:16 }}>
-                <SectionTitle txt="💊 Medicamentos encontrados" />
+                <SectionTitle Ic={Icons.Drug} txt="Medicamentos encontrados" />
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {drugHits.map(({proto:p,drug:d},i) => (
                     <button key={i} onClick={()=>openProto(p.id,"drugs")}
@@ -336,19 +342,21 @@ export default function App() {
             {!q.trim() && (
               <button onClick={openTools}
                 style={{ width:"100%", marginBottom:16, background:"linear-gradient(135deg,#EBF8FF,#E6FFFA)", border:"1px solid #BEE3F8", borderRadius:12, padding:"16px 18px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", alignItems:"center", gap:14 }}>
-                <span style={{ fontSize:30 }}>🧰</span>
+                <span style={{ width:48, height:48, borderRadius:12, background:"#fff", border:"1px solid #BEE3F8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <Icons.Wrench size={24} color="#2B6CB0" />
+                </span>
                 <span style={{ flex:1, minWidth:0 }}>
                   <span style={{ display:"block", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</span>
                   <span style={{ display:"block", fontSize:12, color:S, marginTop:2 }}>Bomba de infusão · Modo Código RCP · {Object.keys(SCORES_DEF).length} escores e fórmulas clínicas</span>
                 </span>
-                <span style={{ fontSize:20, color:"#2B6CB0" }}>→</span>
+                <span style={{ display:"flex", color:"#2B6CB0" }}>→</span>
               </button>
             )}
 
             {/* Favoritos */}
             {!q.trim() && favProtos.length>0 && (
               <div style={{ marginBottom:16 }}>
-                <SectionTitle txt="⭐ Favoritos" />
+                <SectionTitle Ic={Icons.Star} txt="Favoritos" />
                 <div className="proto-grid">{favProtos.map(renderCard)}</div>
               </div>
             )}
@@ -356,7 +364,7 @@ export default function App() {
             {/* Recentes */}
             {!q.trim() && recentProtos.length>0 && (
               <div style={{ marginBottom:16 }}>
-                <SectionTitle txt="🕐 Acessados recentemente" />
+                <SectionTitle Ic={Icons.Clock} txt="Acessados recentemente" />
                 <div className="proto-grid">{recentProtos.map(renderCard)}</div>
               </div>
             )}
@@ -376,7 +384,9 @@ export default function App() {
         {tools && (
           <div style={{ paddingTop:20, paddingBottom:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:8 }}>
-              <span style={{ fontSize:34 }}>🧰</span>
+              <span style={{ width:50, height:50, borderRadius:13, background:"var(--chip-tool-bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Icons.Wrench size={26} color="var(--chip-tool-fg)" />
+              </span>
               <div>
                 <div style={{ fontFamily:serif, fontSize:22, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</div>
                 <div style={{ fontSize:13, color:S, fontFamily:sans }}>Cálculos de beira-leito e escores validados — independentes do protocolo</div>
@@ -385,7 +395,7 @@ export default function App() {
 
             {/* Peso global compartilhado pelas ferramentas */}
             <div style={{ display:"flex", alignItems:"center", gap:8, background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:10, padding:"10px 14px", marginBottom:20, flexWrap:"wrap" }}>
-              <label htmlFor="peso-tools" style={{ fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}>⚖️ Peso do paciente</label>
+              <label htmlFor="peso-tools" style={{ display:"flex", alignItems:"center", gap:5, fontSize:12, color:"#2B6CB0", fontFamily:sans, fontWeight:700 }}><Icons.Scale size={15} /> Peso do paciente</label>
               <input id="peso-tools" type="number" inputMode="decimal" min={1} max={300} placeholder="kg" value={weight}
                 onChange={e=>setWeight(e.target.value)}
                 style={{ width:90, border:"1px solid var(--input-border)", borderRadius:6, padding:"8px 10px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
@@ -417,7 +427,9 @@ export default function App() {
             <div className="proto-hdr" style={{ background:W, border:`1px solid ${BD}`, borderLeft:`5px solid ${cur.border}`, borderRadius:10, marginBottom:20, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
               <div className="proto-hdr-row" style={{ display:"flex", alignItems:"center", gap:16, justifyContent:"space-between" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0, flex:1 }}>
-                  <div style={{ fontSize:38, flexShrink:0 }}>{cur.icon}</div>
+                  <div style={{ width:58, height:58, borderRadius:14, background:cur.light, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <ProtoIcon id={cur.id} color={cur.color} size={32} />
+                  </div>
                   <div style={{ minWidth:0 }}>
                     <div style={{ fontSize:10, color:cur.color, fontFamily:sans, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:2 }}>{cur.cat}</div>
                     <div style={{ fontFamily:serif, fontSize:21, fontWeight:700, color:"var(--text-strong)", marginBottom:3, overflowWrap:"break-word" }}>{cur.label}</div>
@@ -428,7 +440,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="weight-box" style={{ display:"flex", alignItems:"center", gap:8, background:cur.light, border:`1px solid ${cur.border}44`, borderRadius:8, padding:"8px 12px", flexShrink:0 }}>
-                  <label htmlFor="peso-paciente" style={{ fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}>⚖️ Peso do paciente</label>
+                  <label htmlFor="peso-paciente" style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:cur.color, fontFamily:sans, fontWeight:700, whiteSpace:"nowrap" }}><Icons.Scale size={14} /> Peso do paciente</label>
                   <input id="peso-paciente" type="number" inputMode="decimal" min={1} max={300} placeholder="—" value={weight}
                     onChange={e=>setWeight(e.target.value)}
                     style={{ width:72, border:"1px solid var(--input-border)", borderRadius:6, padding:"7px 8px", fontSize:16, fontFamily:sans, outline:"none", background:"var(--input-bg)" }} />
@@ -440,17 +452,18 @@ export default function App() {
             {/* Tabs */}
             <div className="tabs-row">
               {[
-                { k:"cascade", lbl:`📋 Cascata (${cur.cascade.length})` },
-                { k:"drugs", lbl:`💊 Medicamentos (${cur.drugs.length})` },
-                ...(cur.antidotes.length>0 ? [{ k:"antidotes", lbl:`🧪 Antídotos (${cur.antidotes.length})` }] : []),
-                ...(cur.scores.length>0 ? [{ k:"scores", lbl:`📊 Escores (${cur.scores.length})` }] : []),
+                { k:"cascade", Ic:Icons.Cascade, lbl:`Cascata (${cur.cascade.length})` },
+                { k:"drugs", Ic:Icons.Drug, lbl:`Medicamentos (${cur.drugs.length})` },
+                ...(cur.antidotes.length>0 ? [{ k:"antidotes", Ic:Icons.Antidote, lbl:`Antídotos (${cur.antidotes.length})` }] : []),
+                ...(cur.scores.length>0 ? [{ k:"scores", Ic:Icons.Score, lbl:`Escores (${cur.scores.length})` }] : []),
               ].map(t => (
                 <button key={t.k} onClick={()=>setTab(t.k)} className="tab-btn" style={{
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6,
                   background: tab===t.k ? cur.light : "transparent",
                   color: tab===t.k ? cur.color : S,
                   fontWeight: tab===t.k ? 700 : 400,
                   borderLeft: tab===t.k ? `2px solid ${cur.border}` : "2px solid transparent",
-                }}>{t.lbl}</button>
+                }}><t.Ic size={15} strokeWidth={2} /> {t.lbl}</button>
               ))}
             </div>
 
@@ -518,7 +531,7 @@ export default function App() {
                               <span style={{ fontSize:10, color:step.alert?"#9B2C2C":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
                             </div>
                           </div>
-                          <span style={{ color:"var(--muted-2)", fontSize:12, transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}>▼</span>
+                          <span style={{ display:"flex", color:"var(--muted-2)", transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}><Icons.ChevronDown size={18} /></span>
                         </button>
 
                         {isOpen && (
@@ -699,7 +712,11 @@ export default function App() {
           --input-bg:#10161D; --input-border:#3A4654;
           --chip-tool-bg:#15293B; --chip-tool-fg:#7CC0F0; --chip-tool-bd:#2A4A66;
         }
-        html, body { background: var(--bg); }
+        :root {
+          --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+          --font-display: var(--font);
+        }
+        html, body { background: var(--bg); font-family: var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
         * { box-sizing: border-box; }
         button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
         button:focus:not(:focus-visible) { outline: none; }

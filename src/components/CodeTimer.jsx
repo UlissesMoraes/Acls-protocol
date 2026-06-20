@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { Timer, Siren } from "lucide-react";
 
-const sans = "sans-serif";
+const sans = "var(--font)";
 const CYCLE_S = 120;   // ciclo de RCP: 2 min
 const EPI_S = 180;     // intervalo mínimo de adrenalina: 3 min
 const BPM = 110;       // metrônomo: meio da faixa 100–120
@@ -102,14 +103,14 @@ export default function CodeTimer() {
   return (
     <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
       <div style={{ background:"#FDEDEC", borderBottom:"1px solid #C0392B33", padding:"12px 16px" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>⏱️ Modo Código — Timers de RCP</div>
+        <div style={{ display:"flex", alignItems:"center", gap:7, fontFamily:"var(--font-display)", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}><Timer size={17} color="#C53030" /> Modo Código — Timers de RCP</div>
         <div style={{ fontSize:11, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>Cronômetro do atendimento · ciclos de 2 min · metrônomo {BPM} bpm · log de eventos</div>
       </div>
 
       <div style={{ padding:"14px 16px" }}>
         {!startTs && (
-          <button onClick={start} style={{ width:"100%", padding:"20px", borderRadius:10, border:"none", background:"#C53030", color:"#fff", fontSize:18, fontFamily:sans, fontWeight:900, cursor:"pointer", boxShadow:"0 2px 8px rgba(197,48,48,.4)" }}>
-            🚨 INICIAR RCP
+          <button onClick={start} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", padding:"20px", borderRadius:10, border:"none", background:"#C53030", color:"#fff", fontSize:18, fontFamily:sans, fontWeight:900, cursor:"pointer", boxShadow:"0 2px 8px rgba(197,48,48,.4)" }}>
+            <Siren size={22} /> INICIAR RCP
           </button>
         )}
 

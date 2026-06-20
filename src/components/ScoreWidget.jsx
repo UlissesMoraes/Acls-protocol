@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Info } from "lucide-react";
 import { SCORES_DEF } from "../data/scores.js";
 import { normVals } from "../utils/format.js";
 
@@ -20,7 +21,7 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
     return out;
   };
 
-  const sans = "sans-serif";
+  const sans = "var(--font)";
   const BD = "var(--border)";
 
   const isScale = sc.type === "nihss_scale" || sc.type === "scale";
@@ -45,7 +46,7 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
     <div style={{ background:"var(--surface)", border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", marginBottom:16, boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
       {/* Header */}
       <div style={{ background:light, borderBottom:`1px solid ${border}33`, padding:"12px 16px" }}>
-        <div style={{ fontFamily:"Georgia,serif", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>{sc.label}</div>
+        <div style={{ fontFamily:"var(--font-display)", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>{sc.label}</div>
         <div style={{ fontSize:11, color:"var(--muted)", fontFamily:sans, marginTop:2 }}>{sc.sub}</div>
         {sc.ref && <div style={{ fontSize:10, color:"var(--muted-2)", fontFamily:sans, marginTop:4, fontStyle:"italic" }}>Ref: {sc.ref}</div>}
       </div>
@@ -53,8 +54,8 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
       <div style={{ padding:"14px 16px" }}>
         {/* Nota clínica */}
         {sc.note && (
-          <div style={{ background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#2C5282", fontFamily:sans, lineHeight:1.5 }}>
-            ℹ️ {sc.note}
+          <div style={{ display:"flex", gap:8, background:"#EBF8FF", border:"1px solid #BEE3F8", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:12, color:"#2C5282", fontFamily:sans, lineHeight:1.5 }}>
+            <Info size={15} style={{ flexShrink:0, marginTop:1 }} /> <span>{sc.note}</span>
           </div>
         )}
 
