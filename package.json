@@ -10,7 +10,7 @@
     "test": "node --test",
     "validate": "node scripts/validate-data.mjs",
     "check": "node scripts/validate-data.mjs && node --test",
-    "icons": "node scripts/gen-icons.mjs",
+    "icons": "node scripts/gen-app-icons.mjs",
     "content:seed-sql": "node scripts/gen-seed.mjs"
   },
   "dependencies": {
