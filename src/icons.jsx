@@ -4,7 +4,7 @@ import {
   Brain, Zap, Wind, FlaskConical, Syringe,
   Search, Siren, Wrench, Moon, Sun, Download, Scale, ArrowLeft,
   ListChecks, Pill, BarChart3, Star, ChevronDown, Clock, X, TriangleAlert,
-  Stethoscope, Smartphone, LayoutGrid, Split,
+  Stethoscope, Smartphone, LayoutGrid, Split, SlidersHorizontal, ChevronRight, ShieldCheck,
 } from "lucide-react";
 
 // Protocolo (por id) → ícone. Fallback: estetoscópio.
@@ -35,5 +35,5 @@ export const Icons = {
   Search, Siren, Wrench, Moon, Sun, Download, Scale, ArrowLeft,
   Cascade: ListChecks, Drug: Pill, Antidote: FlaskConical, Score: BarChart3,
   Star, ChevronDown, Clock, X, Alert: TriangleAlert, Install: Smartphone,
-  Protocols: LayoutGrid, Decision: Split,
+  Protocols: LayoutGrid, Decision: Split, Filter: SlidersHorizontal, ChevronRight, Shield: ShieldCheck,
 };

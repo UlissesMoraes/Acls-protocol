@@ -25,6 +25,7 @@ export default function App() {
   const [q, setQ] = useState("");
   const [checks, setChecks] = useState({});
   const [clMode, setClMode] = useState(false);
+  const [catOpen, setCatOpen] = useState(true);
 
   // Estado persistido entre sessões
   const [weight, setWeight] = usePersistentState("acls.weight", "");
@@ -104,7 +105,15 @@ export default function App() {
     window.scrollTo({ top:0 });
     pushView({ proto:id });
   };
-  const openTools = () => { setTools(true); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true }); };
+  const openTools = (anchor) => {
+    setTools(true); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true });
+    if (anchor) setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior:"smooth", block:"start" }), 140);
+  };
+  const QUICK_TOOLS = [
+    { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", anchor:"tool-code" },
+    { Ic:Icons.Drug,  color:"#0E7490", label:"Bomba de Infusão", sub:"Dose ↔ mL/h", anchor:"tool-infusion" },
+    { Ic:Icons.Score, color:"#2B6CB0", label:"Escores", sub:`${Object.keys(SCORES_DEF).length} validados`, anchor:"tools-scores" },
+  ];
 
   // Botão "voltar" do navegador/celular navega dentro do app em vez de sair
   useEffect(() => {
@@ -244,8 +253,8 @@ export default function App() {
               )}
               <button onClick={()=>{ setProto(null); setTools(false); window.scrollTo({top:0}); pushView({}); }} aria-label="Início"
                 style={{ background:"none", border:"none", textAlign:"left", cursor:"pointer", padding:0, minWidth:0 }}>
-                <div className="hdr-title" style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>Protocolos de Emergência</div>
-                <div className="hdr-sub" style={{ fontSize:11, color:S, fontFamily:sans }}>ACLS 2025 · Sala de Emergência · CFM/CRM</div>
+                <div className="hdr-title" style={{ fontFamily:serif, fontSize:17, fontWeight:700, color:"var(--text-strong)" }}>{tools ? "Ferramentas & Calculadoras" : "Protocolos de Emergência"}</div>
+                <div className="hdr-sub" style={{ fontSize:11, color:S, fontFamily:sans }}>{tools ? "Acesso rápido. Decisão segura." : "Condutas rápidas. Decisões seguras."}</div>
               </button>
             </div>
             <div className="hdr-actions" style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
@@ -282,28 +291,36 @@ export default function App() {
         {!proto && !tools && (
           <>
             <div style={{ paddingTop:24, paddingBottom:16 }}>
-              <div style={{ position:"relative", marginBottom:12 }}>
-                <Icons.Search size={18} color="var(--muted)" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
-                <input ref={searchRef} value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
-                  aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
-                  placeholder="Pesquisar protocolo, medicamento, sigla ou condição..."
-                  style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:8, padding:"12px 44px 12px 42px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }} />
-                {q && (
-                  <button onClick={()=>setQ("")} aria-label="Limpar pesquisa"
-                    style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"var(--border-2)", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"var(--text)", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-                )}
+              <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                <div style={{ position:"relative", flex:1, minWidth:0 }}>
+                  <Icons.Search size={18} color="var(--muted)" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
+                  <input ref={searchRef} value={q} onChange={e=>setQ(e.target.value)} type="search" inputMode="search"
+                    aria-label="Pesquisar protocolo, medicamento, sigla ou condição"
+                    placeholder="Pesquisar protocolo, medicamento, sintomas..."
+                    style={{ width:"100%", boxSizing:"border-box", background:W, border:`1px solid var(--input-border)`, borderRadius:10, padding:"12px 42px 12px 42px", fontSize:16, fontFamily:sans, color:T, outline:"none", boxShadow:"var(--shadow-sm)" }} />
+                  {q && (
+                    <button onClick={()=>setQ("")} aria-label="Limpar pesquisa"
+                      style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"var(--border-2)", border:"none", borderRadius:"50%", width:30, height:30, cursor:"pointer", color:"var(--text)", fontSize:14, lineHeight:1, display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+                  )}
+                </div>
+                <button onClick={()=>setCatOpen(o=>!o)} aria-label="Filtrar por categoria" aria-pressed={catOpen}
+                  style={{ flexShrink:0, width:46, borderRadius:10, border:`1px solid ${catOpen||cat!=="Todos"?"#2B6CB0":"var(--input-border)"}`, background:catOpen||cat!=="Todos"?"var(--info-bg)":W, color:catOpen||cat!=="Todos"?"#2B6CB0":"var(--muted)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <Icons.Filter size={18} />
+                </button>
               </div>
-              <div className="cat-row">
-                {CATS.map(c => (
-                  <button key={c} onClick={()=>setCat(c)} style={{
-                    padding:"5px 13px", borderRadius:20, border:"1px solid",
-                    borderColor: cat===c ? "#2B6CB0" : "var(--input-border)",
-                    background: cat===c ? "var(--info-bg)" : W,
-                    color: cat===c ? "#2B6CB0" : "var(--text)",
-                    fontSize:12, fontFamily:sans, fontWeight: cat===c ? 700 : 400, cursor:"pointer",
-                  }}>{c}</button>
-                ))}
-              </div>
+              {catOpen && (
+                <div className="cat-row">
+                  {CATS.map(c => (
+                    <button key={c} onClick={()=>setCat(c)} style={{
+                      padding:"5px 13px", borderRadius:20, border:"1px solid",
+                      borderColor: cat===c ? "#2B6CB0" : "var(--input-border)",
+                      background: cat===c ? "var(--info-bg)" : W,
+                      color: cat===c ? "#2B6CB0" : "var(--text)",
+                      fontSize:12, fontFamily:sans, fontWeight: cat===c ? 700 : 400, cursor:"pointer",
+                    }}>{c}</button>
+                  ))}
+                </div>
+              )}
               {q.trim() && (
                 <div style={{ marginTop:8, fontSize:12, color:S, fontFamily:sans }}>
                   {filtered.length===0 ? `Sem resultados para "${q}"` : `${filtered.length} protocolo(s) encontrado(s) para "${q}"`}
@@ -344,19 +361,28 @@ export default function App() {
               </div>
             )}
 
-            {/* Ferramentas — CTA */}
+            {/* Ferramentas rápidas */}
             {!q.trim() && (
-              <button onClick={openTools}
-                style={{ width:"100%", marginBottom:16, background:"var(--info-bg)", border:"1px solid var(--info-bd)", borderRadius:12, padding:"16px 18px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", alignItems:"center", gap:14 }}>
-                <span style={{ width:48, height:48, borderRadius:12, background:"var(--surface)", border:"1px solid var(--info-bd)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  <Icons.Wrench size={24} color="#2B6CB0" />
-                </span>
-                <span style={{ flex:1, minWidth:0 }}>
-                  <span style={{ display:"block", fontSize:15, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</span>
-                  <span style={{ display:"block", fontSize:12, color:S, marginTop:2 }}>Bomba de infusão · Modo Código RCP · {Object.keys(SCORES_DEF).length} escores e fórmulas clínicas</span>
-                </span>
-                <span style={{ display:"flex", color:"#2B6CB0" }}>→</span>
-              </button>
+              <div style={{ marginBottom:18 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", margin:"4px 0 10px" }}>
+                  <SectionTitle txt="Ferramentas rápidas" Ic={Icons.Wrench} />
+                  <button onClick={()=>openTools()} style={{ background:"none", border:"none", cursor:"pointer", color:"#2B6CB0", fontSize:12, fontFamily:sans, fontWeight:700, display:"flex", alignItems:"center", gap:2 }}>
+                    Ver todas <Icons.ChevronRight size={15} />
+                  </button>
+                </div>
+                <div className="quick-grid">
+                  {QUICK_TOOLS.map(t => (
+                    <button key={t.label} onClick={()=>openTools(t.anchor)} className="quick-card"
+                      style={{ background:W, border:`1px solid ${BD}`, borderRadius:12, padding:"14px", cursor:"pointer", textAlign:"left", fontFamily:sans, display:"flex", flexDirection:"column", gap:8, boxShadow:"var(--shadow-sm)", transition:"all .15s" }}>
+                      <span style={{ width:40, height:40, borderRadius:10, background:tint(t.color,16), display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <t.Ic size={21} color={t.color} />
+                      </span>
+                      <span style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", lineHeight:1.2 }}>{t.label}</span>
+                      <span style={{ fontSize:11, color:S }}>{t.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Favoritos */}
@@ -389,8 +415,14 @@ export default function App() {
               </div>
             )}
 
-            <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"var(--warn-fg)", lineHeight:1.6 }}>
-              <strong>⚕️ Nota de uso clínico:</strong> Sistema baseado nas diretrizes <strong>AHA/ACLS 2020–2025</strong>, Surviving Sepsis Campaign 2021 e SBC. As decisões terapêuticas são de responsabilidade exclusiva do médico assistente.
+            <div style={{ display:"flex", alignItems:"flex-start", gap:12, background:W, border:`1px solid ${BD}`, borderRadius:12, padding:"14px 16px", marginBottom:32, boxShadow:"var(--shadow-sm)" }}>
+              <span style={{ width:36, height:36, borderRadius:9, background:tint("#2F855A",16), display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Icons.Shield size={20} color="#2F855A" />
+              </span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Conteúdo baseado em diretrizes atualizadas</div>
+                <div style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5, marginTop:2 }}>AHA/ACLS 2020–2025 · Surviving Sepsis 2021 · SBC. Verifique a data de revisão dentro de cada protocolo — a decisão é do médico assistente.</div>
+              </div>
             </div>
           </>
         )}
@@ -398,14 +430,18 @@ export default function App() {
         {/* ── TOOLS HUB ── */}
         {tools && (
           <div style={{ paddingTop:20, paddingBottom:60 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:8 }}>
-              <span style={{ width:50, height:50, borderRadius:13, background:"var(--chip-tool-bg)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                <Icons.Wrench size={26} color="var(--chip-tool-fg)" />
-              </span>
-              <div>
-                <div style={{ fontFamily:serif, fontSize:22, fontWeight:700, color:"var(--text-strong)" }}>Ferramentas & Calculadoras</div>
-                <div style={{ fontSize:13, color:S, fontFamily:sans }}>Cálculos de beira-leito e escores validados — independentes do protocolo</div>
-              </div>
+            {/* Acesso rápido — salta para a ferramenta */}
+            <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6, marginBottom:14, WebkitOverflowScrolling:"touch" }}>
+              {[
+                { Ic:Icons.Siren, color:"#C53030", lbl:"Copiloto RCP", anchor:"tool-code" },
+                { Ic:Icons.Drug,  color:"#0E7490", lbl:"Bomba de Infusão", anchor:"tool-infusion" },
+                { Ic:Icons.Score, color:"#2B6CB0", lbl:"Escores", anchor:"tools-scores" },
+              ].map(c => (
+                <button key={c.lbl} onClick={()=>document.getElementById(c.anchor)?.scrollIntoView({behavior:"smooth",block:"start"})}
+                  style={{ display:"flex", alignItems:"center", gap:7, flexShrink:0, padding:"8px 14px", borderRadius:20, border:`1px solid ${c.color}44`, background:tint(c.color,12), color:c.color, fontFamily:sans, fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                  <c.Ic size={15} /> {c.lbl}
+                </button>
+              ))}
             </div>
 
             {/* Peso global compartilhado pelas ferramentas */}
@@ -417,12 +453,14 @@ export default function App() {
               <span style={{ fontSize:12, color:S, fontFamily:sans }}>kg — usado nas calculadoras por peso</span>
             </div>
 
-            {TOOL_GROUPS.map(group => (
-              <div key={group.cat} style={{ marginBottom:24 }}>
-                <div style={{ fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${group.border}33` }}>{group.cat}</div>
+            {TOOL_GROUPS.map((group, gi) => (
+              <div key={group.cat} id={gi===TOOL_GROUPS.findIndex(g=>g.items[0]?.kind==="score") ? "tools-scores" : undefined} style={{ marginBottom:24, scrollMarginTop:70 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${group.border}33` }}>
+                  {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat}
+                </div>
                 {group.items.map(item => {
-                  if (item.kind === "infusion") return <div key={item.id} style={{ marginBottom:14 }}><InfusionCalc globalW={weight} /></div>;
-                  if (item.kind === "code") return <div key={item.id} style={{ marginBottom:14 }}><CodeTimer /></div>;
+                  if (item.kind === "infusion") return <div key={item.id} id="tool-infusion" style={{ marginBottom:14, scrollMarginTop:70 }}><InfusionCalc globalW={weight} /></div>;
+                  if (item.kind === "code") return <div key={item.id} id="tool-code" style={{ marginBottom:14, scrollMarginTop:70 }}><CodeTimer /></div>;
                   return <ScoreWidget key={item.id} scoreKey={item.id} color={group.color} light={tint(group.color)} border={group.border} globalW={weight} />;
                 })}
               </div>
@@ -767,6 +805,9 @@ export default function App() {
         html, body { background: var(--bg); font-family: var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
         * { box-sizing: border-box; }
         .bottom-nav { display: none; }
+        .quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        .quick-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        @media (hover: none) { .quick-card:active { transform: scale(.98); } }
         button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
         button:focus:not(:focus-visible) { outline: none; }
 

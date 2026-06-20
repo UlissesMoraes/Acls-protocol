@@ -4,11 +4,17 @@
 
 export const TOOL_GROUPS = [
   {
-    cat: "Beira-leito",
+    cat: "Fluxo crítico",
     color: "#C53030", light: "#FDEDEC", border: "#E74C3C",
     items: [
+      { id: "code", kind: "code", label: "Copiloto de RCP — ACLS", sub: "Guia passo a passo, ciclos de 2 min, medicações por ritmo e 5H/5T" },
+    ],
+  },
+  {
+    cat: "Beira-leito",
+    color: "#0E7490", light: "#ECFEFF", border: "#0891B2",
+    items: [
       { id: "infusion", kind: "infusion", label: "Bomba de Infusão", sub: "Conversão dose ↔ mL/h · vasoativos, sedação e insulina" },
-      { id: "code",     kind: "code",     label: "Modo Código — RCP", sub: "Cronômetro de PCR, ciclos de 2 min, metrônomo e log de eventos" },
     ],
   },
   {
