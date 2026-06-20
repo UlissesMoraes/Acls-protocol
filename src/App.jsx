@@ -376,9 +376,18 @@ export default function App() {
             )}
 
             {(!q.trim() && (favProtos.length>0 || recentProtos.length>0)) && <SectionTitle txt="Todos os protocolos" />}
-            <div className="proto-grid">
-              {filtered.map(renderCard)}
-            </div>
+            {filtered.length === 0 && drugHits.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--muted)", fontFamily:sans }}>
+                <Icons.Search size={40} color="var(--muted-2)" strokeWidth={1.5} />
+                <div style={{ fontSize:15, fontWeight:700, color:"var(--text)", marginTop:12 }}>Nenhum resultado para “{q}”</div>
+                <div style={{ fontSize:13, marginTop:4 }}>Tente outro termo, uma sigla (ex: IAM, TEP) ou um medicamento.</div>
+                <button onClick={()=>setQ("")} style={{ marginTop:16, padding:"9px 18px", borderRadius:8, border:`1px solid ${BD}`, background:W, color:"var(--text)", fontFamily:sans, fontSize:13, fontWeight:600, cursor:"pointer" }}>Limpar busca</button>
+              </div>
+            ) : (
+              <div className="proto-grid">
+                {filtered.map(renderCard)}
+              </div>
+            )}
 
             <div style={{ background:"var(--warn-bg)", border:"1px solid var(--warn-bd)", borderRadius:8, padding:"12px 16px", marginBottom:32, fontFamily:sans, fontSize:12, color:"var(--warn-fg)", lineHeight:1.6 }}>
               <strong>⚕️ Nota de uso clínico:</strong> Sistema baseado nas diretrizes <strong>AHA/ACLS 2020–2025</strong>, Surviving Sepsis Campaign 2021 e SBC. As decisões terapêuticas são de responsabilidade exclusiva do médico assistente.
@@ -508,33 +517,39 @@ export default function App() {
                     const isOpen = !!openSteps[idx];
                     const isDone = !!checks[idx];
                     return (
-                      <div key={idx} style={{ background:W, border:`1px solid ${isDone&&clMode?cur.border:BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)", opacity:isDone&&clMode?.75:1, transition:"all .2s" }}>
-                        <button onClick={()=>setOpenSteps(p=>({...p,[idx]:!p[idx]}))} className="step-hdr" aria-expanded={isOpen} style={{
-                          width:"100%", border:"none", cursor:"pointer", textAlign:"left",
-                          display:"flex", alignItems:"center", gap:12, fontFamily:serif,
-                          background: isOpen?(step.alert?"color-mix(in srgb,#C53030 8%,var(--surface))":"var(--surface-2)"):(isDone&&clMode?tint(cur.color):W),
-                          borderBottom: isOpen?`1px solid ${BD}`:"none", transition:"background .15s",
-                        }}>
-                          {clMode && (
-                            <div onClick={e=>{e.stopPropagation();toggleCheck(idx);}} style={{
-                              width:22, height:22, borderRadius:6, flexShrink:0,
-                              border:`2px solid ${isDone?cur.border:"var(--input-border)"}`,
-                              background: isDone?tint(cur.color):W,
-                              display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
-                            }}>
-                              {isDone && <span style={{ color:cur.color, fontSize:13, fontWeight:900 }}>✓</span>}
-                            </div>
+                      <div key={idx} className="step-row" style={{ display:"flex", gap:12, position:"relative" }}>
+                        <div style={{ position:"relative", flexShrink:0, width:32, display:"flex", justifyContent:"center" }}>
+                          {idx < cur.cascade.length-1 && (
+                            <div style={{ position:"absolute", top:34, bottom:-12, left:"50%", width:2, transform:"translateX(-50%)", background:(isDone&&clMode)?cur.border:"var(--border)" }} />
                           )}
-                          <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, fontFamily:sans,
+                          <div style={{ position:"relative", zIndex:1, width:32, height:32, borderRadius:"50%", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, fontFamily:sans,
                             background:step.alert?"var(--danger-bg)":tint(cur.color), border:`2px solid ${step.alert?"var(--danger-bd)":cur.border}`,
                             color:step.alert?"var(--danger-fg)":cur.color }}>
-                            {step.step}
+                            {isDone&&clMode ? "✓" : step.step}
                           </div>
+                        </div>
+                        <div style={{ flex:1, minWidth:0, background:W, border:`1px solid ${isDone&&clMode?cur.border:BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)", opacity:isDone&&clMode?.78:1, transition:"all .2s" }}>
+                          <button onClick={()=>setOpenSteps(p=>({...p,[idx]:!p[idx]}))} className="step-hdr" aria-expanded={isOpen} style={{
+                            width:"100%", border:"none", cursor:"pointer", textAlign:"left",
+                            display:"flex", alignItems:"center", gap:10, fontFamily:serif,
+                            background: isOpen?(step.alert?"color-mix(in srgb,#C53030 8%,var(--surface))":"var(--surface-2)"):W,
+                            borderBottom: isOpen?`1px solid ${BD}`:"none", transition:"background .15s",
+                          }}>
+                            {clMode && (
+                              <div onClick={e=>{e.stopPropagation();toggleCheck(idx);}} style={{
+                                width:22, height:22, borderRadius:6, flexShrink:0,
+                                border:`2px solid ${isDone?cur.border:"var(--input-border)"}`,
+                                background: isDone?tint(cur.color):W,
+                                display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer",
+                              }}>
+                                {isDone && <span style={{ color:cur.color, fontSize:13, fontWeight:900 }}>✓</span>}
+                              </div>
+                            )}
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
                               {step.alert && <span style={{ fontSize:10, background:"var(--danger-bg)", color:"var(--danger-fg)", border:"1px solid var(--danger-bd)", padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>ATENÇÃO</span>}
                               {isDone&&clMode && <span style={{ fontSize:10, background:tint(cur.color), color:cur.color, border:`1px solid ${cur.border}55`, padding:"1px 8px", borderRadius:20, fontFamily:sans, fontWeight:700 }}>CONCLUÍDO</span>}
-                              <span style={{ fontSize:10, color:step.alert?"var(--danger-fg)":"#2C3E50", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
+                              <span style={{ fontSize:10, color:step.alert?"var(--danger-fg)":"var(--text-strong)", fontFamily:sans, fontWeight:700, letterSpacing:"0.05em", lineHeight:1.4 }}>{step.phase}</span>
                             </div>
                           </div>
                           <span style={{ display:"flex", color:"var(--muted-2)", transform:isOpen?"rotate(180deg)":"rotate(0deg)", transition:"transform .2s", flexShrink:0 }}><Icons.ChevronDown size={18} /></span>
@@ -545,7 +560,7 @@ export default function App() {
                             {step.items.length>0 && (
                               <div style={{ marginBottom:step.decision?16:0 }}>
                                 {step.items.map((it,i) => (
-                                  <div key={i} style={{ display:"flex", gap:12, paddingTop:9, paddingBottom:9, borderBottom:i<step.items.length-1?`1px solid #F0F4F8`:"none" }}>
+                                  <div key={i} style={{ display:"flex", gap:12, paddingTop:9, paddingBottom:9, borderBottom:i<step.items.length-1?`1px solid var(--border-2)`:"none" }}>
                                     <div style={{ width:6, height:6, borderRadius:"50%", background:cur.border, marginTop:7, flexShrink:0 }} />
                                     <span style={{ fontSize:14, lineHeight:1.65, color:T, fontFamily:sans }}>{it}</span>
                                   </div>
@@ -554,7 +569,7 @@ export default function App() {
                             )}
                             {step.decision && (
                               <div style={{ background:"var(--surface-2)", border:`1px solid ${BD}`, borderRadius:8, padding:"14px 16px", marginTop:step.items.length>0?12:0 }}>
-                                <div style={{ fontSize:13, fontWeight:700, color:T, fontFamily:sans, marginBottom:8 }}>🔀 Ponto de Decisão</div>
+                                <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:13, fontWeight:700, color:T, fontFamily:sans, marginBottom:8 }}><Icons.Decision size={16} color={cur.color} /> Ponto de Decisão</div>
                                 <div style={{ fontSize:13, color:"var(--text)", fontFamily:sans, marginBottom:10, fontStyle:"italic" }}>{step.decision.q}</div>
                                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                                   <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
@@ -570,6 +585,7 @@ export default function App() {
                             )}
                           </div>
                         )}
+                      </div>
                       </div>
                     );
                   })}
@@ -627,7 +643,7 @@ export default function App() {
                     </thead>
                     <tbody>
                       {cur.antidotes.map((r,i) => (
-                        <tr key={i} style={{ borderBottom:i<cur.antidotes.length-1?`1px solid #F0F4F8`:"none", background:i%2===0?W:"#FAFBFC" }}>
+                        <tr key={i} style={{ borderBottom:i<cur.antidotes.length-1?`1px solid var(--border-2)`:"none", background:i%2===0?W:"var(--surface-2)" }}>
                           <td style={{ padding:"11px 14px", fontSize:13, fontFamily:sans, fontWeight:600, color:T, verticalAlign:"top" }}>{r.agent}</td>
                           <td style={{ padding:"11px 14px", verticalAlign:"top" }}>
                             <span style={{ fontSize:13, fontFamily:sans, fontWeight:700, color:cur.color, background:tint(cur.color), padding:"2px 10px", borderRadius:20, display:"inline-block" }}>{r.antidote}</span>
