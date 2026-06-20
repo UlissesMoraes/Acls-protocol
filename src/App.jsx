@@ -158,9 +158,9 @@ export default function App() {
       <div key={p.id} role="button" tabIndex={0} onClick={open}
         onKeyDown={e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } }}
         aria-label={`Abrir protocolo ${p.label}`} className="proto-card"
-        style={{ position:"relative", background:"var(--surface)", border:`1px solid var(--border)`, borderLeft:`4px solid ${p.border}`, borderRadius:10, cursor:"pointer", textAlign:"left", fontFamily:serif, boxShadow:"0 1px 4px rgba(0,0,0,.04)", width:"100%", transition:"all .18s" }}
-        onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,.1)";e.currentTarget.style.transform="translateY(-2px)"}}
-        onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)";e.currentTarget.style.transform="translateY(0)"}}>
+        style={{ position:"relative", background:"var(--surface)", border:`1px solid var(--border)`, borderLeft:`4px solid ${p.border}`, borderRadius:12, cursor:"pointer", textAlign:"left", fontFamily:serif, boxShadow:"var(--shadow-sm)", width:"100%", transition:"all .18s" }}
+        onMouseEnter={e=>{e.currentTarget.style.boxShadow="var(--shadow-md)";e.currentTarget.style.transform="translateY(-2px)"}}
+        onMouseLeave={e=>{e.currentTarget.style.boxShadow="var(--shadow-sm)";e.currentTarget.style.transform="translateY(0)"}}>
         <button type="button" onClick={e=>toggleFav(p.id,e)} aria-pressed={isFav} aria-label={isFav?`Remover ${p.label} dos favoritos`:`Adicionar ${p.label} aos favoritos`}
           style={{ position:"absolute", top:6, right:6, display:"flex", lineHeight:1, cursor:"pointer", color:isFav?"#D4AC0D":"var(--muted-2)", background:"none", border:"none", padding:6, zIndex:2 }}>
           <Icons.Star size={18} fill={isFav?"#D4AC0D":"none"} />
@@ -182,6 +182,7 @@ export default function App() {
               {p.scores.length>0 && <span style={{ display:"inline-flex", alignItems:"center", gap:4, fontSize:11, color:"var(--text)", fontFamily:sans }}><Icons.Score size={13} /> {p.scores.length} escore(s)</span>}
             </div>
           </div>
+          <Icons.ChevronRight size={20} color="var(--muted-2)" style={{ alignSelf:"center", flexShrink:0 }} />
         </div>
       </div>
     );
