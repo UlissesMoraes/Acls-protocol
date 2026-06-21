@@ -103,6 +103,17 @@ npm run content:seed-sql        # gera supabase/seed.sql
 Configuração via `.env` (opcional — há fallback embutido): veja `.env.example`.
 Para desligar o backend e usar só o conteúdo embutido: `VITE_REMOTE_CONTENT=off`.
 
+## 👶 Modo Pediátrico (PALS)
+
+Seletor **Adulto ⇄ Pediátrico** na tela inicial que troca todo o conjunto clínico:
+
+- **7 protocolos PALS** — PCR pediátrica, bradicardia, taquicardia (TSV/TV), choque séptico, anafilaxia, estado de mal epiléptico e CAD pediátrica.
+- **Doses por peso (mg/kg) com tetos** — a calculadora de dose calcula automaticamente o valor para o peso da criança, aplicando os máximos do PALS (ex.: adrenalina limitada a 1 mg, amiodarona a 300 mg).
+- **Copiloto de PCR no modo PALS** — o mesmo copiloto, agora com energia de desfibrilação por kg (2 → 4 J/kg), adrenalina 0,01 mg/kg, amiodarona 5 mg/kg, relação 15:2 e causas 6H/6T (inclui hipoglicemia). Exige o peso para calcular doses/energia.
+- **Estimador de peso por idade** — fórmulas APLS, para quando o peso real é desconhecido; pode ser aplicado como peso global do app.
+
+A lógica determinística (medicação por kg, energia, peso por idade) e as fórmulas pediátricas são **funções puras cobertas por testes** (`test/pals.test.mjs`).
+
 ## 🤖 Inteligência (IA)
 
 Recursos de IA ancorados no **conteúdo dos próprios protocolos** do app (padrão

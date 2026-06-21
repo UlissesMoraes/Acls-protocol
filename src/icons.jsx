@@ -4,7 +4,7 @@ import {
   Brain, Zap, Wind, FlaskConical, Syringe,
   Search, Siren, Wrench, Moon, Sun, Download, Scale, ArrowLeft,
   ListChecks, Pill, BarChart3, Star, ChevronDown, Clock, X, TriangleAlert,
-  Stethoscope, Smartphone, LayoutGrid, Split, SlidersHorizontal, ChevronRight, ShieldCheck, Sparkles,
+  Stethoscope, Smartphone, LayoutGrid, Split, SlidersHorizontal, ChevronRight, ShieldCheck, Sparkles, Baby,
 } from "lucide-react";
 
 // Protocolo (por id) → ícone. Fallback: estetoscópio.
@@ -35,13 +35,14 @@ export const Icons = {
   Search, Siren, Wrench, Moon, Sun, Download, Scale, ArrowLeft,
   Cascade: ListChecks, Drug: Pill, Antidote: FlaskConical, Score: BarChart3,
   Star, ChevronDown, Clock, X, Alert: TriangleAlert, Install: Smartphone,
-  Protocols: LayoutGrid, Decision: Split, Filter: SlidersHorizontal, ChevronRight, Shield: ShieldCheck, Sparkles,
+  Protocols: LayoutGrid, Decision: Split, Filter: SlidersHorizontal, ChevronRight, Shield: ShieldCheck, Sparkles, Baby,
 };
 
 // Metadados de cada ferramenta para o catálogo (ícone + nome curto)
 export const TOOL_META = {
   code:      { Ic: Siren,        short: "Copiloto de RCP" },
   assistant: { Ic: Sparkles,     short: "Copiloto Clínico" },
+  pedweight: { Ic: Baby,         short: "Peso por idade" },
   infusion:  { Ic: Syringe,      short: "Bomba de Infusão" },
   grace:     { Ic: Heart,        short: "GRACE" },
   chadsvasc: { Ic: HeartPulse,   short: "CHA₂DS₂-VASc" },

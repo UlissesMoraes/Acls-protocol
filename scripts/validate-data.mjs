@@ -1,41 +1,49 @@
 // Validação de integridade dos dados clínicos.
 // Roda no CI / pré-commit: um campo faltando quebraria a renderização em runtime.
 import { P, CATS } from "../src/data/protocols.js";
+import { P_PED, CATS_PED } from "../src/data/protocolsPed.js";
 import { SCORES_DEF } from "../src/data/scores.js";
 import { FORMULAS } from "../src/data/formulas.js";
+import { FORMULAS_PED } from "../src/data/formulasPed.js";
 import { TOOL_GROUPS } from "../src/data/tools.js";
 
 let errors = 0;
 const fail = msg => { console.error("  ✗ " + msg); errors++; };
 
 const scoreKeys = new Set(Object.keys(SCORES_DEF));
-const protoIds = new Set();
 
-// ── Protocolos ──
-for (const p of P) {
-  const where = `protocolo "${p.id || "?"}"`;
-  for (const f of ["id", "label", "icon", "cat", "color", "light", "border", "sub"])
-    if (!p[f]) fail(`${where}: campo obrigatório "${f}" ausente`);
-  if (protoIds.has(p.id)) fail(`${where}: id duplicado`);
-  protoIds.add(p.id);
-  if (!CATS.includes(p.cat)) fail(`${where}: categoria "${p.cat}" não está em CATS`);
+// Valida um conjunto de protocolos (adulto ou pediátrico) contra o mesmo schema.
+function validateProtocols(list, cats, tag) {
+  const ids = new Set();
+  for (const p of list) {
+    const where = `protocolo ${tag} "${p.id || "?"}"`;
+    for (const f of ["id", "label", "icon", "cat", "color", "light", "border", "sub"])
+      if (!p[f]) fail(`${where}: campo obrigatório "${f}" ausente`);
+    if (ids.has(p.id)) fail(`${where}: id duplicado`);
+    ids.add(p.id);
+    if (!cats.includes(p.cat)) fail(`${where}: categoria "${p.cat}" não está em CATS`);
 
-  for (const [i, s] of (p.cascade || []).entries()) {
-    if (typeof s.step !== "number") fail(`${where} cascata[${i}]: "step" inválido`);
-    if (!s.phase) fail(`${where} cascata[${i}]: "phase" ausente`);
-    if (!Array.isArray(s.items)) fail(`${where} cascata[${i}]: "items" não é array`);
-    if (s.decision && (!s.decision.q || s.decision.yes === undefined || s.decision.no === undefined))
-      fail(`${where} cascata[${i}]: decisão incompleta`);
+    for (const [i, s] of (p.cascade || []).entries()) {
+      if (typeof s.step !== "number") fail(`${where} cascata[${i}]: "step" inválido`);
+      if (!s.phase) fail(`${where} cascata[${i}]: "phase" ausente`);
+      if (!Array.isArray(s.items)) fail(`${where} cascata[${i}]: "items" não é array`);
+      if (s.decision && (!s.decision.q || s.decision.yes === undefined || s.decision.no === undefined))
+        fail(`${where} cascata[${i}]: decisão incompleta`);
+    }
+    for (const [i, d] of (p.drugs || []).entries())
+      for (const f of ["name", "cat", "dose", "via", "ind", "ci"])
+        if (!d[f]) fail(`${where} fármaco[${i}] (${d.name || "?"}): "${f}" ausente`);
+    for (const [i, a] of (p.antidotes || []).entries())
+      for (const f of ["agent", "antidote", "dose", "notes"])
+        if (!a[f]) fail(`${where} antídoto[${i}]: "${f}" ausente`);
+    for (const sk of (p.scores || []))
+      if (!scoreKeys.has(sk)) fail(`${where}: escore "${sk}" não existe em SCORES_DEF`);
   }
-  for (const [i, d] of (p.drugs || []).entries())
-    for (const f of ["name", "cat", "dose", "via", "ind", "ci"])
-      if (!d[f]) fail(`${where} fármaco[${i}] (${d.name || "?"}): "${f}" ausente`);
-  for (const [i, a] of (p.antidotes || []).entries())
-    for (const f of ["agent", "antidote", "dose", "notes"])
-      if (!a[f]) fail(`${where} antídoto[${i}]: "${f}" ausente`);
-  for (const sk of (p.scores || []))
-    if (!scoreKeys.has(sk)) fail(`${where}: escore "${sk}" não existe em SCORES_DEF`);
+  return ids;
 }
+
+const protoIds = validateProtocols(P, CATS, "adulto");
+const protoIdsPed = validateProtocols(P_PED, CATS_PED, "ped");
 
 // ── Escores ──
 for (const [k, sc] of Object.entries(SCORES_DEF)) {
@@ -53,14 +61,18 @@ for (const [k, sc] of Object.entries(SCORES_DEF)) {
 }
 
 // ── Fórmulas de dose: a chave "Nome|protocolo" deve casar com um fármaco real ──
-const drugKeys = new Set(P.flatMap(p => p.drugs.map(d => `${d.name}|${p.id}`)));
-for (const key of Object.keys(FORMULAS)) {
-  if (!drugKeys.has(key)) fail(`fórmula "${key}": nenhum fármaco correspondente em protocols.js`);
-  if (typeof FORMULAS[key] !== "function") { fail(`fórmula "${key}": não é função`); continue; }
-  const out = FORMULAS[key](70);
-  if (!out || !out.result || !Array.isArray(out.details))
-    fail(`fórmula "${key}": retorno deve ter { result, details[] }`);
+function validateFormulas(formulas, list, probeWeight, tag) {
+  const drugKeys = new Set(list.flatMap(p => p.drugs.map(d => `${d.name}|${p.id}`)));
+  for (const key of Object.keys(formulas)) {
+    if (!drugKeys.has(key)) fail(`fórmula ${tag} "${key}": nenhum fármaco correspondente`);
+    if (typeof formulas[key] !== "function") { fail(`fórmula ${tag} "${key}": não é função`); continue; }
+    const out = formulas[key](probeWeight);
+    if (!out || !out.result || !Array.isArray(out.details))
+      fail(`fórmula ${tag} "${key}": retorno deve ter { result, details[] }`);
+  }
 }
+validateFormulas(FORMULAS, P, 70, "adulto");
+validateFormulas(FORMULAS_PED, P_PED, 15, "ped");
 
 // ── Catálogo de ferramentas ──
 for (const g of TOOL_GROUPS)
@@ -72,4 +84,4 @@ if (errors) {
   console.error(`\n❌ Validação de dados falhou — ${errors} problema(s).`);
   process.exit(1);
 }
-console.log(`✅ Dados válidos — ${P.length} protocolos, ${scoreKeys.size} escores, ${Object.keys(FORMULAS).length} fórmulas.`);
+console.log(`✅ Dados válidos — ${P.length} protocolos adultos + ${P_PED.length} pediátricos, ${scoreKeys.size} escores, ${Object.keys(FORMULAS).length + Object.keys(FORMULAS_PED).length} fórmulas.`);

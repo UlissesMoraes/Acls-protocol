@@ -18,6 +18,13 @@ export const TOOL_GROUPS = [
     ],
   },
   {
+    cat: "Pediatria", mode: "ped",
+    color: "#0E7490", light: "#ECFEFF", border: "#0891B2",
+    items: [
+      { id: "pedweight", kind: "pedweight", label: "Peso por idade", sub: "Estimativa de peso (APLS) quando o peso real é desconhecido" },
+    ],
+  },
+  {
     cat: "Beira-leito",
     color: "#0E7490", light: "#ECFEFF", border: "#0891B2",
     items: [

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { CATS } from "./data/protocols.js";
+import { P_PED, CATS_PED } from "./data/protocolsPed.js";
 import { SCORES_DEF } from "./data/scores.js";
 import { TOOL_GROUPS } from "./data/tools.js";
 import ScoreWidget from "./components/ScoreWidget.jsx";
@@ -9,6 +10,7 @@ import CodeTimer from "./components/CodeTimer.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import SymptomTriage from "./components/SymptomTriage.jsx";
 import DrugAlerts from "./components/DrugAlerts.jsx";
+import PedWeight from "./components/PedWeight.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
@@ -65,8 +67,20 @@ export default function App() {
       navigator.serviceWorker.getRegistration().then(r => r?.waiting?.postMessage({ type: "SKIP_WAITING" }));
   };
 
-  const { protocols, updated: contentUpdated, dismissUpdated } = useProtocols();
+  const { protocols: adultProtocols, updated: contentUpdated, dismissUpdated } = useProtocols();
+  // Modo clínico: adulto (ACLS, conteúdo vivo via backend) ou pediátrico (PALS, embutido).
+  const [mode, setMode] = usePersistentState("acls.mode", "adult");
+  const isPed = mode === "ped";
+  const protocols = isPed ? P_PED : adultProtocols;
+  const activeCats = isPed ? CATS_PED : CATS;
   const cur = protocols.find(p => p.id === proto);
+
+  // Ao trocar de modo, volta à home e zera filtros (ids não coincidem entre os conjuntos).
+  const switchMode = (m) => {
+    if (m === mode) return;
+    setMode(m); setProto(null); setTools(false); setTool(null); setCat("Todos"); setQ("");
+    window.scrollTo({ top: 0 }); pushView({});
+  };
 
   const terms = expandQuery(q);
   // Texto completo do protocolo, deburrado uma vez por filtragem
@@ -113,7 +127,8 @@ export default function App() {
   const openTools = () => { setTools(true); setTool(null); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true }); };
   const openTool = (id, focus = null) => { setTools(true); setTool(id); setAiFocus(focus); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true, tool:id, aiFocus:focus }); };
   const QUICK_TOOLS = [
-    { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", id:"code" },
+    { Ic:Icons.Siren, color:"#C53030", label:isPed?"Código PALS":"Códigos RCP", sub:isPed?"Pediátrico · por kg":"Adulto · ACLS", id:"code" },
+    ...(isPed ? [{ Ic:Icons.Baby, color:"#0E7490", label:"Peso por idade", sub:"Estimar (APLS)", id:"pedweight" }] : []),
     { Ic:Icons.Sparkles, color:"#7C3AED", label:"Copiloto Clínico", sub:"IA · voz e texto", id:"assistant" },
     { Ic:Icons.Drug,  color:"#0E7490", label:"Bomba de Infusão", sub:"Dose ↔ mL/h", id:"infusion" },
     { Ic:Icons.Score, color:"#2B6CB0", label:"Escores", sub:`${Object.keys(SCORES_DEF).length} validados`, id:null },
@@ -231,7 +246,7 @@ export default function App() {
       )}
 
       {/* Toast de conteúdo atualizado (backend) */}
-      {contentUpdated && (
+      {contentUpdated && !isPed && (
         <div style={{ position:"fixed", bottom:16, left:"50%", transform:"translateX(-50%)", zIndex:500, background:"#2F855A", color:"#fff", borderRadius:10, padding:"10px 12px 10px 16px", display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 20px rgba(0,0,0,.3)", maxWidth:"92vw" }}>
           <span style={{ fontSize:13, fontFamily:sans }}>✅ Conteúdo dos protocolos atualizado</span>
           <button onClick={dismissUpdated} aria-label="Dispensar" style={{ background:"none", border:"none", color:"var(--ok-bg)", fontSize:16, cursor:"pointer", padding:"4px 6px" }}>✕</button>
@@ -281,8 +296,8 @@ export default function App() {
                   <Icons.Wrench size={16} /><span className="btn-label">Ferramentas</span>
                 </button>
               )}
-              {proto !== "pcr" && (
-                <button onClick={()=>openProto("pcr")} aria-label="Acesso rápido — Parada Cardiorrespiratória"
+              {proto !== (isPed ? "pcr_ped" : "pcr") && (
+                <button onClick={()=>openProto(isPed ? "pcr_ped" : "pcr")} aria-label="Acesso rápido — Parada Cardiorrespiratória"
                   style={{ background:"#C53030", color:"#fff", border:"none", borderRadius:8, padding:"8px 12px", fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:6, minHeight:38, boxShadow:"0 1px 4px rgba(197,48,48,.35)", whiteSpace:"nowrap" }}>
                   <Icons.Siren size={16} /><span className="btn-label">PCR</span>
                 </button>
@@ -297,7 +312,26 @@ export default function App() {
         {/* ── INDEX ── */}
         {!proto && !tools && (
           <>
-            <div style={{ paddingTop:24, paddingBottom:16 }}>
+            {/* Seletor de modo clínico: Adulto (ACLS) ⇄ Pediátrico (PALS) */}
+            <div style={{ display:"flex", gap:6, background:W, border:`1px solid ${BD}`, borderRadius:12, padding:5, marginTop:24, boxShadow:"var(--shadow-sm)" }}>
+              {[
+                { k:"adult", lbl:"Adulto", sub:"ACLS", Ic:Icons.Protocols, c:"#C53030" },
+                { k:"ped",   lbl:"Pediátrico", sub:"PALS", Ic:Icons.Baby, c:"#0E7490" },
+              ].map(o => {
+                const on = mode===o.k;
+                return (
+                  <button key={o.k} onClick={()=>switchMode(o.k)} aria-pressed={on}
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"11px 10px", borderRadius:9, border:"none", cursor:"pointer", fontFamily:sans,
+                      background: on ? tint(o.c,14) : "transparent", color: on ? o.c : "var(--muted)", transition:"all .15s" }}>
+                    <o.Ic size={18} strokeWidth={2.1} />
+                    <span style={{ fontSize:14, fontWeight:on?800:600 }}>{o.lbl}</span>
+                    <span style={{ fontSize:10, fontWeight:700, opacity:.8, background: on?`${o.c}22`:"transparent", padding:"1px 7px", borderRadius:10 }}>{o.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ paddingTop:16, paddingBottom:16 }}>
               <div style={{ display:"flex", gap:8, marginBottom:12 }}>
                 <div style={{ position:"relative", flex:1, minWidth:0 }}>
                   <Icons.Search size={18} color="var(--muted)" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
@@ -317,7 +351,7 @@ export default function App() {
               </div>
               {catOpen && (
                 <div className="cat-row">
-                  {CATS.map(c => (
+                  {activeCats.map(c => (
                     <button key={c} onClick={()=>setCat(c)} style={{
                       padding:"5px 13px", borderRadius:20, border:"1px solid",
                       borderColor: cat===c ? "#2B6CB0" : "var(--input-border)",
@@ -368,8 +402,8 @@ export default function App() {
               </div>
             )}
 
-            {/* Triagem por sintomas (IA) */}
-            {!q.trim() && (
+            {/* Triagem por sintomas (IA) — disponível no modo adulto */}
+            {!q.trim() && !isPed && (
               <div style={{ marginBottom:18 }}>
                 <SymptomTriage protocols={protocols} onOpen={(id)=>openProto(id)} />
               </div>
@@ -435,7 +469,7 @@ export default function App() {
               </span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", fontFamily:sans }}>Conteúdo baseado em diretrizes atualizadas</div>
-                <div style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5, marginTop:2 }}>AHA/ACLS 2020–2025 · Surviving Sepsis 2021 · SBC. Verifique a data de revisão dentro de cada protocolo — a decisão é do médico assistente.</div>
+                <div style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5, marginTop:2 }}>{isPed ? "AHA/PALS 2020–2025 · SBP. Doses por peso (kg) — confira cada cálculo; a decisão é do médico assistente." : "AHA/ACLS 2020–2025 · Surviving Sepsis 2021 · SBC. Verifique a data de revisão dentro de cada protocolo — a decisão é do médico assistente."}</div>
               </div>
             </div>
           </>
@@ -444,7 +478,7 @@ export default function App() {
         {/* ── TOOLS — CATÁLOGO ── */}
         {tools && !tool && (
           <div style={{ paddingTop:20, paddingBottom:60 }}>
-            {TOOL_GROUPS.map(group => (
+            {TOOL_GROUPS.filter(g => !g.mode || g.mode === mode).map(group => (
               <div key={group.cat} style={{ marginBottom:22 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
                   {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat==="Inteligência" && <Icons.Sparkles size={14} />}{group.cat}
@@ -481,7 +515,7 @@ export default function App() {
           let kind = "score", gcolor = "#2B6CB0", gborder = "#2B6CB0", gcat = "";
           for (const g of TOOL_GROUPS) { const it = g.items.find(i => i.id === tool); if (it) { kind = it.kind || "score"; gcolor = g.color; gborder = g.border; gcat = g.cat; break; } }
           const meta = TOOL_META[tool] || {};
-          const needsWeight = kind === "infusion" || (kind === "score" && (SCORES_DEF[tool]?.inputs || []).some(i => i.k === "peso"));
+          const needsWeight = kind === "infusion" || (kind === "code" && isPed) || (kind === "score" && (SCORES_DEF[tool]?.inputs || []).some(i => i.k === "peso"));
           return (
             <div style={{ paddingTop:16, paddingBottom:60 }}>
               <button onClick={()=>window.history.back()} style={{ display:"flex", alignItems:"center", gap:5, background:"none", border:"none", cursor:"pointer", color:S, fontSize:13, fontFamily:sans, padding:"6px 0", marginBottom:8 }}>
@@ -507,7 +541,8 @@ export default function App() {
                 </div>
               )}
 
-              {kind === "code" && <CodeTimer />}
+              {kind === "code" && <CodeTimer pals={isPed} weight={weight} />}
+              {kind === "pedweight" && <PedWeight onApply={setWeight} currentWeight={weight} />}
               {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}

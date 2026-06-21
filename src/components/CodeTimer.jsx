@@ -5,8 +5,10 @@ import {
   Square, Mic, MicOff, Brain, ClipboardList,
 } from "lucide-react";
 import { shockableMed, H5, T5, ventilation } from "../data/acls.js";
+import { shockableMedPed, epiMedPed, palsEnergy, ventilationPed, H6_PED, T6_PED } from "../data/pals.js";
 import { streamChat, AIConfigError } from "../lib/aiClient.js";
 import { buildRcpLogText, buildDebriefText, buildPrioritizerInput } from "../lib/clinicalContext.js";
+import { toNum } from "../utils/format.js";
 
 const sans = "var(--font)";
 const CYCLE_S = 120;
@@ -107,7 +109,12 @@ const VOICE_LABELS = {
   metro: "Metrônomo alternado",
 };
 
-export default function CodeTimer() {
+export default function CodeTimer({ pals = false, weight = null }) {
+  const wNum = toNum(weight);                       // peso da criança (kg) p/ doses PALS
+  const accent = pals ? "#0E7490" : "#C53030";      // cor-tema: pediátrico vs adulto
+  const causesH = pals ? H6_PED : H5;
+  const causesT = pals ? T6_PED : T5;
+
   const [startTs, setStartTs] = useState(null);
   const [endTs, setEndTs] = useState(null);
   const [now, setNow] = useState(Date.now());
@@ -166,12 +173,12 @@ export default function CodeTimer() {
 
   const log = label => setEvents(ev => [...ev, { t: startTs ? (Date.now() - startTs) / 1000 : 0, label }]);
 
-  // ── Medicação devida ──
+  // ── Medicação devida (adulto = ACLS · pediátrico = PALS por peso) ──
   let cycleMed = null;
   if (phase === "cpr") {
-    if (rhythm === "shock") cycleMed = shockableMed(shocks);
+    if (rhythm === "shock") cycleMed = pals ? shockableMedPed(shocks, wNum) : shockableMed(shocks);
     else if (rhythm === "nonshock" && (epiCount === 0 || (epiSince ?? 999) >= EPI_S))
-      cycleMed = { key: "epi", label: "Adrenalina 1 mg", drug: "Adrenalina" };
+      cycleMed = pals ? epiMedPed(wNum) : { key: "epi", label: "Adrenalina 1 mg", drug: "Adrenalina" };
   }
   const medPending = cycleMed && doneCycle !== cycle;
 
@@ -340,13 +347,16 @@ export default function CodeTimer() {
       startTs, durationStr: fmt(elapsed), shocks, epiCount, amioCount, rhythm,
       events: events.map(e => ({ tStr: fmt(e.t), label: e.label })),
     });
+    const palsNote = pals
+      ? `ATENDIMENTO PEDIÁTRICO (PALS) — peso ${wNum > 0 ? `${wNum} kg` : "não informado"}. Avalie pelas diretrizes PALS: adrenalina 0,01 mg/kg, amiodarona 5 mg/kg, desfibrilação 2→4 J/kg, relação 15:2.\n\n`
+      : "";
     setDebriefing(true);
     const ctrl = new AbortController();
     debriefAbort.current = ctrl;
     try {
       await streamChat({
         mode: "debriefing", signal: ctrl.signal,
-        messages: [{ role: "user", content: logText }],
+        messages: [{ role: "user", content: palsNote + logText }],
         onToken: d => setDebrief(prev => prev + d),
       });
     } catch (e) {
@@ -386,7 +396,7 @@ export default function CodeTimer() {
     try { await navigator.clipboard.writeText(head + body + "\n\nGerado pelo app Protocolos ACLS — conferir antes de registrar em prontuário."); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
   };
 
-  const vent = ventilation(airway);
+  const vent = pals ? ventilationPed(airway) : ventilation(airway);
   const chip = (Ic, n, c) => (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,.08)", color: c, fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20 }}>
       <Ic size={12} /> {n}
@@ -414,14 +424,21 @@ export default function CodeTimer() {
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background: "linear-gradient(180deg,#FDEDEC,var(--surface))", borderBottom: "1px solid #C0392B22", padding: "13px 16px" }}>
+      <div style={{ background: `linear-gradient(180deg,color-mix(in srgb,${accent} 12%,var(--surface)),var(--surface))`, borderBottom: `1px solid color-mix(in srgb,${accent} 22%,transparent)`, padding: "13px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-strong)" }}>
-          <HeartPulse size={18} color="#C53030" className={running ? "rcp-beat" : undefined} /> Copiloto de RCP — ACLS Adulto
+          <HeartPulse size={18} color={accent} className={running ? "rcp-beat" : undefined} /> {pals ? "Copiloto de PCR — PALS Pediátrico" : "Copiloto de RCP — ACLS Adulto"}
         </div>
         <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, marginTop: 2 }}>
-          Guia passo a passo · medicações por ritmo · ciclos de 2 min · 5H/5T · voz{hasSpeech ? "" : " (voz indisponível neste navegador)"}
+          {pals ? "Doses e energia por peso · 15:2 · 6H/6T · voz" : "Guia passo a passo · medicações por ritmo · ciclos de 2 min · 5H/5T · voz"}{hasSpeech ? "" : " (voz indisponível neste navegador)"}
         </div>
       </div>
+
+      {/* Aviso: PALS exige peso para calcular doses/energia */}
+      {pals && !(wNum > 0) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--warn-bg)", borderBottom: "1px solid var(--warn-bd)", padding: "10px 16px", fontSize: 12.5, color: "var(--warn-fg)", fontFamily: sans, fontWeight: 600 }}>
+          <TriangleAlert size={16} /> Informe o peso da criança acima — as doses e a energia do choque são calculadas por kg.
+        </div>
+      )}
 
       <div style={{ padding: "16px" }}>
         {/* IDLE */}
@@ -504,7 +521,11 @@ export default function CodeTimer() {
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: sans, marginBottom: 4 }}>
                   <Zap size={20} /> DESFIBRILAR — Choque nº {shocks + 1}
                 </div>
-                <div style={{ fontSize: 12, color: "#FFE0E0", fontFamily: sans, marginBottom: 12 }}>Carga máxima (bifásico 200 J) · afastar todos · retomar RCP logo após</div>
+                <div style={{ fontSize: 12, color: "#FFE0E0", fontFamily: sans, marginBottom: 12 }}>
+                  {pals
+                    ? (() => { const e = palsEnergy(shocks + 1, wNum); return `${e.jPerKg} J/kg${e.joules ? ` ≈ ${e.joules} J` : " — informe o peso"} · afastar todos · retomar RCP logo após`; })()
+                    : "Carga máxima (bifásico 200 J) · afastar todos · retomar RCP logo após"}
+                </div>
                 <button onClick={deliverShock} className="rcp-act" style={{ width: "100%", padding: "15px", borderRadius: 12, border: "none", background: "#fff", color: "#9B2C2C", fontFamily: sans, fontWeight: 900, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "transform .1s" }}>
                   <Check size={20} /> Choque aplicado → iniciar RCP
                 </button>
@@ -518,7 +539,7 @@ export default function CodeTimer() {
                   <HeartPulse size={17} color="#C53030" className={metroOn ? "rcp-beat" : undefined} />
                   <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-strong)", fontFamily: sans }}>RCP de alta qualidade</span>
                 </div>
-                <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: sans }}>100–120/min · 5–6 cm · retorno total do tórax · rodízio a cada 2 min</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: sans }}>{pals ? "100–120/min · ⅓ do diâmetro do tórax (~4–5 cm) · 15:2 · rodízio a cada 2 min" : "100–120/min · 5–6 cm · retorno total do tórax · rodízio a cada 2 min"}</div>
                 <button onClick={recheck} className="rcp-act" style={{ marginTop: 10, width: "100%", padding: "10px", borderRadius: 10, border: "1px solid var(--input-border)", background: "var(--surface)", color: "var(--text)", fontFamily: sans, fontWeight: 700, fontSize: 12.5, cursor: "pointer", transition: "transform .1s" }}>
                   Reavaliar ritmo agora
                 </button>
@@ -554,20 +575,20 @@ export default function CodeTimer() {
             <div className={rhythm === "nonshock" ? "rcp-med" : undefined} style={{ border: `1px solid ${rhythm === "nonshock" ? "#F6AD55" : "var(--border)"}`, borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
               <button onClick={() => setShowCauses(s => !s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", background: rhythm === "nonshock" ? "var(--warn-bg)" : "var(--surface-2)", border: "none", cursor: "pointer", fontFamily: sans }}>
                 <TriangleAlert size={17} color="#C05621" />
-                <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 800, color: "var(--warn-fg)" }}>Causas reversíveis — 5H e 5T</span>
+                <span style={{ flex: 1, textAlign: "left", fontSize: 13, fontWeight: 800, color: "var(--warn-fg)" }}>Causas reversíveis — {pals ? "6H e 6T" : "5H e 5T"}</span>
                 <ChevronDown size={18} color="var(--muted-2)" style={{ transform: showCauses ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
               </button>
               {showCauses && (
                 <div className="rcp-up">
-                  {/* Grade 5H/5T */}
+                  {/* Grade de causas (5H/5T adulto · 6H/6T PALS) */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--border)" }}>
                     <div style={{ padding: "10px 14px", borderRight: "1px solid var(--border)" }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5H</div>
-                      {H5.map((h, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {h}</div>)}
+                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>{pals ? "6H" : "5H"}</div>
+                      {causesH.map((h, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {h}</div>)}
                     </div>
                     <div style={{ padding: "10px 14px" }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5T</div>
-                      {T5.map((t, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {t}</div>)}
+                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>{pals ? "6T" : "5T"}</div>
+                      {causesT.map((t, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {t}</div>)}
                     </div>
                   </div>
 

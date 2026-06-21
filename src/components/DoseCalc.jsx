@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { Scale } from "lucide-react";
 import { FORMULAS } from "../data/formulas.js";
+import { FORMULAS_PED } from "../data/formulasPed.js";
 import { toNum } from "../utils/format.js";
+
+// Lookup unificado: as chaves são namespaced por protocolo (sem colisão adulto/ped).
+const ALL_FORMULAS = { ...FORMULAS, ...FORMULAS_PED };
 
 // ─── DOSE CALCULATOR ──────────────────────────────────────────────────────────
 export default function DoseCalc({ drugName, protocolId, color, light, border, globalW }) {
   const [local, setLocal] = useState("");
   const key = `${drugName}|${protocolId}`;
-  const fn = FORMULAS[key];
+  const fn = ALL_FORMULAS[key];
   const w = local !== "" ? local : (globalW || "");
   const wNum = toNum(w);
   const usingGlobal = local === "" && !!globalW;
