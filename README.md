@@ -66,8 +66,9 @@ src/
 │   ├── formulas.js    # Fórmulas de dose por peso
 │   └── tools.js       # Catálogo do Hub de Ferramentas
 │   └── remoteContent.js # Busca/valida/mescla protocolos do backend (Supabase)
-├── lib/           # aiClient (streaming SSE) · clinicalContext (base p/ a IA)
-├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer, AIAssistant
+├── lib/           # aiClient (streaming SSE) · clinicalContext (base + logs p/ IA)
+├── components/    # ScoreWidget, DoseCalc, InfusionCalc, CodeTimer, AIAssistant,
+│                  #   SymptomTriage, DrugAlerts
 ├── hooks/         # usePersistentState, useInstallPrompt, useProtocols
 ├── config.js      # URL + chave pública do Supabase (com fallback embutido)
 └── App.jsx        # Navegação, índice, detalhe de protocolo e Hub de ferramentas
@@ -102,12 +103,23 @@ npm run content:seed-sql        # gera supabase/seed.sql
 Configuração via `.env` (opcional — há fallback embutido): veja `.env.example`.
 Para desligar o backend e usar só o conteúdo embutido: `VITE_REMOTE_CONTENT=off`.
 
-## 🤖 Copiloto Clínico (IA)
+## 🤖 Inteligência (IA)
 
-Assistente de IA ancorado no **conteúdo dos próprios protocolos** do app (padrão
-RAG). Responde dúvidas de conduta, explica o porquê de cada passo (modo ensino),
-calcula doses conversando e **gera o relatório de parada** a partir do log do
-Copiloto de RCP. Suporta **voz** (falar a pergunta e ouvir a resposta).
+Recursos de IA ancorados no **conteúdo dos próprios protocolos** do app (padrão
+RAG), todos servidos pela mesma função serverless segura (`api/ai.js`), cada um
+com um *system prompt* clínico próprio (modos `chat`, `narrate`, `debriefing`,
+`prioritize`, `triage`, `alerts`):
+
+- **Copiloto Clínico** — chat de dúvidas de conduta, modo ensino e cálculo de doses conversando, com **voz** (falar a pergunta e ouvir a resposta).
+- **Modo explicativo por protocolo** — dentro de qualquer protocolo, o botão "Tirar dúvidas com a IA" abre o copiloto já **focado** naquele tema, com sugestões específicas.
+- **Triagem por sintomas** — na home, descreva o caso (texto ou voz) e a IA sugere os protocolos certos, com atalho para abri-los.
+- **Comandos de voz no RCP** — durante a parada, diga "choquei", "adrenalina", "amiodarona", "reavaliar", "rce" ou "metrônomo" para operar sem tocar a tela.
+- **Priorizador de 5H/5T** — informe K⁺, temperatura e contexto e a IA ranqueia as causas reversíveis mais prováveis.
+- **Relatório de parada** — gera o registro cronológico da RCP a partir do log, pronto para prontuário.
+- **Debriefing pós-código** — após o RCE, analisa o log frente às diretrizes ACLS (timing de adrenalina/amiodarona, ciclos) para fins educacionais.
+- **Alertas de interação** — na aba de medicamentos, verifica interações e riscos de segurança das drogas do protocolo.
+
+> Todo recurso de IA é **apoio à decisão** — a responsabilidade clínica é do médico assistente.
 
 **Segurança da chave:** a chave da OpenAI vive **somente** na função serverless
 `api/ai.js` (Vercel Edge), lida de `OPENAI_API_KEY`. O navegador chama `/api/ai`

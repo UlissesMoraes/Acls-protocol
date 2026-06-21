@@ -7,6 +7,8 @@ import DoseCalc from "./components/DoseCalc.jsx";
 import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
+import SymptomTriage from "./components/SymptomTriage.jsx";
+import DrugAlerts from "./components/DrugAlerts.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
@@ -21,6 +23,7 @@ export default function App() {
   const [proto, setProto] = useState(null);
   const [tools, setTools] = useState(false);
   const [tool, setTool] = useState(null);
+  const [aiFocus, setAiFocus] = useState(null);
   const [tab, setTab] = useState("cascade");
   const [openSteps, setOpenSteps] = useState({});
   const [cat, setCat] = useState("Todos");
@@ -108,7 +111,7 @@ export default function App() {
     pushView({ proto:id });
   };
   const openTools = () => { setTools(true); setTool(null); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true }); };
-  const openTool = (id) => { setTools(true); setTool(id); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true, tool:id }); };
+  const openTool = (id, focus = null) => { setTools(true); setTool(id); setAiFocus(focus); setProto(null); window.scrollTo({ top:0 }); pushView({ tools:true, tool:id, aiFocus:focus }); };
   const QUICK_TOOLS = [
     { Ic:Icons.Siren, color:"#C53030", label:"Códigos RCP", sub:"Adulto · ACLS", id:"code" },
     { Ic:Icons.Sparkles, color:"#7C3AED", label:"Copiloto Clínico", sub:"IA · voz e texto", id:"assistant" },
@@ -123,6 +126,7 @@ export default function App() {
       setProto(s.proto || null);
       setTools(!!s.tools);
       setTool(s.tool || null);
+      setAiFocus(s.aiFocus || null);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -364,6 +368,13 @@ export default function App() {
               </div>
             )}
 
+            {/* Triagem por sintomas (IA) */}
+            {!q.trim() && (
+              <div style={{ marginBottom:18 }}>
+                <SymptomTriage protocols={protocols} onOpen={(id)=>openProto(id)} />
+              </div>
+            )}
+
             {/* Ferramentas rápidas */}
             {!q.trim() && (
               <div style={{ marginBottom:18 }}>
@@ -497,7 +508,7 @@ export default function App() {
               )}
 
               {kind === "code" && <CodeTimer />}
-              {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} />}
+              {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
             </div>
@@ -551,6 +562,20 @@ export default function App() {
                 }}><t.Ic size={15} strokeWidth={2} /> {t.lbl}</button>
               ))}
             </div>
+
+            {/* Atalho: explicar este protocolo com IA */}
+            <button onClick={()=>openTool("assistant", cur.id)}
+              style={{ display:"flex", alignItems:"center", gap:9, width:"100%", marginBottom:18, padding:"11px 14px", borderRadius:10, cursor:"pointer", textAlign:"left", fontFamily:sans,
+                background:"color-mix(in srgb,#7C3AED 7%,var(--surface))", border:"1px solid color-mix(in srgb,#7C3AED 28%,var(--border))" }}>
+              <span style={{ width:34, height:34, borderRadius:9, background:"color-mix(in srgb,#7C3AED 16%,var(--surface))", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Icons.Sparkles size={18} color="#7C3AED" />
+              </span>
+              <span style={{ flex:1, minWidth:0 }}>
+                <span style={{ display:"block", fontSize:13, fontWeight:700, color:"var(--text-strong)" }}>Tirar dúvidas com a IA</span>
+                <span style={{ display:"block", fontSize:11.5, color:S }}>Por que de cada passo, doses e gravidade — focado em {cur.label}</span>
+              </span>
+              <Icons.ChevronRight size={18} color="var(--muted-2)" style={{ flexShrink:0 }} />
+            </button>
 
             {/* ── CASCADE TAB ── */}
             {tab === "cascade" && (
@@ -666,6 +691,7 @@ export default function App() {
             {/* ── DRUGS TAB ── */}
             {tab==="drugs" && (
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                {cur.drugs.length>1 && <DrugAlerts protocol={cur} weight={weight} color={cur.color} />}
                 {cur.drugs.map((d,i) => (
                   <div key={i} style={{ background:W, border:`1px solid ${BD}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
                     <div style={{ background:tint(cur.color), borderBottom:`1px solid ${cur.border}33`, padding:"12px 18px" }}>

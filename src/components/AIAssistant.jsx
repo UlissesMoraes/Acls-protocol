@@ -96,7 +96,7 @@ const SUGGESTIONS = [
   "Resumo da conduta inicial no AVC isquêmico (< 4,5h).",
 ];
 
-export default function AIAssistant({ protocols, weight, focusId }) {
+export default function AIAssistant({ protocols, weight, focusId, focusLabel }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -111,6 +111,17 @@ export default function AIAssistant({ protocols, weight, focusId }) {
     () => (focusId ? buildFocusedContext(protocols, focusId) : buildKnowledgeBase(protocols)),
     [protocols, focusId]
   );
+
+  // Sugestões: específicas do protocolo em foco (modo explicativo) ou genéricas.
+  const suggestions = useMemo(() => {
+    if (focusLabel) return [
+      `Explique o racional da conduta inicial de ${focusLabel}.`,
+      `Quais os erros mais comuns no manejo de ${focusLabel}?`,
+      `Quais critérios definem gravidade em ${focusLabel}?`,
+      `Resuma as doses-chave deste protocolo.`,
+    ];
+    return SUGGESTIONS;
+  }, [focusLabel]);
 
   const speech = useSpeech(setInput);
 
@@ -198,7 +209,11 @@ export default function AIAssistant({ protocols, weight, focusId }) {
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-strong)" }}>Copiloto Clínico</div>
-          <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans }}>Ancorado nos protocolos do app · ACLS/SBC</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, display: "flex", alignItems: "center", gap: 5 }}>
+            {focusLabel
+              ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "color-mix(in srgb,#7C3AED 16%,var(--surface))", color: "#7C3AED", fontWeight: 700, padding: "1px 8px", borderRadius: 20, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Foco: {focusLabel}</span>
+              : "Ancorado nos protocolos do app · ACLS/SBC"}
+          </div>
         </div>
         <button onClick={() => setSpeakOn(s => { if (s) window.speechSynthesis?.cancel(); return !s; })} aria-label={speakOn ? "Desativar leitura em voz" : "Ler respostas em voz"}
           style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 9, border: `1px solid ${speakOn ? "#7C3AED" : "var(--input-border)"}`, background: speakOn ? "color-mix(in srgb,#7C3AED 14%,var(--surface))" : "var(--surface)", color: speakOn ? "#7C3AED" : "var(--muted)", cursor: "pointer" }}>
@@ -218,10 +233,10 @@ export default function AIAssistant({ protocols, weight, focusId }) {
             <span style={{ width: 56, height: 56, borderRadius: 16, background: "color-mix(in srgb,#7C3AED 14%,var(--surface))", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
               <Stethoscope size={28} color="#7C3AED" />
             </span>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>Pergunte sobre os protocolos</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>{focusLabel ? `Tire dúvidas sobre ${focusLabel}` : "Pergunte sobre os protocolos"}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", fontFamily: sans, marginTop: 4, marginBottom: 16, lineHeight: 1.5 }}>Tire dúvidas de conduta, peça o porquê de cada passo ou calcule doses conversando.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {SUGGESTIONS.map((s, i) => (
+              {suggestions.map((s, i) => (
                 <button key={i} onClick={() => send(s)} style={{ textAlign: "left", padding: "11px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13, fontFamily: sans, cursor: "pointer", lineHeight: 1.4 }}>
                   {s}
                 </button>

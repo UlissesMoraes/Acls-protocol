@@ -1,8 +1,6 @@
 // ─── CONTEXTO CLÍNICO PARA A IA ───────────────────────────────────────────────
-// Condensa os protocolos do app em texto compacto, enviado como "fonte oficial"
-// para ancorar as respostas da IA (padrão RAG simples — a base é o próprio app).
+// Condensa os protocolos do app em texto compacto enviado como "fonte oficial".
 
-// Resumo de UM protocolo, em texto enxuto.
 function protoToText(p) {
   const lines = [];
   lines.push(`### ${p.label} — ${p.cat}`);
@@ -34,12 +32,10 @@ function protoToText(p) {
   return lines.join("\n");
 }
 
-// Base de conhecimento completa (todos os protocolos).
 export function buildKnowledgeBase(protocols) {
   return (protocols || []).map(protoToText).join("\n\n");
 }
 
-// Contexto focado: o protocolo atual em destaque + índice dos demais (economiza tokens).
 export function buildFocusedContext(protocols, focusId) {
   if (!protocols?.length) return "";
   const focus = protocols.find(p => p.id === focusId);
@@ -51,7 +47,7 @@ export function buildFocusedContext(protocols, focusId) {
   return `PROTOCOLO EM FOCO:\n${protoToText(focus)}\n\nOUTROS PROTOCOLOS DISPONÍVEIS NO APP:\n${others}`;
 }
 
-// ── Narração de RCP: transforma o estado/log do Copiloto em texto estruturado ──
+// ── Narração de RCP ──────────────────────────────────────────────────────────
 export function buildRcpLogText({ startTs, durationStr, shocks, epiCount, amioCount, events }) {
   const head = [
     `Início da PCR: ${startTs ? new Date(startTs).toLocaleString("pt-BR") : "—"}`,
@@ -62,4 +58,39 @@ export function buildRcpLogText({ startTs, durationStr, shocks, epiCount, amioCo
   ];
   const body = (events || []).map(e => `${e.tStr} — ${e.label}`);
   return [...head, ...body].join("\n");
+}
+
+// ── Debriefing pós-código ────────────────────────────────────────────────────
+// Formata o log com contexto de ritmo para análise de aderência ao protocolo.
+export function buildDebriefText({ startTs, durationStr, shocks, epiCount, amioCount, rhythm, events }) {
+  const lines = [
+    `=== LOG DE ATENDIMENTO ===`,
+    `Data/hora: ${startTs ? new Date(startTs).toLocaleString("pt-BR") : "—"}`,
+    `Duração total: ${durationStr}`,
+    `Ritmo inicial: ${rhythm === "shock" ? "CHOCÁVEL (FV/TV sem pulso)" : rhythm === "nonshock" ? "NÃO CHOCÁVEL (AESP/Assistolia)" : "não registrado"}`,
+    `Desfibrilações: ${shocks}`,
+    `Adrenalina (nº de doses): ${epiCount}`,
+    `Amiodarona (nº de doses): ${amioCount}`,
+    "",
+    "Linha do tempo:",
+    ...(events || []).map(e => `  ${e.tStr}  ${e.label}`),
+    "",
+    "=== FIM DO LOG ===",
+    "Analise SOMENTE os dados acima. Não invente eventos não registrados.",
+  ];
+  return lines.join("\n");
+}
+
+// ── Priorizador de 5H/5T ─────────────────────────────────────────────────────
+export function buildPrioritizerInput({ k, temp, context, rhythm, elapsed }) {
+  const parts = [
+    `Contexto da PCR:`,
+    `- Ritmo: ${rhythm === "shock" ? "chocável (FV/TV)" : rhythm === "nonshock" ? "não chocável (AESP/Assistolia)" : "não definido"}`,
+    `- Duração da PCR até agora: ${elapsed}`,
+  ];
+  if (k) parts.push(`- Potássio sérico: ${k} mEq/L`);
+  if (temp) parts.push(`- Temperatura: ${temp} °C`);
+  if (context?.trim()) parts.push(`- Contexto clínico/histórico: ${context.trim()}`);
+  parts.push("", "Com base nesses dados, ranqueie as causas reversíveis mais prováveis (5H e 5T).");
+  return parts.join("\n");
 }

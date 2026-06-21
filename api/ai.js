@@ -11,11 +11,12 @@
 export const config = { runtime: "edge" };
 
 const DEFAULT_MODEL = "gpt-4o-mini";
-const MAX_MESSAGES = 24;          // teto de histórico por requisição
-const MAX_CHARS_PER_MSG = 4000;   // teto por mensagem
-const MAX_CONTEXT_CHARS = 24000;  // teto do contexto clínico injetado
+const MAX_MESSAGES = 24;
+const MAX_CHARS_PER_MSG = 4000;
+const MAX_CONTEXT_CHARS = 24000;
 
-// ── Prompts de sistema (governança clínica) ──
+// ── Prompts de sistema por modo ──────────────────────────────────────────────
+
 const BASE_RULES = `Você é o "Copiloto Clínico" do aplicativo Protocolos de Emergência ACLS 2025, usado por médicos e profissionais de saúde no Brasil.
 
 Princípios obrigatórios:
@@ -38,11 +39,96 @@ Produza um texto formal, cronológico e conciso, em português do Brasil, pronto
 - desfecho (RCE / em curso) e condutas pós-PCR, se houver.
 NÃO invente dados que não estejam no log. Finalize com: "Documento gerado por assistente — conferir antes de registrar em prontuário."`;
 
+const DEBRIEFING_RULES = `Você analisa o log de um atendimento de PCR (ACLS adulto) e fornece um DEBRIEFING estruturado da qualidade do atendimento.
+
+Compare cada decisão com as diretrizes AHA/ACLS 2020–2025:
+- Adrenalina: 1ª dose ASAP em ritmo não chocável, ou após 2º choque em chocável; repetir a cada 3–5 min (idealmente 3 min)
+- Amiodarona 300 mg: após o 3º choque (1ª dose); 150 mg após o 5º choque (2ª dose)
+- Ciclos de RCP: 2 minutos; desvio > 20 s merece nota
+- RCE: identificar e documentar; condutas pós-PCR iniciadas
+
+Formato OBRIGATÓRIO de saída (use exatamente esses cabeçalhos):
+**✅ Dentro do protocolo:**
+(liste pontos positivos com horário, ex: "Adrenalina em 02:15 — dentro da janela")
+
+**⚠️ Pontos de atenção:**
+(desvios encontrados com horário, o que era esperado vs o que ocorreu, e sugestão de melhoria)
+
+**📋 Resumo geral:**
+(1–2 frases sobre a qualidade do atendimento)
+
+Seja objetivo, clínico e não punitivo. Lembre que é análise educacional.`;
+
+const PRIORITIZE_RULES = `Você é um especialista em PCR e causas reversíveis (5H e 5T — AHA/ACLS 2020).
+
+Com base nos dados clínicos fornecidos, ranqueie as causas reversíveis mais PROVÁVEIS desta PCR, da mais para a menos provável.
+
+5H: Hipóxia · Hipovolemia · Hidrogênio (acidose) · Hipo/Hipercalemia · Hipotermia
+5T: Tensão no tórax (pneumotórax) · Tamponamento cardíaco · Tóxicos · Trombose pulmonar (TEP) · Trombose coronariana (IAM)
+
+Para cada causa do top 3–4:
+- Probabilidade estimada (alta / média / baixa)
+- Achado clínico ou exame que a confirma/exclui
+- Intervenção imediata
+
+Seja MUITO direto e rápido — o médico está em uma emergência ativa.
+Finalize com: "⚠️ Investigar e tratar em paralelo com a RCP."`;
+
+const TRIAGE_RULES = `Você analisa a descrição de um quadro clínico e sugere os 2–3 PROTOCOLOS mais relevantes do app "Protocolos de Emergência ACLS 2025".
+
+Protocolos disponíveis (id → nome):
+taquiarritmias → Taquiarritmias
+bradiarritmias → Bradiarritmias
+pcr → Parada Cardiorrespiratória (PCR)
+iamcssst → IAM com Supra de ST
+iamssst → SCA sem Supra de ST
+intoxicacoes → Intoxicações Agudas
+sepse → Sepse e Choque Séptico
+cad → Cetoacidose Diabética
+hhns → Estado Hiperosmolar
+avc → AVC / Síndromes Neurológicas
+convulsoes → Síndrome Convulsiva
+amax4 → Anafilaxia / Asma Grave
+hidroeletroliticos → Distúrbios Hidroeletrolíticos
+vasoativas → Drogas Vasoativas e Inotrópicos
+
+Responda com os protocolos mais relevantes em ordem de prioridade, uma linha por protocolo: **Nome do protocolo** — justificativa em uma frase.
+Se o quadro for urgência extrema (PCR, anafilaxia, IAMCSSST), destaque em negrito.
+Se o quadro não se encaixar em nenhum protocolo, diga claramente.
+Na ÚLTIMA linha, emita SOMENTE os ids sugeridos (na ordem) neste formato exato, sem mais nada: [[id1, id2, id3]]`;
+
+const ALERTS_RULES = `Você é farmacêutico clínico de emergência. Receberá uma lista de medicações de um protocolo e dados do paciente, e deve sinalizar ALERTAS DE SEGURANÇA acionáveis.
+
+Foque APENAS no que muda conduta:
+- Interações relevantes entre as drogas listadas (ex.: duas que prolongam QT, depressão respiratória aditiva, hipotensão somada)
+- Drogas que alongam o intervalo QT (sinalizar risco de torsades)
+- Ajuste/risco em disfunção renal ou hepática quando aplicável
+- Cuidados de diluição/velocidade que evitam eventos graves (ex.: extravasamento de vasopressor, bolus rápido)
+
+Formato OBRIGATÓRIO:
+**🚨 Alertas críticos:** (ou "Nenhum alerta crítico entre as drogas listadas")
+- itens curtos e diretos
+
+**⚠️ Atenção:**
+- itens curtos
+
+Seja conciso (máx ~8 bullets). NÃO repita as doses do protocolo. Não invente interações inexistentes.
+Finalize: "Apoio à decisão — confira a bula e o quadro do paciente."`;
+
+const MODE_CONFIGS = {
+  chat:       { rules: BASE_RULES,       temp: 0.3, maxTok: 1100, useCtx: true },
+  narrate:    { rules: NARRATE_RULES,    temp: 0.2, maxTok: 900,  useCtx: false },
+  debriefing: { rules: DEBRIEFING_RULES, temp: 0.2, maxTok: 900,  useCtx: false },
+  prioritize: { rules: PRIORITIZE_RULES, temp: 0.2, maxTok: 600,  useCtx: false },
+  triage:     { rules: TRIAGE_RULES,     temp: 0.2, maxTok: 500,  useCtx: false },
+  alerts:     { rules: ALERTS_RULES,     temp: 0.2, maxTok: 600,  useCtx: false },
+};
+
 function systemPrompt(mode, context) {
-  const rules = mode === "narrate" ? NARRATE_RULES : BASE_RULES;
-  const ctx = (context || "").slice(0, MAX_CONTEXT_CHARS);
-  if (!ctx) return rules;
-  return `${rules}\n\n──────────\nCONTEÚDO DOS PROTOCOLOS (fonte oficial do app):\n${ctx}`;
+  const cfg = MODE_CONFIGS[mode] || MODE_CONFIGS.chat;
+  const ctx = cfg.useCtx ? (context || "").slice(0, MAX_CONTEXT_CHARS) : "";
+  if (!ctx) return cfg.rules;
+  return `${cfg.rules}\n\n──────────\nCONTEÚDO DOS PROTOCOLOS (fonte oficial do app):\n${ctx}`;
 }
 
 const json = (obj, status = 200) =>
@@ -52,7 +138,6 @@ export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  // Restrição de origem opcional (best-effort contra abuso casual)
   const allowed = process.env.AI_ALLOWED_ORIGIN;
   if (allowed) {
     const origin = req.headers.get("origin") || "";
@@ -70,11 +155,13 @@ export default async function handler(req) {
   let body;
   try { body = await req.json(); } catch { return json({ error: "JSON inválido" }, 400); }
 
-  const mode = body.mode === "narrate" ? "narrate" : "chat";
+  const VALID_MODES = Object.keys(MODE_CONFIGS);
+  const mode = VALID_MODES.includes(body.mode) ? body.mode : "chat";
+  const cfg = MODE_CONFIGS[mode];
+
   let messages = Array.isArray(body.messages) ? body.messages : [];
   if (!messages.length) return json({ error: "messages vazio" }, 400);
 
-  // Sanitização: papéis válidos, tamanho e quantidade
   messages = messages
     .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
     .slice(-MAX_MESSAGES)
@@ -84,8 +171,8 @@ export default async function handler(req) {
   const payload = {
     model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
     messages: [{ role: "system", content: systemPrompt(mode, body.context) }, ...messages],
-    temperature: mode === "narrate" ? 0.2 : 0.3,
-    max_tokens: mode === "narrate" ? 900 : 1100,
+    temperature: cfg.temp,
+    max_tokens: cfg.maxTok,
     stream: true,
   };
 
@@ -105,7 +192,6 @@ export default async function handler(req) {
     return json({ error: "Erro da OpenAI", status: upstream.status, detail: detail.slice(0, 500) }, 502);
   }
 
-  // Repassa o stream SSE da OpenAI direto ao cliente (parsing feito no front).
   return new Response(upstream.body, {
     status: 200,
     headers: {

@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { Siren, Timer, Zap, Syringe, Pill, TriangleAlert, Wind, Check, ChevronDown, Activity, RotateCcw, Volume2, VolumeX, HeartPulse, Sparkles, FileText, Square } from "lucide-react";
+import {
+  Siren, Zap, Syringe, Pill, TriangleAlert, Wind, Check, ChevronDown,
+  Activity, RotateCcw, Volume2, VolumeX, HeartPulse, Sparkles, FileText,
+  Square, Mic, MicOff, Brain, ClipboardList,
+} from "lucide-react";
 import { shockableMed, H5, T5, ventilation } from "../data/acls.js";
 import { streamChat, AIConfigError } from "../lib/aiClient.js";
-import { buildRcpLogText } from "../lib/clinicalContext.js";
+import { buildRcpLogText, buildDebriefText, buildPrioritizerInput } from "../lib/clinicalContext.js";
 
 const sans = "var(--font)";
-const CYCLE_S = 120;   // ciclo de RCP: 2 min
-const EPI_S = 180;     // intervalo da adrenalina: 3 min
-const BPM = 110;       // metrônomo: meio da faixa 100–120
+const CYCLE_S = 120;
+const EPI_S = 180;
+const BPM = 110;
 
 const fmt = s => {
   const m = Math.floor(Math.max(0, s) / 60), r = Math.floor(Math.max(0, s) % 60);
@@ -35,14 +39,82 @@ function CycleRing({ left }) {
   );
 }
 
+// Comandos de voz mapeados para ações (palavras-chave em pt-BR)
+const VOICE_PATTERNS = [
+  { words: ["choquei", "choque aplicado", "choque dado", "desfibrilei", "desfibrilação aplicada"], key: "shock" },
+  { words: ["adrenalina dada", "adrenalina administrada", "adrenalina", "epinefrina"], key: "epi" },
+  { words: ["amiodarona dada", "amiodarona administrada", "amiodarona", "cordarone"], key: "amio" },
+  { words: ["medicação dada", "medicação administrada", "medicamento dado", "droga dada"], key: "med" },
+  { words: ["reavaliar ritmo", "analisar ritmo", "checar ritmo", "reavaliar"], key: "recheck" },
+  { words: ["rce", "circulação retornou", "pulso voltou", "ritmo sinusal"], key: "rce" },
+  { words: ["metrônomo"], key: "metro" },
+];
+
+function matchCmd(text) {
+  const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  for (const pat of VOICE_PATTERNS) {
+    for (const w of pat.words) {
+      const wn = w.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (t.includes(wn)) return pat.key;
+    }
+  }
+  return null;
+}
+
+// Painel reutilizável para uma saída de IA (relatório, debriefing).
+function AIPanel({ title, Ic, color, result, loading, error, onGenerate, onCopy, copied: isCopied, abort, desc, emptyLabel = "Gerar" }) {
+  return (
+    <div style={{ border: `1px solid color-mix(in srgb,${color} 30%,var(--border))`, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+      <div style={{ background: `color-mix(in srgb,${color} 9%,var(--surface))`, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, borderBottom: result || error || loading ? "1px solid var(--border)" : "none" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>
+          <Ic size={15} color={color} /> {title}
+        </span>
+        {loading ? (
+          <button onClick={() => abort.current?.abort()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 6, border: "none", background: "#C53030", color: "#fff", fontSize: 11, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+            <Square size={11} fill="#fff" /> Parar
+          </button>
+        ) : (
+          <button onClick={onGenerate} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 13px", borderRadius: 7, border: "none", background: color, color: "#fff", fontSize: 11.5, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+            <Sparkles size={13} /> {result ? "Refazer" : emptyLabel}
+          </button>
+        )}
+      </div>
+      {(result || loading) && (
+        <div style={{ padding: "12px 14px" }}>
+          <div style={{ fontSize: 12.5, color: "var(--text)", fontFamily: sans, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+            {result}{loading && <span style={{ opacity: .5 }}>▍</span>}
+          </div>
+          {result && !loading && (
+            <button onClick={onCopy} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--surface)", fontSize: 11.5, fontFamily: sans, fontWeight: 600, cursor: "pointer", color: "var(--text)" }}>
+              {isCopied ? "✓ Copiado!" : "Copiar"}
+            </button>
+          )}
+        </div>
+      )}
+      {error && <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--danger-fg)", fontFamily: sans, background: "var(--danger-bg)" }}>{error}</div>}
+      {!result && !loading && !error && <div style={{ padding: "10px 14px", fontSize: 11.5, color: "var(--muted)", fontFamily: sans, lineHeight: 1.5 }}>{desc}</div>}
+    </div>
+  );
+}
+
+const VOICE_LABELS = {
+  shock: "Choque confirmado",
+  epi: "Adrenalina confirmada",
+  amio: "Amiodarona confirmada",
+  med: "Medicação confirmada",
+  recheck: "Reavaliando ritmo",
+  rce: "RCE registrado",
+  metro: "Metrônomo alternado",
+};
+
 export default function CodeTimer() {
   const [startTs, setStartTs] = useState(null);
   const [endTs, setEndTs] = useState(null);
   const [now, setNow] = useState(Date.now());
 
-  const [phase, setPhase] = useState("idle");   // idle | analyze | shock | cpr
-  const [rhythm, setRhythm] = useState(null);    // 'shock' | 'nonshock'
-  const [airway, setAirway] = useState("basic"); // 'basic' | 'advanced'
+  const [phase, setPhase] = useState("idle");
+  const [rhythm, setRhythm] = useState(null);
+  const [airway, setAirway] = useState("basic");
 
   const [shocks, setShocks] = useState(0);
   const [cycle, setCycle] = useState(0);
@@ -57,12 +129,33 @@ export default function CodeTimer() {
   const [metroOn, setMetroOn] = useState(false);
   const [showCauses, setShowCauses] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // IA: relatório de parada
   const [narrative, setNarrative] = useState("");
   const [narrating, setNarrating] = useState(false);
   const [narrErr, setNarrErr] = useState(null);
   const [narrCopied, setNarrCopied] = useState(false);
-  const audioRef = useRef(null);
   const narrAbort = useRef(null);
+
+  // IA: debriefing pós-código
+  const [debrief, setDebrief] = useState("");
+  const [debriefing, setDebriefing] = useState(false);
+  const [debriefErr, setDebriefErr] = useState(null);
+  const [debriefCopied, setDebriefCopied] = useState(false);
+  const debriefAbort = useRef(null);
+
+  // IA: priorizador de 5H/5T
+  const [causesForm, setCausesForm] = useState({ k: "", temp: "", context: "" });
+  const [causePriority, setCausePriority] = useState("");
+  const [prioritizing, setPrioritizing] = useState(false);
+  const [prioErr, setPrioErr] = useState(null);
+  const prioAbort = useRef(null);
+
+  // Comandos de voz
+  const [voiceCmd, setVoiceCmd] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState(null); // { key, success, ts }
+  const cmdRecRef = useRef(null);
+  const audioRef = useRef(null);
 
   const running = startTs !== null && endTs === null;
   const elapsed = startTs ? ((endTs || now) - startTs) / 1000 : 0;
@@ -73,6 +166,59 @@ export default function CodeTimer() {
 
   const log = label => setEvents(ev => [...ev, { t: startTs ? (Date.now() - startTs) / 1000 : 0, label }]);
 
+  // ── Medicação devida ──
+  let cycleMed = null;
+  if (phase === "cpr") {
+    if (rhythm === "shock") cycleMed = shockableMed(shocks);
+    else if (rhythm === "nonshock" && (epiCount === 0 || (epiSince ?? 999) >= EPI_S))
+      cycleMed = { key: "epi", label: "Adrenalina 1 mg", drug: "Adrenalina" };
+  }
+  const medPending = cycleMed && doneCycle !== cycle;
+
+  // ── Handlers ──
+  const beginCycle = () => { setCycle(c => c + 1); setCycleStart(Date.now()); setPhase("cpr"); };
+  const chooseShockable = () => { setRhythm("shock"); setPhase("shock"); log("Ritmo CHOCÁVEL (FV/TV sem pulso)"); };
+  const chooseNonShock = () => { setRhythm("nonshock"); log("Ritmo NÃO CHOCÁVEL (AESP/Assistolia)"); beginCycle(); };
+
+  const deliverShock = () => {
+    const next = shocks + 1;
+    setShocks(next);
+    log(`Choque nº ${next} aplicado — retomar RCP imediatamente`);
+    if (navigator.vibrate) navigator.vibrate(150);
+    setCycle(c => c + 1); setCycleStart(Date.now()); setPhase("cpr");
+  };
+
+  const giveMed = med => {
+    if (med.key === "epi") { setEpiCount(c => c + 1); setLastEpiTs(Date.now()); }
+    if (med.key === "amio300") setAmio300(true);
+    if (med.key === "amio150") setAmio150(true);
+    setDoneCycle(cycle);
+    log(`${med.label} administrada`);
+    if (navigator.vibrate) navigator.vibrate(60);
+  };
+
+  const recheck = () => { setPhase("analyze"); log("Reavaliação de ritmo (antecipada)"); };
+  const rce = () => { setEndTs(Date.now()); setMetroOn(false); setPhase("idle"); log("RCE — retorno da circulação espontânea · cuidados pós-PCR"); };
+
+  const start = () => {
+    const t = Date.now();
+    setStartTs(t); setEndTs(null); setNow(t);
+    setPhase("analyze"); setRhythm(null);
+    setShocks(0); setCycle(0); setCycleStart(null);
+    setEpiCount(0); setLastEpiTs(null); setAmio300(false); setAmio150(false); setDoneCycle(-1);
+    setEvents([{ t: 0, label: "Início da RCP — iniciar compressões e analisar ritmo" }]);
+    if (navigator.vibrate) navigator.vibrate(80);
+  };
+
+  const reset = () => {
+    stopVoiceCmd();
+    setStartTs(null); setEndTs(null); setPhase("idle"); setRhythm(null); setEvents([]);
+    setMetroOn(false); setNarrative(""); setNarrErr(null); setDebrief(""); setDebriefErr(null);
+    setCausePriority(""); setPrioErr(null); setCausesForm({ k: "", temp: "", context: "" });
+    narrAbort.current?.abort(); debriefAbort.current?.abort(); prioAbort.current?.abort();
+  };
+
+  // ── Timers ──
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => setNow(Date.now()), 500);
@@ -87,6 +233,7 @@ export default function CodeTimer() {
     }
   }, [expired]); // eslint-disable-line
 
+  // Wake lock
   useEffect(() => {
     if (!running || !("wakeLock" in navigator)) return;
     let lock = null;
@@ -97,6 +244,7 @@ export default function CodeTimer() {
     return () => { document.removeEventListener("visibilitychange", onVis); if (lock) lock.release().catch(() => {}); };
   }, [running]);
 
+  // Metrônomo (Web Audio)
   useEffect(() => {
     if (!metroOn || !running) return;
     const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -115,54 +263,50 @@ export default function CodeTimer() {
     return () => clearInterval(id);
   }, [metroOn, running]);
 
-  // ── Medicação devida na fase atual ──
-  let cycleMed = null;
-  if (phase === "cpr") {
-    if (rhythm === "shock") cycleMed = shockableMed(shocks);
-    else if (rhythm === "nonshock" && (epiCount === 0 || (epiSince ?? 999) >= EPI_S))
-      cycleMed = { key: "epi", label: "Adrenalina 1 mg", drug: "Adrenalina" };
-  }
-  const medPending = cycleMed && doneCycle !== cycle;
+  // ── Comandos de voz ──────────────────────────────────────────────────────────
+  const hasSpeech = typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
-  // ── Handlers ──
-  const start = () => {
-    const t = Date.now();
-    setStartTs(t); setEndTs(null); setNow(t);
-    setPhase("analyze"); setRhythm(null);
-    setShocks(0); setCycle(0); setCycleStart(null);
-    setEpiCount(0); setLastEpiTs(null); setAmio300(false); setAmio150(false); setDoneCycle(-1);
-    setEvents([{ t: 0, label: "Início da RCP — iniciar compressões e analisar ritmo" }]);
-    if (navigator.vibrate) navigator.vibrate(80);
-  };
-  const beginCycle = () => { setCycle(c => c + 1); setCycleStart(Date.now()); setPhase("cpr"); };
-  const chooseShockable = () => { setRhythm("shock"); setPhase("shock"); log("Ritmo CHOCÁVEL (FV/TV sem pulso)"); };
-  const chooseNonShock = () => { setRhythm("nonshock"); log("Ritmo NÃO CHOCÁVEL (AESP/Assistolia)"); beginCycle(); };
-  const deliverShock = () => {
-    const n = shocks + 1;
-    setShocks(n);
-    log(`Choque nº ${n} aplicado — retomar RCP imediatamente`);
-    if (navigator.vibrate) navigator.vibrate(150);
-    setCycle(c => c + 1); setCycleStart(Date.now()); setPhase("cpr");
-  };
-  const giveMed = med => {
-    if (med.key === "epi") { setEpiCount(c => c + 1); setLastEpiTs(Date.now()); }
-    if (med.key === "amio300") setAmio300(true);
-    if (med.key === "amio150") setAmio150(true);
-    setDoneCycle(cycle);
-    log(`${med.label} administrada`);
-    if (navigator.vibrate) navigator.vibrate(60);
-  };
-  const recheck = () => { setPhase("analyze"); log("Reavaliação de ritmo (antecipada)"); };
-  const rce = () => { setEndTs(Date.now()); setMetroOn(false); setPhase("idle"); log("RCE — retorno da circulação espontânea · cuidados pós-PCR"); };
-  const reset = () => { setStartTs(null); setEndTs(null); setPhase("idle"); setRhythm(null); setEvents([]); setMetroOn(false); setNarrative(""); setNarrErr(null); narrAbort.current?.abort(); };
-
-  const copyLog = async () => {
-    const head = `REGISTRO DE RCP — ${new Date(startTs).toLocaleString("pt-BR")}\nDuração: ${fmt(elapsed)}\nChoques: ${shocks} · Adrenalina: ${epiCount} · Amiodarona: ${amioCount}\n\n`;
-    const body = events.map(e => `${fmt(e.t)} — ${e.label}`).join("\n");
-    try { await navigator.clipboard.writeText(head + body + "\n\nGerado pelo app Protocolos ACLS — conferir antes de registrar em prontuário."); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+  const stopVoiceCmd = () => {
+    cmdRecRef.current?.abort?.();
+    cmdRecRef.current = null;
+    setVoiceCmd(false);
   };
 
-  // Gera o relatório de parada (narração) com IA, a partir do log estruturado.
+  // "Latest ref": rec.onresult sempre chama a versão mais recente (sem closure velha).
+  const processCmdRef = useRef(() => {});
+  processCmdRef.current = (text) => {
+    const cmdKey = matchCmd(text);
+    if (!cmdKey) return;
+    let success = false;
+    if (cmdKey === "shock" && phase === "shock") { deliverShock(); success = true; }
+    else if ((cmdKey === "epi" || cmdKey === "med") && medPending && cycleMed?.key === "epi") { giveMed(cycleMed); success = true; }
+    else if ((cmdKey === "amio" || cmdKey === "med") && medPending && cycleMed?.key?.startsWith("amio")) { giveMed(cycleMed); success = true; }
+    else if (cmdKey === "recheck" && phase === "cpr") { recheck(); success = true; }
+    else if (cmdKey === "rce" && running) { rce(); stopVoiceCmd(); success = true; }
+    else if (cmdKey === "metro") { setMetroOn(m => !m); success = true; }
+    setVoiceFeedback({ key: cmdKey, success, ts: Date.now() });
+    setTimeout(() => setVoiceFeedback(null), 2500);
+  };
+
+  const toggleVoiceCmd = () => {
+    if (!hasSpeech) return;
+    if (voiceCmd) { stopVoiceCmd(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = "pt-BR"; rec.continuous = true; rec.interimResults = false;
+    rec.onresult = e => processCmdRef.current(e.results[e.results.length - 1][0].transcript);
+    rec.onend = () => { if (cmdRecRef.current === rec) { try { rec.start(); } catch {} } };
+    rec.onerror = () => {};
+    try { rec.start(); } catch {}
+    cmdRecRef.current = rec;
+    setVoiceCmd(true);
+  };
+
+  // Para o reconhecimento quando a RCP termina e ao desmontar
+  useEffect(() => { if (!running && voiceCmd) stopVoiceCmd(); }, [running]); // eslint-disable-line
+  useEffect(() => () => cmdRecRef.current?.abort?.(), []);
+
+  // ── IA: relatório de parada ──────────────────────────────────────────────────
   const generateNarrative = async () => {
     if (narrating || !events.length) return;
     setNarrErr(null); setNarrative("");
@@ -176,18 +320,70 @@ export default function CodeTimer() {
     try {
       await streamChat({
         mode: "narrate", signal: ctrl.signal,
-        messages: [{ role: "user", content: `Gere o relatório de parada a partir deste log:\n\n${logText}` }],
+        messages: [{ role: "user", content: `Gere o relatório de parada:\n\n${logText}` }],
         onToken: d => setNarrative(prev => prev + d),
       });
     } catch (e) {
       if (e?.name !== "AbortError")
-        setNarrErr(e instanceof AIConfigError ? "IA não configurada no servidor (defina OPENAI_API_KEY na Vercel)." : (e.message || "Falha ao gerar relatório."));
-    } finally {
-      setNarrating(false); narrAbort.current = null;
-    }
+        setNarrErr(e instanceof AIConfigError ? "IA não configurada (defina OPENAI_API_KEY na Vercel)." : (e.message || "Falha ao gerar."));
+    } finally { setNarrating(false); narrAbort.current = null; }
   };
   const copyNarrative = async () => {
     try { await navigator.clipboard.writeText(narrative + "\n\nDocumento gerado por assistente — conferir antes de registrar em prontuário."); setNarrCopied(true); setTimeout(() => setNarrCopied(false), 2000); } catch {}
+  };
+
+  // ── IA: debriefing pós-código ────────────────────────────────────────────────
+  const generateDebrief = async () => {
+    if (debriefing || !events.length) return;
+    setDebriefErr(null); setDebrief("");
+    const logText = buildDebriefText({
+      startTs, durationStr: fmt(elapsed), shocks, epiCount, amioCount, rhythm,
+      events: events.map(e => ({ tStr: fmt(e.t), label: e.label })),
+    });
+    setDebriefing(true);
+    const ctrl = new AbortController();
+    debriefAbort.current = ctrl;
+    try {
+      await streamChat({
+        mode: "debriefing", signal: ctrl.signal,
+        messages: [{ role: "user", content: logText }],
+        onToken: d => setDebrief(prev => prev + d),
+      });
+    } catch (e) {
+      if (e?.name !== "AbortError")
+        setDebriefErr(e instanceof AIConfigError ? "IA não configurada (defina OPENAI_API_KEY na Vercel)." : (e.message || "Falha ao gerar."));
+    } finally { setDebriefing(false); debriefAbort.current = null; }
+  };
+  const copyDebrief = async () => {
+    try { await navigator.clipboard.writeText(debrief + "\n\nAnálise gerada por assistente — usar como apoio educacional."); setDebriefCopied(true); setTimeout(() => setDebriefCopied(false), 2000); } catch {}
+  };
+
+  // ── IA: priorizador de 5H/5T ────────────────────────────────────────────────
+  const generatePriority = async () => {
+    if (prioritizing) return;
+    setPrioErr(null); setCausePriority("");
+    const input = buildPrioritizerInput({
+      ...causesForm, rhythm, elapsed: fmt(elapsed),
+    });
+    setPrioritizing(true);
+    const ctrl = new AbortController();
+    prioAbort.current = ctrl;
+    try {
+      await streamChat({
+        mode: "prioritize", signal: ctrl.signal,
+        messages: [{ role: "user", content: input }],
+        onToken: d => setCausePriority(prev => prev + d),
+      });
+    } catch (e) {
+      if (e?.name !== "AbortError")
+        setPrioErr(e instanceof AIConfigError ? "IA não configurada." : (e.message || "Falha."));
+    } finally { setPrioritizing(false); prioAbort.current = null; }
+  };
+
+  const copyLog = async () => {
+    const head = `REGISTRO DE RCP — ${new Date(startTs).toLocaleString("pt-BR")}\nDuração: ${fmt(elapsed)}\nChoques: ${shocks} · Adrenalina: ${epiCount} · Amiodarona: ${amioCount}\n\n`;
+    const body = events.map(e => `${fmt(e.t)} — ${e.label}`).join("\n");
+    try { await navigator.clipboard.writeText(head + body + "\n\nGerado pelo app Protocolos ACLS — conferir antes de registrar em prontuário."); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
   };
 
   const vent = ventilation(airway);
@@ -197,21 +393,24 @@ export default function CodeTimer() {
     </span>
   );
 
+
   return (
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden", boxShadow: "var(--shadow-sm)" }}>
       <style>{`
-        @keyframes rcpPulse { 0%,100% { box-shadow:0 0 0 0 rgba(197,48,48,0); } 50% { box-shadow:0 0 0 5px rgba(197,48,48,.16); } }
-        @keyframes rcpMed   { 0%,100% { box-shadow:0 0 0 0 rgba(214,158,46,0); } 50% { box-shadow:0 0 0 5px rgba(214,158,46,.20); } }
-        @keyframes rcpUp    { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-        @keyframes rcpBeat  { 0%,100%{ transform:scale(1);} 18%{ transform:scale(1.28);} 36%{ transform:scale(1);} }
-        @keyframes rcpGlow  { 0%,100%{ box-shadow:0 0 0 0 rgba(197,48,48,.5);} 50%{ box-shadow:0 0 0 14px rgba(197,48,48,0);} }
-        .rcp-pulse { animation: rcpPulse 1.3s ease-in-out infinite; }
-        .rcp-med   { animation: rcpMed 1.1s ease-in-out infinite; }
-        .rcp-up    { animation: rcpUp .28s ease-out; }
-        .rcp-beat  { animation: rcpBeat ${(60/BPM).toFixed(3)}s ease-in-out infinite; }
-        .rcp-start { animation: rcpGlow 1.8s ease-out infinite; }
-        .rcp-act:active { transform: scale(.97); }
-        @media (prefers-reduced-motion: reduce){ .rcp-pulse,.rcp-med,.rcp-up,.rcp-beat,.rcp-start{ animation:none; } }
+        @keyframes rcpPulse { 0%,100%{box-shadow:0 0 0 0 rgba(197,48,48,0);}50%{box-shadow:0 0 0 5px rgba(197,48,48,.16);} }
+        @keyframes rcpMed   { 0%,100%{box-shadow:0 0 0 0 rgba(214,158,46,0);}50%{box-shadow:0 0 0 5px rgba(214,158,46,.20);} }
+        @keyframes rcpUp    { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;} }
+        @keyframes rcpBeat  { 0%,100%{transform:scale(1);}18%{transform:scale(1.28);}36%{transform:scale(1);} }
+        @keyframes rcpGlow  { 0%,100%{box-shadow:0 0 0 0 rgba(197,48,48,.5);}50%{box-shadow:0 0 0 14px rgba(197,48,48,0);} }
+        @keyframes vcPulse  { 0%,100%{opacity:.5;}50%{opacity:1;} }
+        .rcp-pulse{animation:rcpPulse 1.3s ease-in-out infinite;}
+        .rcp-med{animation:rcpMed 1.1s ease-in-out infinite;}
+        .rcp-up{animation:rcpUp .28s ease-out;}
+        .rcp-beat{animation:rcpBeat ${(60/BPM).toFixed(3)}s ease-in-out infinite;}
+        .rcp-start{animation:rcpGlow 1.8s ease-out infinite;}
+        .rcp-act:active{transform:scale(.97);}
+        .vc-pulse{animation:vcPulse .8s ease-in-out infinite;}
+        @media(prefers-reduced-motion:reduce){.rcp-pulse,.rcp-med,.rcp-up,.rcp-beat,.rcp-start,.vc-pulse{animation:none;}}
       `}</style>
 
       {/* HEADER */}
@@ -219,7 +418,9 @@ export default function CodeTimer() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--text-strong)" }}>
           <HeartPulse size={18} color="#C53030" className={running ? "rcp-beat" : undefined} /> Copiloto de RCP — ACLS Adulto
         </div>
-        <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, marginTop: 2 }}>Guia passo a passo · medicações por ritmo · ciclos de 2 min · 5H/5T</div>
+        <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, marginTop: 2 }}>
+          Guia passo a passo · medicações por ritmo · ciclos de 2 min · 5H/5T · voz{hasSpeech ? "" : " (voz indisponível neste navegador)"}
+        </div>
       </div>
 
       <div style={{ padding: "16px" }}>
@@ -240,6 +441,23 @@ export default function CodeTimer() {
 
         {startTs && (
           <>
+            {/* Toast de feedback de comando de voz */}
+            {voiceFeedback && (
+              <div className="rcp-up" style={{
+                position: "relative", borderRadius: 10, padding: "10px 14px", marginBottom: 10,
+                background: voiceFeedback.success ? "var(--ok-bg)" : "var(--warn-bg)",
+                border: `1px solid ${voiceFeedback.success ? "var(--ok-bd)" : "var(--warn-bd)"}`,
+                color: voiceFeedback.success ? "var(--ok-fg)" : "var(--warn-fg)",
+                fontSize: 13, fontFamily: sans, fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 8,
+              }}>
+                <Mic size={15} />
+                {voiceFeedback.success
+                  ? `✓ ${VOICE_LABELS[voiceFeedback.key] || "Comando executado"}`
+                  : "Comando não reconhecido neste momento"}
+              </div>
+            )}
+
             {/* PLACAR */}
             <div style={{ background: "#0F141A", borderRadius: 16, padding: "16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -249,6 +467,7 @@ export default function CodeTimer() {
                   {chip(Zap, shocks, "#FCA5A5")}
                   {chip(Syringe, epiCount, "#FCD9A5")}
                   {chip(Pill, amioCount, "#A5D8FC")}
+                  {voiceCmd && <span className="vc-pulse" style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(197,48,48,.25)", color: "#FC8181", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 20 }}><Mic size={12} /> voz ativa</span>}
                 </div>
               </div>
               {phase === "cpr"
@@ -263,7 +482,7 @@ export default function CodeTimer() {
                 )}
             </div>
 
-            {/* HERO — PRÓXIMA AÇÃO */}
+            {/* PRÓXIMA AÇÃO */}
             {phase === "analyze" && (
               <div key="analyze" className="rcp-pulse rcp-up" style={{ border: "2px solid #C53030", background: "var(--danger-bg)", borderRadius: 14, padding: "14px", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: "var(--danger-fg)", fontFamily: sans, marginBottom: 10, textTransform: "uppercase", letterSpacing: ".03em" }}>
@@ -289,6 +508,7 @@ export default function CodeTimer() {
                 <button onClick={deliverShock} className="rcp-act" style={{ width: "100%", padding: "15px", borderRadius: 12, border: "none", background: "#fff", color: "#9B2C2C", fontFamily: sans, fontWeight: 900, fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "transform .1s" }}>
                   <Check size={20} /> Choque aplicado → iniciar RCP
                 </button>
+                {voiceCmd && <div style={{ marginTop: 8, fontSize: 11, color: "#FFD0D0", fontFamily: sans }}>💬 Ou diga "choquei"</div>}
               </div>
             )}
 
@@ -315,6 +535,7 @@ export default function CodeTimer() {
                 <button onClick={() => giveMed(cycleMed)} className="rcp-act" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "13px", borderRadius: 10, border: "none", background: "#D69E2E", color: "#fff", fontFamily: sans, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "transform .1s" }}>
                   <Check size={18} /> Confirmar administração
                 </button>
+                {voiceCmd && <div style={{ marginTop: 8, fontSize: 11, color: "var(--warn-fg)", fontFamily: sans, opacity: .8 }}>💬 Ou diga o nome da medicação</div>}
               </div>
             )}
             {phase === "cpr" && rhythm === "shock" && !cycleMed && shocks < 2 && (
@@ -329,7 +550,7 @@ export default function CodeTimer() {
               </div>
             )}
 
-            {/* 5H/5T */}
+            {/* 5H/5T + PRIORIZADOR */}
             <div className={rhythm === "nonshock" ? "rcp-med" : undefined} style={{ border: `1px solid ${rhythm === "nonshock" ? "#F6AD55" : "var(--border)"}`, borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
               <button onClick={() => setShowCauses(s => !s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", background: rhythm === "nonshock" ? "var(--warn-bg)" : "var(--surface-2)", border: "none", cursor: "pointer", fontFamily: sans }}>
                 <TriangleAlert size={17} color="#C05621" />
@@ -337,14 +558,54 @@ export default function CodeTimer() {
                 <ChevronDown size={18} color="var(--muted-2)" style={{ transform: showCauses ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
               </button>
               {showCauses && (
-                <div className="rcp-up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--border)" }}>
-                  <div style={{ padding: "10px 14px", borderRight: "1px solid var(--border)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5H</div>
-                    {H5.map((h, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {h}</div>)}
+                <div className="rcp-up">
+                  {/* Grade 5H/5T */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--border)" }}>
+                    <div style={{ padding: "10px 14px", borderRight: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5H</div>
+                      {H5.map((h, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {h}</div>)}
+                    </div>
+                    <div style={{ padding: "10px 14px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5T</div>
+                      {T5.map((t, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {t}</div>)}
+                    </div>
                   </div>
-                  <div style={{ padding: "10px 14px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#C05621", fontFamily: sans, marginBottom: 6 }}>5T</div>
-                    {T5.map((t, i) => <div key={i} style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.7 }}>• {t}</div>)}
+
+                  {/* Priorizador IA */}
+                  <div style={{ borderTop: "1px solid var(--border)", padding: "12px 14px", background: "color-mix(in srgb,#7C3AED 5%,var(--surface))" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "#7C3AED", fontFamily: sans, marginBottom: 10 }}>
+                      <Brain size={14} /> Priorizar causas com IA — informe dados clínicos
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, color: "var(--muted)", fontFamily: sans, fontWeight: 700, marginBottom: 3 }}>K⁺ (mEq/L)</label>
+                        <input value={causesForm.k} onChange={e => setCausesForm(f => ({ ...f, k: e.target.value }))} placeholder="ex: 6.5" inputMode="decimal"
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--text)", fontSize: 14, fontFamily: sans, outline: "none" }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, color: "var(--muted)", fontFamily: sans, fontWeight: 700, marginBottom: 3 }}>Temperatura (°C)</label>
+                        <input value={causesForm.temp} onChange={e => setCausesForm(f => ({ ...f, temp: e.target.value }))} placeholder="ex: 32" inputMode="decimal"
+                          style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--text)", fontSize: 14, fontFamily: sans, outline: "none" }} />
+                      </div>
+                    </div>
+                    <textarea value={causesForm.context} onChange={e => setCausesForm(f => ({ ...f, context: e.target.value }))} rows={2}
+                      placeholder="Contexto: cirurgia recente, medicações em uso, queixa inicial, achados clínicos..."
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--text)", fontSize: 13, fontFamily: sans, outline: "none", resize: "none", marginBottom: 8 }} />
+                    {prioritizing ? (
+                      <button onClick={() => prioAbort.current?.abort()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderRadius: 7, border: "none", background: "#C53030", color: "#fff", fontSize: 12, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+                        <Square size={12} fill="#fff" /> Parar
+                      </button>
+                    ) : (
+                      <button onClick={generatePriority} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 7, border: "none", background: "#7C3AED", color: "#fff", fontSize: 12, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+                        <Sparkles size={13} /> Priorizar causas
+                      </button>
+                    )}
+                    {(causePriority || prioritizing) && (
+                      <div style={{ marginTop: 10, padding: "10px 12px", background: "var(--surface-2)", borderRadius: 8, border: "1px solid var(--border)", fontSize: 12.5, color: "var(--text)", fontFamily: sans, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                        {causePriority}{prioritizing && <span style={{ opacity: .5 }}>▍</span>}
+                      </div>
+                    )}
+                    {prioErr && <div style={{ marginTop: 8, fontSize: 12, color: "var(--danger-fg)", fontFamily: sans }}>{prioErr}</div>}
                   </div>
                 </div>
               )}
@@ -361,8 +622,7 @@ export default function CodeTimer() {
                 {[["basic", "Sem via aérea avançada"], ["advanced", "TOT / Supraglótico"]].map(([k, lbl]) => (
                   <button key={k} onClick={() => { setAirway(k); log(k === "advanced" ? "Via aérea avançada — ventilação contínua 1/6s" : "Sem via aérea avançada — 30:2"); }}
                     className="rcp-act"
-                    style={{ flex: 1, padding: "9px", borderRadius: 8, fontSize: 11, fontFamily: sans, fontWeight: 700, cursor: "pointer", transition: "transform .1s",
-                      border: `1px solid ${airway === k ? "#2B6CB0" : "var(--input-border)"}`, background: airway === k ? "var(--info-bg)" : "var(--surface)", color: airway === k ? "#2B6CB0" : "var(--muted)" }}>
+                    style={{ flex: 1, padding: "9px", borderRadius: 8, fontSize: 11, fontFamily: sans, fontWeight: 700, cursor: "pointer", transition: "transform .1s", border: `1px solid ${airway === k ? "#2B6CB0" : "var(--input-border)"}`, background: airway === k ? "var(--info-bg)" : "var(--surface)", color: airway === k ? "#2B6CB0" : "var(--muted)" }}>
                     {lbl}
                   </button>
                 ))}
@@ -371,18 +631,44 @@ export default function CodeTimer() {
 
             {/* CONTROLES */}
             <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-              <button onClick={() => setMetroOn(m => !m)} className="rcp-act" style={{ flex: 1, minWidth: 130, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px", borderRadius: 10, border: `1px solid ${metroOn ? "#F6E05E" : "var(--input-border)"}`, background: metroOn ? "var(--warn-bg)" : "var(--surface)", color: metroOn ? "var(--warn-fg)" : "var(--muted)", fontFamily: sans, fontWeight: 700, fontSize: 12, cursor: "pointer", transition: "transform .1s" }}>
-                {metroOn ? <Volume2 size={16} className="rcp-beat" /> : <VolumeX size={16} />} Metrônomo {metroOn ? `${BPM}/min` : ""}
+              <button onClick={() => setMetroOn(m => !m)} className="rcp-act" style={{ flex: 1, minWidth: 110, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px", borderRadius: 10, border: `1px solid ${metroOn ? "#F6E05E" : "var(--input-border)"}`, background: metroOn ? "var(--warn-bg)" : "var(--surface)", color: metroOn ? "var(--warn-fg)" : "var(--muted)", fontFamily: sans, fontWeight: 700, fontSize: 12, cursor: "pointer", transition: "transform .1s" }}>
+                {metroOn ? <Volume2 size={16} className="rcp-beat" /> : <VolumeX size={16} />} {metroOn ? `${BPM}/min` : "Metrônomo"}
               </button>
-              <button onClick={rce} className="rcp-act" style={{ flex: 1, minWidth: 130, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px", borderRadius: 10, border: "1px solid #276749", background: "#276749", color: "#fff", fontFamily: sans, fontWeight: 800, fontSize: 12, cursor: "pointer", transition: "transform .1s" }}>
-                <Check size={16} /> RCE — circulação retornou
+              {hasSpeech && (
+                <button onClick={toggleVoiceCmd} disabled={!running} className="rcp-act" aria-label={voiceCmd ? "Desativar comandos de voz" : "Ativar comandos de voz"}
+                  title={voiceCmd ? "Diga: choquei · adrenalina · reavaliar · rce · metrônomo" : "Comandos hands-free"}
+                  style={{ flex: 1, minWidth: 110, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px", borderRadius: 10, border: `1px solid ${voiceCmd ? "#C53030" : "var(--input-border)"}`, background: voiceCmd ? "var(--danger-bg)" : "var(--surface)", color: voiceCmd ? "var(--danger-fg)" : "var(--muted)", fontFamily: sans, fontWeight: 700, fontSize: 12, cursor: running ? "pointer" : "default", transition: "transform .1s", opacity: running ? 1 : .5 }}>
+                  {voiceCmd ? <><MicOff size={16} className="vc-pulse" /> Voz ativa</> : <><Mic size={16} /> Voz</>}
+                </button>
+              )}
+              <button onClick={rce} className="rcp-act" style={{ flex: 1, minWidth: 110, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px", borderRadius: 10, border: "1px solid #276749", background: "#276749", color: "#fff", fontFamily: sans, fontWeight: 800, fontSize: 12, cursor: "pointer", transition: "transform .1s" }}>
+                <Check size={16} /> RCE
               </button>
             </div>
+
+            {/* Dica de comandos de voz */}
+            {voiceCmd && (
+              <div className="rcp-up" style={{ background: "var(--danger-bg)", border: "1px solid var(--danger-bd)", borderRadius: 10, padding: "9px 12px", marginBottom: 12, fontSize: 11.5, color: "var(--danger-fg)", fontFamily: sans, lineHeight: 1.6 }}>
+                <strong>Comandos reconhecidos:</strong> "choquei" · "adrenalina" · "amiodarona" · "reavaliar" · "rce" · "metrônomo"
+              </div>
+            )}
 
             {endTs && (
               <div className="rcp-up" style={{ background: "var(--ok-bg)", border: "1px solid var(--ok-bd)", borderRadius: 12, padding: "13px 14px", marginBottom: 12, fontSize: 13, color: "var(--ok-fg)", fontFamily: sans, lineHeight: 1.6 }}>
                 <strong>RCE após {fmt(elapsed)}.</strong> Cuidados pós-PCR: SpO₂ 92–98%, PAS ≥ 90 (noradrenalina se preciso), alvo térmico 32–36 °C, ECG 12 derivações imediato.
               </div>
+            )}
+
+            {/* IA: DEBRIEFING PÓS-CÓDIGO (só aparece após RCE) */}
+            {endTs && (
+              <AIPanel
+                title="Debriefing do atendimento (IA)"
+                Ic={ClipboardList} color="#0E7490"
+                result={debrief} loading={debriefing} error={debriefErr}
+                onGenerate={generateDebrief} onCopy={copyDebrief} copied={debriefCopied}
+                abort={debriefAbort} emptyLabel="Analisar"
+                desc="Analisa o log em relação às diretrizes ACLS 2020 — timing de adrenalina, amiodarona, duração dos ciclos. Uso educacional."
+              />
             )}
 
             {/* LOG */}
@@ -403,43 +689,15 @@ export default function CodeTimer() {
               </div>
             </div>
 
-            {/* RELATÓRIO DE PARADA (IA) */}
-            <div style={{ border: "1px solid color-mix(in srgb,#7C3AED 35%,var(--border))", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
-              <div style={{ background: "color-mix(in srgb,#7C3AED 9%,var(--surface))", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, borderBottom: narrative || narrErr || narrating ? "1px solid var(--border)" : "none" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>
-                  <FileText size={15} color="#7C3AED" /> Relatório de parada (IA)
-                </span>
-                {narrating ? (
-                  <button onClick={() => narrAbort.current?.abort()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 6, border: "none", background: "#C53030", color: "#fff", fontSize: 11, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
-                    <Square size={11} fill="#fff" /> Parar
-                  </button>
-                ) : (
-                  <button onClick={generateNarrative} disabled={!events.length} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 13px", borderRadius: 7, border: "none", background: events.length ? "#7C3AED" : "var(--border)", color: "#fff", fontSize: 11.5, fontFamily: sans, fontWeight: 700, cursor: events.length ? "pointer" : "default" }}>
-                    <Sparkles size={13} /> {narrative ? "Refazer" : "Gerar"}
-                  </button>
-                )}
-              </div>
-              {(narrative || narrating) && (
-                <div style={{ padding: "12px 14px" }}>
-                  <div style={{ fontSize: 12.5, color: "var(--text)", fontFamily: sans, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                    {narrative}{narrating && <span style={{ opacity: .5 }}>▍</span>}
-                  </div>
-                  {narrative && !narrating && (
-                    <button onClick={copyNarrative} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 7, border: "1px solid var(--input-border)", background: "var(--surface)", fontSize: 11.5, fontFamily: sans, fontWeight: 600, cursor: "pointer", color: "var(--text)" }}>
-                      {narrCopied ? "✓ Copiado!" : "Copiar relatório"}
-                    </button>
-                  )}
-                </div>
-              )}
-              {narrErr && (
-                <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--danger-fg)", fontFamily: sans, background: "var(--danger-bg)" }}>{narrErr}</div>
-              )}
-              {!narrative && !narrating && !narrErr && (
-                <div style={{ padding: "10px 14px", fontSize: 11.5, color: "var(--muted)", fontFamily: sans, lineHeight: 1.5 }}>
-                  Gera um texto cronológico do atendimento (ritmo, choques, medicações, desfecho) pronto para conferência e prontuário.
-                </div>
-              )}
-            </div>
+            {/* IA: RELATÓRIO DE PARADA */}
+            <AIPanel
+              title="Relatório de parada (IA)"
+              Ic={FileText} color="#7C3AED"
+              result={narrative} loading={narrating} error={narrErr}
+              onGenerate={generateNarrative} onCopy={copyNarrative} copied={narrCopied}
+              abort={narrAbort} emptyLabel="Gerar"
+              desc="Gera texto cronológico do atendimento pronto para conferência e prontuário."
+            />
 
             <button onClick={reset} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "1px solid var(--input-border)", background: "var(--surface)", fontSize: 12, fontFamily: sans, color: "var(--muted)", cursor: "pointer" }}>
               <RotateCcw size={14} /> Reiniciar (limpa o registro)
