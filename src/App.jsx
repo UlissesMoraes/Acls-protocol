@@ -11,6 +11,7 @@ import AIAssistant from "./components/AIAssistant.jsx";
 import SymptomTriage from "./components/SymptomTriage.jsx";
 import DrugAlerts from "./components/DrugAlerts.jsx";
 import PedWeight from "./components/PedWeight.jsx";
+import Procedures from "./components/procedures/Procedures.jsx";
 import usePersistentState from "./hooks/usePersistentState.js";
 import useInstallPrompt from "./hooks/useInstallPrompt.js";
 import useProtocols from "./hooks/useProtocols.js";
@@ -542,6 +543,7 @@ export default function App() {
               )}
 
               {kind === "code" && <CodeTimer pals={isPed} weight={weight} />}
+              {kind === "procedures" && <Procedures />}
               {kind === "pedweight" && <PedWeight onApply={setWeight} currentWeight={weight} />}
               {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}

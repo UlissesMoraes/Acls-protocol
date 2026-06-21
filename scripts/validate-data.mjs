@@ -6,6 +6,7 @@ import { SCORES_DEF } from "../src/data/scores.js";
 import { FORMULAS } from "../src/data/formulas.js";
 import { FORMULAS_PED } from "../src/data/formulasPed.js";
 import { TOOL_GROUPS } from "../src/data/tools.js";
+import { PROCEDURES } from "../src/data/procedures.js";
 
 let errors = 0;
 const fail = msg => { console.error("  ✗ " + msg); errors++; };
@@ -74,6 +75,23 @@ function validateFormulas(formulas, list, probeWeight, tag) {
 validateFormulas(FORMULAS, P, 70, "adulto");
 validateFormulas(FORMULAS_PED, P_PED, 15, "ped");
 
+// ── Procedimentos (3D) ──
+const SCENE_KEYS = new Set(["io", "intub", "thorax", "rcp"]);
+const procIds = new Set();
+for (const p of PROCEDURES) {
+  const where = `procedimento "${p.id || "?"}"`;
+  for (const f of ["id", "label", "cat", "color", "scene", "sub"])
+    if (!p[f]) fail(`${where}: campo "${f}" ausente`);
+  if (procIds.has(p.id)) fail(`${where}: id duplicado`);
+  procIds.add(p.id);
+  if (!SCENE_KEYS.has(p.scene)) fail(`${where}: cena 3D "${p.scene}" sem componente correspondente`);
+  if (!Array.isArray(p.steps) || !p.steps.length) fail(`${where}: "steps" vazio`);
+  for (const [i, s] of (p.steps || []).entries())
+    if (!s.t || !s.d) fail(`${where} passo[${i}]: faltando título/descrição`);
+  for (const f of ["indications", "contra", "materials", "complications"])
+    if (!Array.isArray(p[f]) || !p[f].length) fail(`${where}: "${f}" vazio`);
+}
+
 // ── Catálogo de ferramentas ──
 for (const g of TOOL_GROUPS)
   for (const it of g.items)
@@ -84,4 +102,4 @@ if (errors) {
   console.error(`\n❌ Validação de dados falhou — ${errors} problema(s).`);
   process.exit(1);
 }
-console.log(`✅ Dados válidos — ${P.length} protocolos adultos + ${P_PED.length} pediátricos, ${scoreKeys.size} escores, ${Object.keys(FORMULAS).length + Object.keys(FORMULAS_PED).length} fórmulas.`);
+console.log(`✅ Dados válidos — ${P.length} protocolos adultos + ${P_PED.length} pediátricos, ${scoreKeys.size} escores, ${Object.keys(FORMULAS).length + Object.keys(FORMULAS_PED).length} fórmulas, ${PROCEDURES.length} procedimentos 3D.`);

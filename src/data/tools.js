@@ -18,6 +18,13 @@ export const TOOL_GROUPS = [
     ],
   },
   {
+    cat: "Procedimentos",
+    color: "#2B6CB0", light: "#EBF5FB", border: "#2980B9",
+    items: [
+      { id: "procedures", kind: "procedures", label: "Procedimentos 3D", sub: "Passo a passo com modelo 3D animado — IO, intubação, dreno de tórax e RCP/desfibrilação" },
+    ],
+  },
+  {
     cat: "Pediatria", mode: "ped",
     color: "#0E7490", light: "#ECFEFF", border: "#0891B2",
     items: [
