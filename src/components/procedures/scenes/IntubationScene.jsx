@@ -1,7 +1,11 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, Suspense } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
+import { Html, useGLTF } from "@react-three/drei";
+import GLBModel from "./GLBModel.jsx";
+import { MODELS } from "../../../data/models.js";
+
+useGLTF.preload(MODELS.head.url);
 
 const SKIN = "#E8B98E", TUBE = "#2B6CB0", BLADE = "#9AA6B2";
 const damp = THREE.MathUtils.damp;
@@ -53,15 +57,13 @@ export default function IntubationScene({ step = 0 }) {
   return (
     <group position={[0, 0.3, 0]}>
       {/* Cabeça em perfil + mandíbula */}
-      <group ref={head}>
-        <mesh position={[0, 0.4, 0]}>
-          <sphereGeometry args={[1.05, 32, 32]} />
-          <meshStandardMaterial color={SKIN} roughness={0.85} />
-        </mesh>
-        <mesh position={[0.95, -0.1, 0]} rotation={[0, 0, -0.5]}>
-          <boxGeometry args={[0.7, 0.45, 0.9]} />
-          <meshStandardMaterial color={SKIN} roughness={0.85} />
-        </mesh>
+      {/* Cabeça humana realista (GLB) — perfil voltado para a via aérea (+X) */}
+      <group ref={head} position={[-0.15, 0.1, -0.05]}>
+        <Suspense fallback={
+          <mesh position={[0, 0.3, 0]}><sphereGeometry args={[1.05, 24, 24]} /><meshStandardMaterial color={SKIN} roughness={0.85} /></mesh>
+        }>
+          <GLBModel url={MODELS.head.url} height={2.4} rotation={[0, Math.PI / 2, 0]} />
+        </Suspense>
       </group>
 
       {/* Via aérea (trilho translúcido) */}

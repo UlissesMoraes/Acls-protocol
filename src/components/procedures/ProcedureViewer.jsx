@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Environment, Lightformer, ContactShadows } from "@react-three/drei";
 import { ArrowLeft, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, AlertTriangle, ListChecks, Ban, Package } from "lucide-react";
 import IOScene from "./scenes/IOScene.jsx";
 import IntubationScene from "./scenes/IntubationScene.jsx";
@@ -56,12 +56,23 @@ export default function ProcedureViewer({ proc, onBack }) {
       <div className="proc-split">
         {/* 3D */}
         <div className="proc-3d" style={{ position: "relative", background: "#0F141A" }}>
-          <Canvas dpr={[1, 1.8]} camera={{ position: [0, 0.4, 6.2], fov: 42 }} gl={{ antialias: true }}>
-            <color attach="background" args={["#0F141A"]} />
-            <ambientLight intensity={0.75} />
-            <directionalLight position={[3, 5, 4]} intensity={1.1} />
-            <directionalLight position={[-4, 2, -3]} intensity={0.45} />
-            <Scene step={step} />
+          <Canvas shadows dpr={[1, 1.9]} camera={{ position: [0, 0.4, 6.2], fov: 42 }}
+            gl={{ antialias: true, toneMappingExposure: 1.05 }}>
+            <color attach="background" args={["#10151C"]} />
+            <ambientLight intensity={0.35} />
+            <directionalLight position={[4, 6, 5]} intensity={1.6} castShadow
+              shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
+            <directionalLight position={[-5, 3, -2]} intensity={0.5} color="#9FC0E8" />
+            {/* Ambiente de estúdio procedural (offline) para reflexos/PBR modernos */}
+            <Environment resolution={256} frames={1}>
+              <Lightformer form="rect" intensity={2.4} position={[3, 4, 4]} scale={6} />
+              <Lightformer form="rect" intensity={1.2} position={[-4, 2, 2]} scale={5} color="#cfe0ff" />
+              <Lightformer form="ring" intensity={1.5} position={[0, -2, 5]} scale={4} />
+            </Environment>
+            <Suspense fallback={null}>
+              <Scene step={step} />
+            </Suspense>
+            <ContactShadows position={[0, -2.15, 0]} opacity={0.55} blur={2.6} scale={14} far={4.5} resolution={512} color="#000000" />
             <OrbitControls enablePan={false} minDistance={3.2} maxDistance={11}
               autoRotate={!reduceMotion && !playing} autoRotateSpeed={0.5} enableDamping />
           </Canvas>

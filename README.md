@@ -148,6 +148,26 @@ Configuração na Vercel (**Project → Settings → Environment Variables**):
 > Após adicioná-las, faça um novo deploy. Sem a chave, o app funciona normalmente
 > e o Copiloto exibe um aviso de "não configurado".
 
+## 🧊 Procedimentos 3D
+
+Ferramenta de procedimentos com modelo 3D animado passo a passo, renderizado no
+aparelho (three.js / react-three-fiber) — **sem servidor, funciona offline**:
+
+- **4 procedimentos:** acesso intraósseo, intubação orotraqueal, drenagem torácica e RCP/desfibrilação, cada um com indicações, contraindicações, materiais, passos e complicações.
+- **Render realista:** iluminação de estúdio procedural (offline), sombras de contato, PBR e tone mapping ACES.
+- **Modelo humano realista:** a intubação usa um **scan de cabeça humana** (CC-BY) embutido; os demais combinam anatomia esquemática clara com instrumentos precisos.
+- **Lazy-load:** o visualizador 3D (three.js, ~275 KB gzip) é um chunk separado, carregado **só** ao abrir um procedimento — não pesa o load inicial do app.
+
+### Adicionar modelos de anatomia realista
+
+Modelos ficam em `public/models/` (cacheados pelo service worker → offline). Para
+incluir um novo (ex.: caixa torácica, crânio):
+
+1. Baixe um `.glb` com licença adequada (preferir **CC0**/**CC-BY**).
+2. Coloque em `public/models/` e registre em `src/data/models.js`.
+3. Aponte a cena via o componente `GLBModel` (auto-centra e escala qualquer GLB).
+4. Mantenha o crédito/licença em `public/models/CREDITS.md`.
+
 ## 🚀 Instalação e execução local
 
 ```bash
