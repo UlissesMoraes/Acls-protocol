@@ -682,7 +682,7 @@ export const P = [
     scores:[],
   },
   {
-    id:"hipertensao", label:"Crise Hipertensiva", icon:"🩸", cat:"Cardiovascular",
+    id:"hipertensao", label:"Emergências Hipertensivas", icon:"🩸", cat:"Cardiovascular",
     color:"#6C2377", light:"#F5EEF8", border:"#9B59B6",
     sub:"Emergência hipertensiva e hipertensão grave assintomática — AHA/ACC 2025",
     cascade:[
