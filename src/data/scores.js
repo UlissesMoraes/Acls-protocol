@@ -672,4 +672,31 @@ export const SCORES_DEF = {
           text:"Reposição IV: veia periférica máx 20 mEq/h (40 mEq/L); veia central até 40 mEq/h (200 mEq/L) com ECG contínuo. NUNCA KCl em bolus. Não diluir em soro glicosado. Repor Mg²⁺ associado." },
     unit:"mEq",
   },
+
+  // ── Peso Predito e Volume Corrente Protetor ────────────────────────────────
+  pbw: {
+    label:"Peso Predito e VC Protetor (ventilação)",
+    sub:"PBW: ♂ 50 + 0,91×(alt − 152,4) · ♀ 45,5 + 0,91×(alt − 152,4)",
+    ref:"ARDS Network. Ventilation with lower tidal volumes for ARDS. N Engl J Med. 2000;342(18):1301-1308.",
+    type:"calc",
+    note:"O volume corrente na ventilação protetora é calculado pelo PESO PREDITO (estatura + sexo), NUNCA pelo peso real — usar o peso real superdistende o pulmão. Metas: Pplatô < 30 cmH₂O, driving pressure < 15 cmH₂O.",
+    inputs:[
+      { k:"altura", label:"Altura (cm)", ph:"Ex: 170", unit:"cm" },
+      { k:"sexo",   label:"Sexo", type:"select", options:[
+        { v:"m", label:"Masculino" },
+        { v:"f", label:"Feminino" },
+      ]},
+    ],
+    formula: v => {
+      const h=parseFloat(v.altura)||0;
+      if(!h) return 0;
+      const base = v.sexo==="f" ? 45.5 : 50;
+      return Math.max(0, base + 0.91*(h-152.4));
+    },
+    interp: v => v<=0
+      ? { label:"Preencha a altura e o sexo", color:"#718096", bg:"#EDF2F7", text:"Informe a estatura e o sexo para obter o peso predito e as metas de volume corrente." }
+      : { label:`Peso predito ${v.toFixed(1)} kg`, color:"#2B6CB0", bg:"#EBF8FF",
+          text:`VC protetor 6 mL/kg = ${(v*6).toFixed(0)} mL (faixa 4–8 mL/kg = ${(v*4).toFixed(0)}–${(v*8).toFixed(0)} mL). SDRA / asma / DPOC: 4–6 mL/kg (${(v*4).toFixed(0)}–${(v*6).toFixed(0)} mL). Manter Pplatô < 30 cmH₂O e driving pressure < 15 cmH₂O.` },
+    unit:"kg",
+  },
 };

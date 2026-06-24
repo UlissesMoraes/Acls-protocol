@@ -870,6 +870,17 @@ export const P = [
           "Reavaliar PA (hipotensão pós-IOT é comum) e analgesia; sonda gástrica; metas de ETCO₂",
         ],
         decision:null },
+      { step:9, phase:"AJUSTE DO VENTILADOR POR CENÁRIO", alert:false,
+        items:[
+          "PARÂMETROS INICIAIS (ventilação protetora): modo VCV ou PCV · VC 6 mL/kg de PESO PREDITO (nunca o peso real) · FR 12–16 · PEEP 5 cmH₂O · FiO₂ para SpO₂ 92–96% · fluxo 50–60 L/min · I:E 1:2",
+          "Peso predito (PBW): ♂ 50 + 0,91×(altura cm − 152,4) · ♀ 45,5 + 0,91×(altura cm − 152,4). Metas de segurança: Pplatô < 30 cmH₂O e driving pressure (Pplatô − PEEP) < 15 cmH₂O",
+          "TCE / HIC: NORMOCAPNIA — PaCO₂ 35–45 (ETCO₂ 35–45); NÃO hiperventilar (vasoconstrição → isquemia). Hiperventilação leve (PaCO₂ 30–35) SÓ na herniação iminente e por pouco tempo. Normóxia (PaO₂ ~80–120, evitar hiperóxia), SpO₂ ≥ 94%. PEEP moderada 5–8 (PEEP alta pode ↑ PIC), cabeceira 30°",
+          "BRONCOESPASMO (asma/DPOC): FR BAIXA 8–10 · tempo EXPIRATÓRIO longo (I:E 1:4 a 1:5) · fluxo inspiratório alto (60–80 L/min) · PEEP baixa · HIPERCAPNIA PERMISSIVA (tolerar PaCO₂ alta se pH > 7,20) · vigiar auto-PEEP / air trapping. Piora súbita → DESCONECTAR e comprimir o tórax (DOPES)",
+          "HIPOTENSÃO / CHOQUE: a pressão positiva e a PEEP reduzem o retorno venoso — iniciar PEEP baixa (5), VC 6 mL/kg, evitar auto-PEEP; ajustar FR para compensar acidose metabólica SEM empilhamento de ar; manter volemia/vasopressor otimizados",
+          "GESTANTE: manter a alcalose respiratória fisiológica — alvo PaCO₂ 28–32 mmHg (NÃO normalizar para 40 = acidose relativa para o feto). SpO₂ ≥ 95%, FiO₂/PEEP um pouco maiores (CRF reduzida, atelectasia). VC pelo PBW (altura), cabeceira elevada + deslocamento uterino",
+          "SDRA associada (PaO₂/FiO₂ < 300): VC 4–6 mL/kg PBW · PEEP alta pela tabela PEEP/FiO₂ · Pplatô < 30 · driving pressure < 15 · hipercapnia permissiva · posição prona se P/F < 150",
+        ],
+        decision:null },
     ],
     drugs:[
       { name:"Etomidato", cat:"Indutor (hipnótico)", dose:"0,3 mg/kg IV em bolus (0,15–0,3 mg/kg no choque)", via:"IV bolus rápido", ind:"Indutor padrão na SRI — hemodinamicamente neutro. Bom no TCE e instabilidade hemodinâmica.", ci:"Cautela na sepse (supressão adrenal transitória com dose única — não contraindica em emergência)", obs:"Onset ~30s, duração 5–10 min. Pode causar mioclonias. Sem analgesia." },
@@ -888,7 +899,7 @@ export const P = [
       { agent:"Hipotensão peri-intubação", antidote:"Adrenalina push-dose + volume", dose:"10–20 mcg IV (10 mcg/mL) a cada 1–5 min + cristaloide; iniciar noradrenalina se sustentada", notes:"Antecipar: \"reanimar antes de intubar\". Reduzir a dose do indutor no choque." },
       { agent:"Hipertermia maligna (Succinilcolina)", antidote:"Dantroleno", dose:"2,5 mg/kg IV em bolus → repetir até 10 mg/kg", notes:"Suspeita: hipercapnia + rigidez + hipertermia. Suspender o agente, resfriar, tratar hipercalemia/acidose." },
     ],
-    scores:["gcs"],
+    scores:["gcs","pbw"],
   },
 ];
 
