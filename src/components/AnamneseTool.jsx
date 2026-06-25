@@ -1,11 +1,36 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
-  Copy, Download, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
+  Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
 } from "lucide-react";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
+import { useWakeLock } from "../hooks/useWakeLock.js";
+import { exportAnamnesePDF } from "../lib/anamnesePdf.js";
+
+// Extrai idade/sexo/observações da transcrição (heurística pt-BR, só preenche
+// campos vazios — nunca sobrescreve o que o médico digitou).
+function extractContext(text) {
+  const t = (text || "").toLowerCase();
+  const mAge = t.match(/(\d{1,3})\s*(?:anos?|a\b)/);
+  const idade = mAge ? `${mAge[1]}a` : "";
+  let sexo = "";
+  if (/\b(feminino|mulher|gestante|gr[áa]vida|sexo feminino|paciente do sexo feminino)\b/.test(t)) sexo = "feminino";
+  else if (/\b(masculino|homem|sexo masculino|paciente do sexo masculino)\b/.test(t)) sexo = "masculino";
+  const KW = [
+    [/hipertens|press[ãa]o alta|\bhas\b/, "HAS"],
+    [/diab[ée]t|\bdm\b/, "diabético"],
+    [/al[ée]rg/, "alergia relatada"],
+    [/tabagis|fumante|fuma\b/, "tabagista"],
+    [/etilis|alco[óo]l/, "etilista"],
+    [/infarto|\biam\b|card[íi]aco/, "antecedente cardíaco"],
+    [/asma|\bdpoc\b/, "doença respiratória"],
+    [/gestante|gr[áa]vida/, "gestante"],
+  ];
+  const obs = [...new Set(KW.filter(([re]) => re.test(t)).map(([, l]) => l))].join(", ");
+  return { idade, sexo, obs };
+}
 
 const sans = "var(--font)";
 const ACCENT = "#9D174D";
@@ -51,6 +76,9 @@ export default function AnamneseTool() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const abortRef = useRef(null);
+
+  // Mantém a tela ligada durante a gravação (não interromper o atendimento).
+  useWakeLock(recording);
 
   useEffect(() => () => {
     clearInterval(timerRef.current);
@@ -134,6 +162,11 @@ export default function AnamneseTool() {
     try {
       const text = await transcribeAudio(audioBlob, { authKey, filename: `anamnese.${audioBlob._ext || "webm"}` });
       setTranscript(prev => (prev ? prev.trim() + "\n\n" : "") + text);
+      // Autopreenche os campos vazios a partir do que foi falado.
+      const ex = extractContext(text);
+      if (ex.idade) setIdade(p => p || ex.idade);
+      if (ex.sexo)  setSexo(p => p || ex.sexo);
+      if (ex.obs)   setNota(p => p || ex.obs);
     } catch (e) {
       if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
       else if (e instanceof AnamneseConfigError || e instanceof AIConfigError) setNotConfigured(true);
@@ -173,13 +206,7 @@ export default function AnamneseTool() {
   const copy = async (text, tag) => {
     try { await navigator.clipboard.writeText(text); setCopied(tag); setTimeout(() => setCopied(""), 1500); } catch {}
   };
-  const download = () => {
-    const blob = new Blob([analysis], { type: "text/markdown;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "anamnese.md"; a.click();
-    URL.revokeObjectURL(a.href);
-  };
+  const exportPDF = () => exportAnamnesePDF({ analysis, transcript, idade, sexo, nota });
 
   // ── Tela "não configurado" ──
   if (notConfigured) {
@@ -272,6 +299,11 @@ export default function AnamneseTool() {
           </label>
           {recording && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#C53030", fontFamily: sans, fontWeight: 600 }}><span className="anam-pulse" /> gravando…</span>}
         </div>
+        {recording && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 11, color: "var(--muted)", fontFamily: sans }}>
+            <ShieldCheck size={13} color="#1E8449" /> A tela permanece ligada durante a gravação para não interromper.
+          </div>
+        )}
 
         {audioUrl && !recording && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
@@ -337,7 +369,7 @@ export default function AnamneseTool() {
               <button onClick={() => copy(stripMd(analysis), "p")} style={btnGhost}>
                 {copied === "p" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar texto puro
               </button>
-              <button onClick={download} style={btnGhost}><Download size={15} /> Baixar .md</button>
+              <button onClick={exportPDF} style={{ ...btnPrimary, background: ACCENT }}><FileDown size={16} /> Exportar PDF</button>
             </div>
           )}
         </Section>
