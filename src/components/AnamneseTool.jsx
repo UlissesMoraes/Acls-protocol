@@ -5,7 +5,7 @@ import {
   History, RotateCcw, ChevronDown, Activity, Tag, FlaskConical, ListChecks, HelpCircle, Siren,
   ExternalLink, BarChart3,
 } from "lucide-react";
-import { parseAnamnese, shortHip, hasApontamentos } from "../lib/anamneseParse.js";
+import { parseAnamnese, shortHip, hasApontamentos, buildSoap } from "../lib/anamneseParse.js";
 import { suggestLinks, SCORE_SHORT } from "../lib/anamneseLinks.js";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
@@ -85,7 +85,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const [copied, setCopied] = useState("");
   const [history, setHistory] = useState([]);
   const [showHist, setShowHist] = useState(false);
-  const [showFull, setShowFull] = useState(false);
+  const [tab3, setTab3] = useState("apont");
   const [pdfBusy, setPdfBusy] = useState(false);
   const abortRef = useRef(null);
 
@@ -97,6 +97,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     const protos = protocolIds.map(id => protocols.find(p => p.id === id)).filter(Boolean);
     return { protos, scoreIds };
   }, [parsed, protocols]);
+  const soap = useMemo(() => buildSoap(parsed), [parsed]);
 
   // Mantém a tela ligada durante a gravação (não interromper o atendimento).
   useWakeLock(recording);
@@ -429,13 +430,22 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
 
       {/* 3 — Apontamentos visuais + análise */}
       {(analysis || streaming) && (
-        <Section n={3} title="Apontamentos e análise">
+        <Section n={3} title="Resultado">
           {streaming && !hasApontamentos(parsed) && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--muted)", fontFamily: sans, padding: "6px 0 12px" }}>
               <Loader2 size={15} className="anam-spin" /> Analisando o caso…
             </div>
           )}
 
+          {/* Barra de abas */}
+          <div role="tablist" style={{ display: "flex", gap: 4, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 11, padding: 4 }}>
+            <TabBtn id="apont" active={tab3} set={setTab3} Ic={ClipboardList} label="Apontamentos" />
+            <TabBtn id="analise" active={tab3} set={setTab3} Ic={FileText} label="Análise" />
+            <TabBtn id="soap" active={tab3} set={setTab3} Ic={ListChecks} label="SOAP" />
+          </div>
+
+          {/* Aba: Apontamentos */}
+          {tab3 === "apont" && (<div style={{ marginTop: 12 }}>
           <Apontamentos d={parsed} onCopyCid={code => copy(code, `cid-${code}`)} copied={copied} />
 
           {/* Atalhos acionáveis no app */}
@@ -475,28 +485,27 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
             </div>
           )}
 
-          {/* Documento completo (recolhível) */}
-          {analysis && (
-            <div style={{ marginTop: hasApontamentos(parsed) ? 14 : 0, border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
-              <button onClick={() => setShowFull(s => !s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 13px", background: "var(--surface-2)", border: "none", cursor: "pointer", fontFamily: sans }}>
-                <FileText size={16} color="var(--muted)" />
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-strong)" }}>Documento completo</span>
-                {streaming && <Loader2 size={14} className="anam-spin" style={{ color: "var(--muted)" }} />}
-                <ChevronDown size={16} color="var(--muted)" style={{ marginLeft: "auto", transform: showFull ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
-              </button>
-              {showFull && (
-                <div style={{ padding: "12px 14px", fontSize: 13.5, fontFamily: sans, color: "var(--text)", lineHeight: 1.6, borderTop: "1px solid var(--border)" }}>
-                  <Markdown text={analysis} />
-                  {streaming && <span style={{ display: "inline-block", width: 7, height: 14, background: "var(--text)", marginLeft: 2, borderRadius: 1, verticalAlign: "middle", animation: "anamBlink 1s infinite" }} />}
-                </div>
-              )}
+          </div>)}
+
+          {/* Aba: Análise (documento completo) */}
+          {tab3 === "analise" && (
+            <div style={{ marginTop: 12, fontSize: 13.5, fontFamily: sans, color: "var(--text)", lineHeight: 1.6 }}>
+              <Markdown text={analysis} />
+              {streaming && <span style={{ display: "inline-block", width: 7, height: 14, background: "var(--text)", marginLeft: 2, borderRadius: 1, verticalAlign: "middle", animation: "anamBlink 1s infinite" }} />}
+            </div>
+          )}
+
+          {/* Aba: SOAP */}
+          {tab3 === "soap" && (
+            <div style={{ marginTop: 12 }}>
+              <SoapView soap={soap} streaming={streaming} />
             </div>
           )}
 
           {analysis && !streaming && (
-            <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-              <button onClick={() => copy(analysis, "a")} style={btnGhost}>
-                {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar análise
+            <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+              <button onClick={() => copy(tab3 === "soap" ? soapText(soap) : analysis, "a")} style={btnGhost}>
+                {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar {tab3 === "soap" ? "SOAP" : "análise"}
               </button>
               <button onClick={exportPDF} disabled={pdfBusy} style={{ ...btnPrimary, background: ACCENT, opacity: pdfBusy ? 0.6 : 1 }}>
                 {pdfBusy ? <Loader2 size={16} className="anam-spin" /> : <FileDown size={16} />} {pdfBusy ? "Gerando…" : "Exportar PDF"}
@@ -621,6 +630,72 @@ const linkBtn = color => ({
   background: "var(--surface)", color, fontSize: 12.5, fontFamily: sans, fontWeight: 700,
   border: `1px solid color-mix(in srgb,${color} 38%,var(--surface))`,
 });
+
+// ── Abas e SOAP ──
+const TabBtn = ({ id, active, set, Ic, label }) => {
+  const on = active === id;
+  return (
+    <button onClick={() => set(id)} role="tab" aria-selected={on}
+      style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "9px 8px", borderRadius: 8, cursor: "pointer", border: "none",
+        background: on ? "var(--surface)" : "transparent", color: on ? ACCENT : "var(--muted)",
+        fontSize: 12.5, fontFamily: sans, fontWeight: on ? 800 : 600, boxShadow: on ? "var(--shadow-sm)" : "none" }}>
+      <Ic size={15} /> {label}
+    </button>
+  );
+};
+
+const SOAP_META = {
+  S: { t: "Subjetivo", c: "#2B6CB0", d: "Relato do paciente" },
+  O: { t: "Objetivo", c: "#0E7490", d: "Exame e sinais vitais" },
+  A: { t: "Avaliação", c: "#6C2377", d: "Hipóteses e diagnóstico" },
+  P: { t: "Plano", c: "#1E8449", d: "Conduta e exames" },
+};
+
+function SoapBlock({ k, items, extra }) {
+  const m = SOAP_META[k];
+  return (
+    <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 9, background: `color-mix(in srgb,${m.c} 16%,var(--surface))`, color: m.c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, fontFamily: sans }}>{k}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: m.c, fontFamily: sans }}>{m.t} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 11 }}>· {m.d}</span></div>
+        <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+          {extra}
+          {items.length ? items.map((t, i) => (
+            <div key={i} style={{ display: "flex", gap: 7, fontSize: 13, color: "var(--text)", fontFamily: sans, lineHeight: 1.5 }}>
+              <span style={{ color: m.c, flexShrink: 0 }}>•</span><span>{t}</span>
+            </div>
+          )) : <span style={{ fontSize: 12.5, color: "var(--muted)", fontFamily: sans }}>Não documentado na transcrição.</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SoapView({ soap, streaming }) {
+  if (!soap || !(soap.S.length || soap.O.length || soap.A.length || soap.P.length))
+    return <div style={{ fontSize: 12.5, color: "var(--muted)", fontFamily: sans, padding: "8px 2px" }}>{streaming ? "Montando o SOAP…" : "SOAP indisponível para esta análise."}</div>;
+  const alarms = soap.alarms?.length ? (
+    <div style={{ display: "flex", gap: 7, background: "color-mix(in srgb,#C53030 10%,var(--surface))", border: "1px solid color-mix(in srgb,#C53030 30%,var(--surface))", borderRadius: 8, padding: "6px 9px", marginBottom: 2 }}>
+      <Siren size={14} color="#C53030" style={{ flexShrink: 0, marginTop: 1 }} />
+      <span style={{ fontSize: 12, color: "var(--text)", fontFamily: sans, lineHeight: 1.45 }}><strong style={{ color: "#C53030" }}>Alerta:</strong> {soap.alarms.join("; ")}</span>
+    </div>
+  ) : null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <SoapBlock k="S" items={soap.S} />
+      <SoapBlock k="O" items={soap.O} />
+      <SoapBlock k="A" items={soap.A} extra={alarms} />
+      <SoapBlock k="P" items={soap.P} />
+    </div>
+  );
+}
+
+const soapText = s => !s ? "" : [
+  ["S — Subjetivo", s.S],
+  ["O — Objetivo", s.O],
+  ["A — Avaliação", [...(s.alarms || []).map(a => `! ${a}`), ...s.A]],
+  ["P — Plano", s.P],
+].map(([h, arr]) => `${h}\n${(arr && arr.length ? arr : ["Não documentado."]).map(x => `- ${x}`).join("\n")}`).join("\n\n");
 
 const txt = { fontSize: 13, color: "var(--text)", fontFamily: sans, lineHeight: 1.65, margin: "8px 0" };
 const code = { background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontFamily: "monospace", fontSize: 12.5, color: "var(--text)", whiteSpace: "pre-wrap", margin: "10px 0" };
