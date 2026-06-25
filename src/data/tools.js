@@ -18,6 +18,13 @@ export const TOOL_GROUPS = [
     ],
   },
   {
+    cat: "Anamnese & Documentação",
+    color: "#9D174D", light: "#FDF2F8", border: "#DB2777",
+    items: [
+      { id: "anamnese", kind: "anamnese", label: "Anamnese com IA · 🔒 protegida", sub: "Grave o atendimento, transcreva (Whisper) e gere anamnese estruturada, hipóteses, CID-10 e conduta — requer senha" },
+    ],
+  },
+  {
     cat: "Procedimentos",
     color: "#2B6CB0", light: "#EBF5FB", border: "#2980B9",
     items: [

@@ -8,6 +8,7 @@ import DoseCalc from "./components/DoseCalc.jsx";
 import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
+import AnamneseTool from "./components/AnamneseTool.jsx";
 import SymptomTriage from "./components/SymptomTriage.jsx";
 import DrugAlerts from "./components/DrugAlerts.jsx";
 import PedWeight from "./components/PedWeight.jsx";
@@ -546,6 +547,7 @@ export default function App() {
               {kind === "procedures" && <Procedures />}
               {kind === "pedweight" && <PedWeight onApply={setWeight} currentWeight={weight} />}
               {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
+              {kind === "anamnese" && <AnamneseTool />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
             </div>

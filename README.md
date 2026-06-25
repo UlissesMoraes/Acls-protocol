@@ -148,6 +148,32 @@ Configuração na Vercel (**Project → Settings → Environment Variables**):
 > Após adicioná-las, faça um novo deploy. Sem a chave, o app funciona normalmente
 > e o Copiloto exibe um aviso de "não configurado".
 
+## 📝 Anamnese com IA (área protegida)
+
+Ferramenta exclusiva, **protegida por senha**, para transcrever o atendimento e
+gerar um documento clínico estruturado:
+
+1. **Gravação ou upload de áudio** (no aparelho) → **transcrição** via OpenAI
+   Whisper (`api/transcribe.js`).
+2. **Transcrição editável** + campos de contexto (idade, sexo, observações).
+3. **Análise clínica estruturada** (modo `anamnese` de `api/ai.js`): identificação
+   e queixa, HMA, antecedentes, revisão de sistemas, **red flags**, **hipóteses
+   diagnósticas**, **CID-10 sugeridos**, exames complementares, conduta e
+   pendências — com cópia e export `.md`.
+
+**Segurança:** o gate é **server-side** — a senha (`ANAMNESE_PASSWORD`) e a chave
+da OpenAI ficam só no servidor, e cada chamada paga (transcrição/análise)
+revalida a senha. O front-end apenas destrava a UI. Variáveis na Vercel:
+
+| Variável | Obrigatória | Padrão | Função |
+|---|---|---|---|
+| `ANAMNESE_PASSWORD` | ✅ | — | Senha da área de anamnese |
+| `OPENAI_TRANSCRIBE_MODEL` | — | `whisper-1` | Modelo de transcrição |
+
+> ⚕️ **LGPD:** áudio e texto são enviados à OpenAI. Evitar identificadores diretos
+> do paciente, obter consentimento e seguir a política da instituição. Os CID-10 e
+> hipóteses são sugestões — conferir antes do prontuário.
+
 ## 🧊 Procedimentos 3D
 
 Ferramenta de procedimentos com modelo 3D animado passo a passo, renderizado no

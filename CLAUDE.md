@@ -37,8 +37,14 @@ npm run check   # valida schema dos dados clínicos + testes unitários (node:te
 ## Segurança da chave OpenAI (regra permanente)
 
 A chave da OpenAI vive **somente** na env var `OPENAI_API_KEY` da Vercel, lida
-pela função serverless `api/ai.js`. **Nunca** colocar a chave no código, no
-bundle do front-end nem em commits. Não usar prefixo `VITE_` nessa variável.
+pelas funções serverless `api/ai.js` e `api/transcribe.js`. **Nunca** colocar a
+chave no código, no bundle do front-end nem em commits. Não usar prefixo `VITE_`
+nessa variável.
+
+A área de **anamnese** é protegida por senha (`ANAMNESE_PASSWORD`, também só no
+servidor). O gate real é server-side: `api/transcribe.js` e o modo `anamnese` de
+`api/ai.js` revalidam a senha a cada chamada (o front-end apenas destrava a UI).
+Dados clínicos vão à OpenAI — manter o aviso de LGPD na ferramenta.
 
 ## Git
 

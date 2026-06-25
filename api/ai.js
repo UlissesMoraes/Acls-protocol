@@ -115,13 +115,44 @@ Formato OBRIGATÓRIO:
 Seja conciso (máx ~8 bullets). NÃO repita as doses do protocolo. Não invente interações inexistentes.
 Finalize: "Apoio à decisão — confira a bula e o quadro do paciente."`;
 
+const ANAMNESE_RULES = `Você é um médico assistente experiente que ESTRUTURA e ANALISA uma anamnese a partir da TRANSCRIÇÃO de um atendimento (fala do médico e/ou do paciente), em português do Brasil. Produza um documento clínico organizado, técnico e pronto para revisão e registro em prontuário.
+
+A transcrição pode conter erros (palavras trocadas, pontuação ausente) — interprete com bom senso clínico e sinalize trechos ambíguos em "Pendências". Pode haver dados de contexto (idade, sexo, observações) antes da transcrição.
+
+Use Markdown e EXATAMENTE esta estrutura. Omita uma seção apenas se não houver NENHUMA informação para ela:
+
+## 📋 Identificação e Queixa Principal
+## 📖 História da Moléstia Atual (HMA)
+(organize cronologicamente e caracterize a semiologia: início, localização, qualidade, intensidade, irradiação, duração, fatores de melhora/piora e sintomas associados)
+## 🩺 Antecedentes, Medicações e Alergias
+(pessoais, familiares, hábitos de vida, medicações em uso, alergias)
+## 🔎 Revisão de Sistemas
+## ⚠️ Sinais de Alarme / Red Flags
+(o que não pode passar despercebido neste caso — destaque)
+## 🧠 Hipóteses Diagnósticas
+(em ordem de probabilidade, com o raciocínio que sustenta cada uma e o que a diferencia das demais)
+## 🏷️ CID-10 Sugeridos
+(para as principais hipóteses: **CÓDIGO** — descrição. São SUGESTÕES a confirmar pelo médico)
+## 🧪 Exames Complementares Sugeridos
+(laboratoriais e de imagem que ajudam a confirmar/excluir as hipóteses)
+## 💊 Conduta / Plano
+## ❓ Pendências a Esclarecer
+(informações que faltaram na anamnese e que o médico deve perguntar/registrar)
+
+Regras invioláveis:
+- NÃO invente dados que não estejam na transcrição. Se algo não foi dito, escreva "não relatado".
+- Os códigos CID-10 são sugestões e devem ser sempre conferidos pelo médico.
+- Seja técnico, objetivo e completo. Sem floreios. Português do Brasil.
+- Finalize com: "⚠️ Documento gerado por IA a partir de transcrição — revisar e validar antes de registrar em prontuário. A responsabilidade clínica é do médico assistente."`;
+
 const MODE_CONFIGS = {
-  chat:       { rules: BASE_RULES,       temp: 0.3, maxTok: 1100, useCtx: true },
+  chat:       { rules: BASE_RULES,       temp: 0.3, maxTok: 1100, useCtx: true  },
   narrate:    { rules: NARRATE_RULES,    temp: 0.2, maxTok: 900,  useCtx: false },
   debriefing: { rules: DEBRIEFING_RULES, temp: 0.2, maxTok: 900,  useCtx: false },
   prioritize: { rules: PRIORITIZE_RULES, temp: 0.2, maxTok: 600,  useCtx: false },
   triage:     { rules: TRIAGE_RULES,     temp: 0.2, maxTok: 500,  useCtx: false },
   alerts:     { rules: ALERTS_RULES,     temp: 0.2, maxTok: 600,  useCtx: false },
+  anamnese:   { rules: ANAMNESE_RULES,   temp: 0.2, maxTok: 2400, useCtx: false, protected: true },
 };
 
 function systemPrompt(mode, context) {
@@ -158,6 +189,13 @@ export default async function handler(req) {
   const VALID_MODES = Object.keys(MODE_CONFIGS);
   const mode = VALID_MODES.includes(body.mode) ? body.mode : "chat";
   const cfg = MODE_CONFIGS[mode];
+
+  // Modos protegidos (área de anamnese): revalidar a senha no servidor.
+  if (cfg.protected) {
+    const pw = process.env.ANAMNESE_PASSWORD;
+    if (!pw) return json({ error: "Área de anamnese não configurada", detail: "Defina ANAMNESE_PASSWORD nas variáveis de ambiente da Vercel.", code: "no_password" }, 503);
+    if ((req.headers.get("x-anamnese-key") || "") !== pw) return json({ error: "Senha incorreta ou sessão expirada", code: "bad_password" }, 401);
+  }
 
   let messages = Array.isArray(body.messages) ? body.messages : [];
   if (!messages.length) return json({ error: "messages vazio" }, 400);
