@@ -52,7 +52,7 @@ export async function exportAnamnesePDF(data) {
 }
 
 // Construção pura do documento (testável em Node com o construtor jsPDF).
-export function buildAnamneseDoc(jsPDF, { analysis, transcript, idade, sexo, nota }) {
+export function buildAnamneseDoc(jsPDF, { analysis, transcript, idade, sexo, nota, templateLabel }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   const M = 15, PW = 210, PH = 297, CW = PW - 2 * M, LH = 4.5, BOTTOM = PH - 18;
@@ -102,6 +102,10 @@ export function buildAnamneseDoc(jsPDF, { analysis, transcript, idade, sexo, not
   try { dateStr = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch {}
   doc.text(dateStr, PW - M, 11.5, { align: "right" });
   doc.setFontSize(7.5); doc.text("Documento gerado com apoio de IA", PW - M, 16.5, { align: "right" });
+  if (templateLabel && !/geral/i.test(templateLabel)) {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+    doc.text(san(`Modelo: ${templateLabel}`), M, 20.5);
+  }
   y = 32;
 
   // ── Caixa de contexto do paciente ──

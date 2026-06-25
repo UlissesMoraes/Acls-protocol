@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { parseAnamnese, shortHip, hasApontamentos, buildSoap } from "../lib/anamneseParse.js";
 import { suggestLinks, SCORE_SHORT } from "../lib/anamneseLinks.js";
+import { ANAMNESE_TEMPLATES, templateById } from "../data/anamneseTemplates.js";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
@@ -79,6 +80,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const [idade, setIdade] = useState("");
   const [sexo, setSexo] = useState("");
   const [nota, setNota] = useState("");
+  const [tmpl, setTmpl] = useState("geral");
   const [analysis, setAnalysis] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
@@ -203,8 +205,11 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const analyze = async () => {
     if (!transcript.trim() || streaming) return;
     setError(""); setAnalysis("");
+    const tpl = templateById(tmpl);
     const ctx = [idade && `Idade: ${idade}`, sexo && `Sexo: ${sexo}`].filter(Boolean).join(" · ");
     const userMsg =
+      (tpl.guidance ? `${tpl.guidance}\n\n` : "") +
+      (tpl.id !== "geral" ? `Modelo de anamnese selecionado: ${tpl.label}.\n` : "") +
       (ctx ? `Dados de contexto: ${ctx}.\n` : "") +
       (nota.trim() ? `Observações do médico: ${nota.trim()}.\n` : "") +
       `\nTranscrição do atendimento:\n"""\n${transcript.trim()}\n"""`;
@@ -219,7 +224,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
         mode: "anamnese", authKey, signal: ctrl.signal,
         onToken: d => { acc += d; setAnalysis(acc); },
       });
-      if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), transcript: transcript.trim(), analysis: acc }));
+      if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), tmpl: tpl.label, transcript: transcript.trim(), analysis: acc }));
     } catch (e) {
       if (e?.name === "AbortError") { /* mantém parcial */ }
       else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
@@ -235,7 +240,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const exportPDF = async () => {
     if (pdfBusy) return;
     setPdfBusy(true); setError("");
-    try { await exportAnamnesePDF({ analysis, transcript, idade, sexo, nota }); }
+    try { await exportAnamnesePDF({ analysis, transcript, idade, sexo, nota, templateLabel: templateById(tmpl).label }); }
     catch { setError("Falha ao gerar o PDF. Tente novamente."); }
     finally { setPdfBusy(false); }
   };
@@ -323,6 +328,31 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
         </span>
       </div>
 
+      {/* Tipo de anamnese (modelos) */}
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "13px 14px", boxShadow: "var(--shadow-sm)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <ClipboardList size={16} color={ACCENT} />
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-strong)", fontFamily: sans }}>Tipo de anamnese</span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {ANAMNESE_TEMPLATES.map(t => {
+            const on = tmpl === t.id;
+            return (
+              <button key={t.id} onClick={() => setTmpl(t.id)} title={t.desc}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 20, cursor: "pointer", fontFamily: sans, fontSize: 12.5, fontWeight: on ? 800 : 600,
+                  border: `1px solid ${on ? ACCENT : "var(--input-border)"}`,
+                  background: on ? `color-mix(in srgb,${ACCENT} 12%,var(--surface))` : "var(--surface)",
+                  color: on ? ACCENT : "var(--text)" }}>
+                <span style={{ fontSize: 14 }}>{t.emoji}</span> {t.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--muted)", fontFamily: sans, marginTop: 9, lineHeight: 1.5 }}>
+          {templateById(tmpl).desc} A IA estrutura a análise conforme o modelo escolhido.
+        </div>
+      </div>
+
       {/* Histórico local (24h) */}
       {history.length > 0 && (
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
@@ -337,8 +367,10 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
               {history.map(h => (
                 <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 10, marginBottom: 2 }}>
                   <button onClick={() => reopen(h)} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, display: "flex", gap: 6, alignItems: "center" }}>
-                      {clock(h.ts)} {(h.idade || h.sexo) && <span>· {[h.idade, h.sexo].filter(Boolean).join(" · ")}</span>}
+                    <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      {clock(h.ts)}
+                      {(h.idade || h.sexo) && <span>· {[h.idade, h.sexo].filter(Boolean).join(" · ")}</span>}
+                      {h.tmpl && h.tmpl !== "Geral / Clínica" && <span style={{ color: ACCENT, fontWeight: 700 }}>· {h.tmpl}</span>}
                     </div>
                     <div style={{ fontSize: 13, color: "var(--text)", fontFamily: sans, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview(h)}</div>
                   </button>
