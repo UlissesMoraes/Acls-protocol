@@ -547,7 +547,7 @@ export default function App() {
               {kind === "procedures" && <Procedures />}
               {kind === "pedweight" && <PedWeight onApply={setWeight} currentWeight={weight} />}
               {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
-              {kind === "anamnese" && <AnamneseTool />}
+              {kind === "anamnese" && <AnamneseTool onOpenProtocol={openProto} onOpenTool={openTool} protocols={protocols} />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
             </div>

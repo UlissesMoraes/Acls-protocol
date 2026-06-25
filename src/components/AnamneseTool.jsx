@@ -3,8 +3,10 @@ import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
   Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
   History, RotateCcw, ChevronDown, Activity, Tag, FlaskConical, ListChecks, HelpCircle, Siren,
+  ExternalLink, BarChart3,
 } from "lucide-react";
 import { parseAnamnese, shortHip, hasApontamentos } from "../lib/anamneseParse.js";
+import { suggestLinks, SCORE_SHORT } from "../lib/anamneseLinks.js";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
@@ -51,7 +53,7 @@ function pickMime() {
 const extFor = mime => (mime.includes("mp4") ? "mp4" : mime.includes("ogg") ? "ogg" : "webm");
 const fmtTime = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-export default function AnamneseTool() {
+export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [] }) {
   // ── Auth ──
   const [authKey, setAuthKey] = useState(() => {
     try { return sessionStorage.getItem(SESSION_KEY) || ""; } catch { return ""; }
@@ -89,6 +91,12 @@ export default function AnamneseTool() {
 
   // Apontamentos visuais extraídos da análise (atualiza durante o streaming).
   const parsed = useMemo(() => parseAnamnese(analysis), [analysis]);
+  // Atalhos acionáveis: protocolos (existentes no modo atual) e escores sugeridos.
+  const links = useMemo(() => {
+    const { protocolIds, scoreIds } = suggestLinks(parsed);
+    const protos = protocolIds.map(id => protocols.find(p => p.id === id)).filter(Boolean);
+    return { protos, scoreIds };
+  }, [parsed, protocols]);
 
   // Mantém a tela ligada durante a gravação (não interromper o atendimento).
   useWakeLock(recording);
@@ -430,6 +438,43 @@ export default function AnamneseTool() {
 
           <Apontamentos d={parsed} onCopyCid={code => copy(code, `cid-${code}`)} copied={copied} />
 
+          {/* Atalhos acionáveis no app */}
+          {(links.protos.length > 0 || links.scoreIds.length > 0) && (
+            <div style={{ marginTop: 10, background: "color-mix(in srgb,#2B6CB0 8%,var(--surface))", border: "1px solid color-mix(in srgb,#2B6CB0 26%,var(--surface))", borderRadius: 12, padding: "11px 13px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
+                <ExternalLink size={16} color="#2B6CB0" />
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#2B6CB0", fontFamily: sans, textTransform: "uppercase", letterSpacing: ".03em" }}>Atalhos no app</span>
+              </div>
+              {links.protos.length > 0 && (
+                <div style={{ marginBottom: links.scoreIds.length ? 9 : 0 }}>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, marginBottom: 5 }}>Protocolos</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                    {links.protos.map(p => (
+                      <button key={p.id} onClick={() => onOpenProtocol?.(p.id)} style={linkBtn(p.color || "#2B6CB0")}>
+                        <ListChecks size={13} /> {p.label} <ChevronDown size={13} style={{ transform: "rotate(-90deg)", opacity: 0.6 }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {links.scoreIds.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, marginBottom: 5 }}>Escores sugeridos</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                    {links.scoreIds.map(id => (
+                      <button key={id} onClick={() => onOpenTool?.(id)} style={linkBtn("#1E8449")}>
+                        <BarChart3 size={13} /> {SCORE_SHORT[id] || id} <ChevronDown size={13} style={{ transform: "rotate(-90deg)", opacity: 0.6 }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{ fontSize: 10.5, color: "var(--muted)", fontFamily: sans, marginTop: 9, lineHeight: 1.5 }}>
+                Abre o protocolo/escore correspondente. O atendimento atual fica salvo no histórico (24h) para reabrir.
+              </div>
+            </div>
+          )}
+
           {/* Documento completo (recolhível) */}
           {analysis && (
             <div style={{ marginTop: hasApontamentos(parsed) ? 14 : 0, border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
@@ -569,6 +614,12 @@ const BulletList = ({ items, color, marker = "•" }) => (
 const chip = color => ({
   display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, maxWidth: "100%",
   background: `color-mix(in srgb,${color} 12%,var(--surface))`, color, fontSize: 12.5, fontFamily: sans, fontWeight: 600,
+});
+
+const linkBtn = color => ({
+  display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+  background: "var(--surface)", color, fontSize: 12.5, fontFamily: sans, fontWeight: 700,
+  border: `1px solid color-mix(in srgb,${color} 38%,var(--surface))`,
 });
 
 const txt = { fontSize: 13, color: "var(--text)", fontFamily: sans, lineHeight: 1.65, margin: "8px 0" };

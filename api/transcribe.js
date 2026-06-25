@@ -49,10 +49,14 @@ export default async function handler(req) {
   if (file.size > MAX_BYTES) return json({ error: "Áudio acima de 25 MB — grave trechos menores ou reduza a qualidade" }, 413);
 
   const model = process.env.OPENAI_TRANSCRIBE_MODEL || "whisper-1";
+  // Viés de domínio: melhora o reconhecimento de termos clínicos, fala coloquial
+  // e truncada, nomes de fármacos e doses em pt-BR.
+  const PROMPT = "Consulta médica em português do Brasil. Transcreva fielmente a fala, incluindo sintomas, queixas em linguagem coloquial, termos clínicos, nomes de medicamentos, doses e unidades (mg, mL, mcg/kg/min).";
   const upstreamForm = new FormData();
   upstreamForm.append("file", file, file.name || "audio.webm");
   upstreamForm.append("model", model);
   upstreamForm.append("language", "pt");
+  upstreamForm.append("prompt", PROMPT);
   upstreamForm.append("response_format", "json");
 
   let upstream;
