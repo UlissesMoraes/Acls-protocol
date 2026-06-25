@@ -84,6 +84,7 @@ export default function AnamneseTool() {
   const [history, setHistory] = useState([]);
   const [showHist, setShowHist] = useState(false);
   const [showFull, setShowFull] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const abortRef = useRef(null);
 
   // Apontamentos visuais extraídos da análise (atualiza durante o streaming).
@@ -222,7 +223,13 @@ export default function AnamneseTool() {
   const copy = async (text, tag) => {
     try { await navigator.clipboard.writeText(text); setCopied(tag); setTimeout(() => setCopied(""), 1500); } catch {}
   };
-  const exportPDF = () => exportAnamnesePDF({ analysis, transcript, idade, sexo, nota });
+  const exportPDF = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true); setError("");
+    try { await exportAnamnesePDF({ analysis, transcript, idade, sexo, nota }); }
+    catch { setError("Falha ao gerar o PDF. Tente novamente."); }
+    finally { setPdfBusy(false); }
+  };
 
   // ── Histórico (24h) ──
   const reopen = h => {
@@ -446,7 +453,9 @@ export default function AnamneseTool() {
               <button onClick={() => copy(analysis, "a")} style={btnGhost}>
                 {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar análise
               </button>
-              <button onClick={exportPDF} style={{ ...btnPrimary, background: ACCENT }}><FileDown size={16} /> Exportar PDF</button>
+              <button onClick={exportPDF} disabled={pdfBusy} style={{ ...btnPrimary, background: ACCENT, opacity: pdfBusy ? 0.6 : 1 }}>
+                {pdfBusy ? <Loader2 size={16} className="anam-spin" /> : <FileDown size={16} />} {pdfBusy ? "Gerando…" : "Exportar PDF"}
+              </button>
             </div>
           )}
         </Section>
