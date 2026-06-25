@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
   Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
-  History, RotateCcw, ChevronDown,
+  History, RotateCcw, ChevronDown, Activity, Tag, FlaskConical, ListChecks, HelpCircle, Siren,
 } from "lucide-react";
+import { parseAnamnese, shortHip, hasApontamentos } from "../lib/anamneseParse.js";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
@@ -82,7 +83,11 @@ export default function AnamneseTool() {
   const [copied, setCopied] = useState("");
   const [history, setHistory] = useState([]);
   const [showHist, setShowHist] = useState(false);
+  const [showFull, setShowFull] = useState(false);
   const abortRef = useRef(null);
+
+  // Apontamentos visuais extraídos da análise (atualiza durante o streaming).
+  const parsed = useMemo(() => parseAnamnese(analysis), [analysis]);
 
   // Mantém a tela ligada durante a gravação (não interromper o atendimento).
   useWakeLock(recording);
@@ -407,20 +412,39 @@ export default function AnamneseTool() {
         </div>
       )}
 
-      {/* 3 — Análise */}
+      {/* 3 — Apontamentos visuais + análise */}
       {(analysis || streaming) && (
-        <Section n={3} title="Análise clínica estruturada">
-          <div style={{ fontSize: 13.5, fontFamily: sans, color: "var(--text)", lineHeight: 1.6 }}>
-            <Markdown text={analysis} />
-            {streaming && <span style={{ display: "inline-block", width: 7, height: 14, background: "var(--text)", marginLeft: 2, borderRadius: 1, verticalAlign: "middle", animation: "anamBlink 1s infinite" }} />}
-          </div>
+        <Section n={3} title="Apontamentos e análise">
+          {streaming && !hasApontamentos(parsed) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--muted)", fontFamily: sans, padding: "6px 0 12px" }}>
+              <Loader2 size={15} className="anam-spin" /> Analisando o caso…
+            </div>
+          )}
+
+          <Apontamentos d={parsed} onCopyCid={code => copy(code, `cid-${code}`)} copied={copied} />
+
+          {/* Documento completo (recolhível) */}
+          {analysis && (
+            <div style={{ marginTop: hasApontamentos(parsed) ? 14 : 0, border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden" }}>
+              <button onClick={() => setShowFull(s => !s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "11px 13px", background: "var(--surface-2)", border: "none", cursor: "pointer", fontFamily: sans }}>
+                <FileText size={16} color="var(--muted)" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-strong)" }}>Documento completo</span>
+                {streaming && <Loader2 size={14} className="anam-spin" style={{ color: "var(--muted)" }} />}
+                <ChevronDown size={16} color="var(--muted)" style={{ marginLeft: "auto", transform: showFull ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+              </button>
+              {showFull && (
+                <div style={{ padding: "12px 14px", fontSize: 13.5, fontFamily: sans, color: "var(--text)", lineHeight: 1.6, borderTop: "1px solid var(--border)" }}>
+                  <Markdown text={analysis} />
+                  {streaming && <span style={{ display: "inline-block", width: 7, height: 14, background: "var(--text)", marginLeft: 2, borderRadius: 1, verticalAlign: "middle", animation: "anamBlink 1s infinite" }} />}
+                </div>
+              )}
+            </div>
+          )}
+
           {analysis && !streaming && (
             <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
               <button onClick={() => copy(analysis, "a")} style={btnGhost}>
                 {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar análise
-              </button>
-              <button onClick={() => copy(stripMd(analysis), "p")} style={btnGhost}>
-                {copied === "p" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar texto puro
               </button>
               <button onClick={exportPDF} style={{ ...btnPrimary, background: ACCENT }}><FileDown size={16} /> Exportar PDF</button>
             </div>
@@ -459,6 +483,84 @@ const Field = ({ label, grow, children }) => (
     {children}
   </label>
 );
+
+// ── Apontamentos visuais (cards) extraídos da análise ──
+function Apontamentos({ d, onCopyCid, copied }) {
+  if (!hasApontamentos(d)) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {d.redFlags.length > 0 && (
+        <AptCard Ic={Siren} color="#C53030" title="Sinais de alarme">
+          <BulletList items={d.redFlags} color="#C53030" />
+        </AptCard>
+      )}
+      {d.hipoteses.length > 0 && (
+        <AptCard Ic={Activity} color="#6C2377" title="Hipóteses diagnósticas">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {d.hipoteses.map((h, i) => (
+              <span key={i} style={chip("#6C2377")}><span style={{ fontWeight: 800, opacity: 0.65 }}>{i + 1}</span> {shortHip(h)}</span>
+            ))}
+          </div>
+        </AptCard>
+      )}
+      {d.cid.length > 0 && (
+        <AptCard Ic={Tag} color="#2B6CB0" title="CID-10 sugeridos — conferir">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {d.cid.map((c, i) => (
+              <button key={i} onClick={() => onCopyCid(c.code)} title="Copiar código"
+                style={{ ...chip("#2B6CB0"), cursor: "pointer", border: "1px solid color-mix(in srgb,#2B6CB0 35%,var(--surface))" }}>
+                {copied === `cid-${c.code}` ? <Check size={13} color="#1E8449" /> : <Tag size={12} />}
+                <strong>{c.code}</strong>{c.desc && <span style={{ opacity: 0.85, fontWeight: 500 }}>· {c.desc}</span>}
+              </button>
+            ))}
+          </div>
+        </AptCard>
+      )}
+      {d.conduta.length > 0 && (
+        <AptCard Ic={ListChecks} color="#1E8449" title="Orientações / conduta">
+          <BulletList items={d.conduta} color="#1E8449" />
+        </AptCard>
+      )}
+      {d.pendencias.length > 0 && (
+        <AptCard Ic={HelpCircle} color="#B7791F" title="A confirmar / perguntar">
+          <BulletList items={d.pendencias} color="#B7791F" marker="○" />
+        </AptCard>
+      )}
+      {d.exames.length > 0 && (
+        <AptCard Ic={FlaskConical} color="#0E7490" title="Exames sugeridos">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+            {d.exames.map((e, i) => <span key={i} style={chip("#0E7490")}>{e}</span>)}
+          </div>
+        </AptCard>
+      )}
+    </div>
+  );
+}
+
+const AptCard = ({ Ic, color, title, children }) => (
+  <div style={{ background: `color-mix(in srgb,${color} 8%,var(--surface))`, border: `1px solid color-mix(in srgb,${color} 26%,var(--surface))`, borderRadius: 12, padding: "11px 13px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+      <Ic size={16} color={color} />
+      <span style={{ fontSize: 12, fontWeight: 800, color, fontFamily: sans, textTransform: "uppercase", letterSpacing: ".03em" }}>{title}</span>
+    </div>
+    {children}
+  </div>
+);
+
+const BulletList = ({ items, color, marker = "•" }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+    {items.map((t, i) => (
+      <div key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--text)", fontFamily: sans, lineHeight: 1.5 }}>
+        <span style={{ color, flexShrink: 0, fontWeight: 700 }}>{marker}</span><span>{t}</span>
+      </div>
+    ))}
+  </div>
+);
+
+const chip = color => ({
+  display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 20, maxWidth: "100%",
+  background: `color-mix(in srgb,${color} 12%,var(--surface))`, color, fontSize: 12.5, fontFamily: sans, fontWeight: 600,
+});
 
 const txt = { fontSize: 13, color: "var(--text)", fontFamily: sans, lineHeight: 1.65, margin: "8px 0" };
 const code = { background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px", fontFamily: "monospace", fontSize: 12.5, color: "var(--text)", whiteSpace: "pre-wrap", margin: "10px 0" };
