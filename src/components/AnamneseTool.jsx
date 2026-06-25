@@ -2,12 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
   Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
+  History, RotateCcw, ChevronDown,
 } from "lucide-react";
 import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
 import { useWakeLock } from "../hooks/useWakeLock.js";
 import { exportAnamnesePDF } from "../lib/anamnesePdf.js";
+import { loadHistory, saveEntry, deleteEntry, clearHistory } from "../lib/anamneseHistory.js";
+
+const clock = ts => { try { return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+const preview = h => (h.transcript || stripMd(h.analysis || "") || "").trim().replace(/\s+/g, " ").slice(0, 80) || "anamnese";
 
 // Extrai idade/sexo/observações da transcrição (heurística pt-BR, só preenche
 // campos vazios — nunca sobrescreve o que o médico digitou).
@@ -75,10 +80,15 @@ export default function AnamneseTool() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
+  const [history, setHistory] = useState([]);
+  const [showHist, setShowHist] = useState(false);
   const abortRef = useRef(null);
 
   // Mantém a tela ligada durante a gravação (não interromper o atendimento).
   useWakeLock(recording);
+
+  // Carrega o histórico local (24h) ao desbloquear a área.
+  useEffect(() => { if (authed) setHistory(loadHistory()); }, [authed]);
 
   useEffect(() => () => {
     clearInterval(timerRef.current);
@@ -194,6 +204,7 @@ export default function AnamneseTool() {
         mode: "anamnese", authKey, signal: ctrl.signal,
         onToken: d => { acc += d; setAnalysis(acc); },
       });
+      if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), transcript: transcript.trim(), analysis: acc }));
     } catch (e) {
       if (e?.name === "AbortError") { /* mantém parcial */ }
       else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
@@ -207,6 +218,14 @@ export default function AnamneseTool() {
     try { await navigator.clipboard.writeText(text); setCopied(tag); setTimeout(() => setCopied(""), 1500); } catch {}
   };
   const exportPDF = () => exportAnamnesePDF({ analysis, transcript, idade, sexo, nota });
+
+  // ── Histórico (24h) ──
+  const reopen = h => {
+    setTranscript(h.transcript || ""); setAnalysis(h.analysis || "");
+    setIdade(h.idade || ""); setSexo(h.sexo || ""); setNota(h.nota || "");
+    setError(""); setShowHist(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // ── Tela "não configurado" ──
   if (notConfigured) {
@@ -282,6 +301,40 @@ export default function AnamneseTool() {
           <strong>LGPD:</strong> o áudio e o texto são enviados à OpenAI para processamento. Evite nomes completos e identificadores diretos do paciente. Obtenha consentimento e siga a política da sua instituição. Conteúdo é apoio à decisão — a responsabilidade é do médico assistente.
         </span>
       </div>
+
+      {/* Histórico local (24h) */}
+      {history.length > 0 && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
+          <button onClick={() => setShowHist(s => !s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "12px 14px", background: "none", border: "none", cursor: "pointer", fontFamily: sans }}>
+            <History size={17} color={ACCENT} />
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-strong)" }}>Histórico (24h)</span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: ACCENT, background: `color-mix(in srgb,${ACCENT} 12%,var(--surface))`, padding: "1px 8px", borderRadius: 20 }}>{history.length}</span>
+            <ChevronDown size={17} color="var(--muted)" style={{ marginLeft: "auto", transform: showHist ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+          </button>
+          {showHist && (
+            <div style={{ borderTop: "1px solid var(--border)", padding: "8px 10px 12px" }}>
+              {history.map(h => (
+                <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 8px", borderRadius: 10, marginBottom: 2 }}>
+                  <button onClick={() => reopen(h)} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                    <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: sans, display: "flex", gap: 6, alignItems: "center" }}>
+                      {clock(h.ts)} {(h.idade || h.sexo) && <span>· {[h.idade, h.sexo].filter(Boolean).join(" · ")}</span>}
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text)", fontFamily: sans, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview(h)}</div>
+                  </button>
+                  <button onClick={() => reopen(h)} title="Reabrir" style={iconBtn}><RotateCcw size={15} /></button>
+                  <button onClick={() => setHistory(deleteEntry(h.id))} title="Excluir" style={iconBtn}><Trash2 size={15} /></button>
+                </div>
+              ))}
+              <button onClick={() => { clearHistory(); setHistory([]); }} style={{ ...btnGhost, marginTop: 8, fontSize: 12.5, padding: "8px 13px" }}>
+                <Trash2 size={14} /> Limpar histórico
+              </button>
+              <div style={{ fontSize: 10.5, color: "var(--muted)", fontFamily: sans, marginTop: 10, lineHeight: 1.5, display: "flex", gap: 6 }}>
+                <ShieldCheck size={13} style={{ flexShrink: 0, marginTop: 1 }} /> Guardado só neste aparelho e apagado automaticamente após 24h. Áudio não é salvo.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 1 — Captura de áudio */}
       <Section n={1} title="Gravar ou enviar o áudio">

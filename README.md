@@ -159,7 +159,12 @@ gerar um documento clínico estruturado:
 3. **Análise clínica estruturada** (modo `anamnese` de `api/ai.js`): identificação
    e queixa, HMA, antecedentes, revisão de sistemas, **red flags**, **hipóteses
    diagnósticas**, **CID-10 sugeridos**, exames complementares, conduta e
-   pendências — com cópia e export `.md`.
+   pendências — com cópia e **export em PDF** clínico formatado.
+
+Comodidades: **autopreenchimento** de idade/sexo/observações a partir da fala,
+**tela mantida ligada** (Wake Lock) durante a gravação e **histórico local de 24h**
+(só no aparelho, sem áudio, com expiração automática) para reabrir atendimentos
+recentes.
 
 **Segurança:** o gate é **server-side** — a senha (`ANAMNESE_PASSWORD`) e a chave
 da OpenAI ficam só no servidor, e cada chamada paga (transcrição/análise)
