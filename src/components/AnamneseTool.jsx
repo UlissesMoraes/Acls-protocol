@@ -100,6 +100,10 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     return { protos, scoreIds };
   }, [parsed, protocols]);
   const soap = useMemo(() => buildSoap(parsed), [parsed]);
+  const isNarrative = !!templateById(tmpl).narrative;
+  // Resultado estruturado (cards/abas) vs narrativo (texto corrido).
+  const structured = hasApontamentos(parsed) || soap.S.length || soap.A.length || soap.P.length;
+  const showTabs = structured || (streaming && !isNarrative);
 
   // Mantém a tela ligada durante a gravação (não interromper o atendimento).
   useWakeLock(recording);
@@ -206,13 +210,15 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     if (!transcript.trim() || streaming) return;
     setError(""); setAnalysis("");
     const tpl = templateById(tmpl);
+    const isNarr = !!tpl.narrative;
     const ctx = [idade && `Idade: ${idade}`, sexo && `Sexo: ${sexo}`].filter(Boolean).join(" · ");
-    const userMsg =
-      (tpl.guidance ? `${tpl.guidance}\n\n` : "") +
-      (tpl.id !== "geral" ? `Modelo de anamnese selecionado: ${tpl.label}.\n` : "") +
-      (ctx ? `Dados de contexto: ${ctx}.\n` : "") +
-      (nota.trim() ? `Observações do médico: ${nota.trim()}.\n` : "") +
-      `\nTranscrição do atendimento:\n"""\n${transcript.trim()}\n"""`;
+    const userMsg = isNarr
+      ? `Transcrição do atendimento:\n"""\n${transcript.trim()}\n"""`
+      : (tpl.guidance ? `${tpl.guidance}\n\n` : "") +
+        (tpl.id !== "geral" ? `Modelo de anamnese selecionado: ${tpl.label}.\n` : "") +
+        (ctx ? `Dados de contexto: ${ctx}.\n` : "") +
+        (nota.trim() ? `Observações do médico: ${nota.trim()}.\n` : "") +
+        `\nTranscrição do atendimento:\n"""\n${transcript.trim()}\n"""`;
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -221,7 +227,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
       let acc = "";
       await streamChat({
         messages: [{ role: "user", content: userMsg }],
-        mode: "anamnese", authKey, signal: ctrl.signal,
+        mode: isNarr ? "anamnese_narr" : "anamnese", authKey, signal: ctrl.signal,
         onToken: d => { acc += d; setAnalysis(acc); },
       });
       if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), tmpl: tpl.label, transcript: transcript.trim(), analysis: acc }));
@@ -442,19 +448,21 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
           placeholder="A transcrição aparecerá aqui. Você pode editar livremente antes de analisar."
           style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: 120, padding: "12px 13px", borderRadius: 11, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--text)", fontSize: 14, fontFamily: sans, lineHeight: 1.6, outline: "none" }}
         />
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
-          <Field label="Idade"><input value={idade} onChange={e => setIdade(e.target.value)} placeholder="ex: 54a" style={miniInput} /></Field>
-          <Field label="Sexo">
-            <select value={sexo} onChange={e => setSexo(e.target.value)} style={{ ...miniInput, width: 120 }}>
-              <option value="">—</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option>
-            </select>
-          </Field>
-          <Field label="Observações (opcional)" grow><input value={nota} onChange={e => setNota(e.target.value)} placeholder="ex: HAS, diabético, alérgico a dipirona" style={{ ...miniInput, width: "100%" }} /></Field>
-        </div>
+        {!isNarrative && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+            <Field label="Idade"><input value={idade} onChange={e => setIdade(e.target.value)} placeholder="ex: 54a" style={miniInput} /></Field>
+            <Field label="Sexo">
+              <select value={sexo} onChange={e => setSexo(e.target.value)} style={{ ...miniInput, width: 120 }}>
+                <option value="">—</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option>
+              </select>
+            </Field>
+            <Field label="Observações (opcional)" grow><input value={nota} onChange={e => setNota(e.target.value)} placeholder="ex: HAS, diabético, alérgico a dipirona" style={{ ...miniInput, width: "100%" }} /></Field>
+          </div>
+        )}
         <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
           {!streaming ? (
             <button onClick={analyze} disabled={!transcript.trim()} style={{ ...btnPrimary, background: ACCENT, opacity: transcript.trim() ? 1 : 0.5 }}>
-              <Sparkles size={17} /> Analisar com IA
+              <Sparkles size={17} /> {isNarrative ? "Gerar narrativa" : "Analisar com IA"}
             </button>
           ) : (
             <button onClick={stopAnalyze} style={{ ...btnPrimary, background: "#C53030" }}><Square size={15} fill="#fff" /> Parar</button>
@@ -479,12 +487,13 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
       {/* 3 — Apontamentos visuais + análise */}
       {(analysis || streaming) && (
         <Section n={3} title="Resultado">
-          {streaming && !hasApontamentos(parsed) && (
+          {streaming && !analysis && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--muted)", fontFamily: sans, padding: "6px 0 12px" }}>
-              <Loader2 size={15} className="anam-spin" /> Analisando o caso…
+              <Loader2 size={15} className="anam-spin" /> {isNarrative ? "Gerando a narrativa…" : "Analisando o caso…"}
             </div>
           )}
 
+          {showTabs ? (<>
           {/* Barra de abas */}
           <div role="tablist" style={{ display: "flex", gap: 4, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 11, padding: 4 }}>
             <TabBtn id="apont" active={tab3} set={setTab3} Ic={ClipboardList} label="Apontamentos" />
@@ -549,11 +558,18 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
               <SoapView soap={soap} streaming={streaming} />
             </div>
           )}
+          </>) : (
+            /* Modo narrativo: apenas o texto corrido */
+            <div style={{ marginTop: 4, fontSize: 14, fontFamily: sans, color: "var(--text)", lineHeight: 1.7 }}>
+              <Markdown text={analysis} />
+              {streaming && <span style={{ display: "inline-block", width: 7, height: 14, background: "var(--text)", marginLeft: 2, borderRadius: 1, verticalAlign: "middle", animation: "anamBlink 1s infinite" }} />}
+            </div>
+          )}
 
           {analysis && !streaming && (
             <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-              <button onClick={() => copy(tab3 === "soap" ? soapText(soap) : analysis, "a")} style={btnGhost}>
-                {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar {tab3 === "soap" ? "SOAP" : "análise"}
+              <button onClick={() => copy(showTabs && tab3 === "soap" ? soapText(soap) : analysis, "a")} style={btnGhost}>
+                {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar {showTabs && tab3 === "soap" ? "SOAP" : (isNarrative ? "narrativa" : "análise")}
               </button>
               <button onClick={exportPDF} disabled={pdfBusy} style={{ ...btnPrimary, background: ACCENT, opacity: pdfBusy ? 0.6 : 1 }}>
                 {pdfBusy ? <Loader2 size={16} className="anam-spin" /> : <FileDown size={16} />} {pdfBusy ? "Gerando…" : "Exportar PDF"}

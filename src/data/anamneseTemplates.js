@@ -11,6 +11,11 @@ export const ANAMNESE_TEMPLATES = [
     guidance: "",
   },
   {
+    id: "narrativo", emoji: "📝", label: "Narrativo (só transcrição)",
+    desc: "Texto corrido do áudio — sem identificação, fatores de risco, hipóteses ou seções.",
+    guidance: "", narrative: true,
+  },
+  {
     id: "politrauma", emoji: "🚑", label: "Politrauma (ATLS)",
     desc: "Vítima de trauma — ABCDE, cinemática e AMPLA.",
     guidance: "MODELO POLITRAUMA (ATLS). Vítima de trauma. Estruture com foco em: mecanismo e cinemática do trauma (tipo, energia, cinto/capacete, ejeção, óbito no local); Avaliação Primária ABCDE — A (via aérea + proteção da coluna cervical), B (ventilação/oxigenação), C (circulação + controle de hemorragia), D (neurológico — Glasgow, pupilas), E (exposição + hipotermia); história AMPLA (Alergias, Medicações, Passado, Líquidos/última ingesta, Ambiente/evento); avaliação secundária e busca de lesões ocultas. Acrescente uma seção \"## 🚑 Avaliação Primária (ABCDE)\" antes das hipóteses.",

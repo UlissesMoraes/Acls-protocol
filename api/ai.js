@@ -149,8 +149,19 @@ Regras invioláveis:
 - Seja técnico, objetivo e completo. Sem floreios. Português do Brasil.
 - Finalize com: "⚠️ Documento gerado por IA a partir de transcrição — revisar e validar antes de registrar em prontuário. A responsabilidade clínica é do médico assistente."`;
 
+const ANAMNESE_NARR_RULES = `Você organiza a TRANSCRIÇÃO de um atendimento (fala do paciente e/ou do médico) em um TEXTO NARRATIVO clínico, em português do Brasil.
+
+Reescreva o que foi dito como uma narrativa corrida, coerente, bem pontuada e em terceira pessoa, fiel ao relato. Corrija a pontuação e os termos coloquiais para a forma adequada quando o sentido for claro (ex.: "falta de ar" → dispneia, "dor de barriga" → dor abdominal), mas NÃO invente nada que não foi dito.
+
+REGRAS INVIOLÁVEIS:
+- Produza APENAS a narrativa. NÃO adicione identificação, fatores de risco, hipóteses diagnósticas, CID, exames, conduta, recomendações, títulos ou seções.
+- NÃO use cabeçalhos de Markdown (#) nem listas. Use parágrafos simples.
+- Se a fala estiver truncada/ambígua, faça a leitura mais provável; se um trecho for incompreensível, mantenha-o entre aspas como foi dito.
+- NÃO inclua avisos, disclaimers ou conclusões ao final — apenas a narrativa.`;
+
 const MODE_CONFIGS = {
-  chat:       { rules: BASE_RULES,       temp: 0.3, maxTok: 1100, useCtx: true  },
+  chat:        { rules: BASE_RULES,        temp: 0.3, maxTok: 1100, useCtx: true  },
+  anamnese_narr:{ rules: ANAMNESE_NARR_RULES, temp: 0.2, maxTok: 1600, useCtx: false, protected: true },
   narrate:    { rules: NARRATE_RULES,    temp: 0.2, maxTok: 900,  useCtx: false },
   debriefing: { rules: DEBRIEFING_RULES, temp: 0.2, maxTok: 900,  useCtx: false },
   prioritize: { rules: PRIORITIZE_RULES, temp: 0.2, maxTok: 600,  useCtx: false },
