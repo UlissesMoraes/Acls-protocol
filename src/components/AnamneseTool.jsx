@@ -328,9 +328,6 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
             <ShieldCheck size={12} color="#1E8449" /> Área protegida · transcrição + análise clínica
           </div>
         </div>
-        <button onClick={newAnamnese} title="Finalizar e começar uma nova anamnese" style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 11px", borderRadius: 9, border: `1px solid ${ACCENT}`, background: `color-mix(in srgb,${ACCENT} 10%,var(--surface))`, color: ACCENT, fontSize: 12, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
-          <FilePlus size={15} /> Nova
-        </button>
         <button onClick={lock} title="Sair da área protegida" style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 11px", borderRadius: 9, border: "1px solid var(--input-border)", background: "var(--surface)", color: "var(--muted)", fontSize: 12, fontFamily: sans, fontWeight: 600, cursor: "pointer" }}>
           <LogOut size={15} /> Sair
         </button>
@@ -467,6 +464,9 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
               {copied === "t" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar transcrição
             </button>
           )}
+          <button onClick={newAnamnese} title="Finalizar e começar uma nova anamnese" style={{ ...btnGhost, marginLeft: "auto", borderColor: ACCENT, color: ACCENT }}>
+            <FilePlus size={15} /> Nova anamnese
+          </button>
         </div>
       </Section>
 
@@ -557,9 +557,6 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
               </button>
               <button onClick={exportPDF} disabled={pdfBusy} style={{ ...btnPrimary, background: ACCENT, opacity: pdfBusy ? 0.6 : 1 }}>
                 {pdfBusy ? <Loader2 size={16} className="anam-spin" /> : <FileDown size={16} />} {pdfBusy ? "Gerando…" : "Exportar PDF"}
-              </button>
-              <button onClick={newAnamnese} style={{ ...btnGhost, marginLeft: "auto", borderColor: ACCENT, color: ACCENT }}>
-                <FilePlus size={15} /> Finalizar / Nova
               </button>
             </div>
           )}
