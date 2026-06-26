@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { UserRound, LogOut, KeyRound, Loader2, Check, X } from "lucide-react";
+import { UserRound, LogOut, KeyRound, Loader2, Check, X, Users } from "lucide-react";
 import { supabase, authErrorPt } from "../lib/supabase.js";
+import { isAdmin } from "../lib/admin.js";
+import AdminUsers from "./AdminUsers.jsx";
 
 const sans = "var(--font)";
 
@@ -12,6 +14,7 @@ export default function AccountMenu() {
   const [newPw, setNewPw] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function AccountMenu() {
   const initial = (email[0] || "?").toUpperCase();
 
   return (
+    <>
     <div ref={ref} style={{ position: "relative" }}>
       <button onClick={() => setOpen(o => !o)} aria-label="Conta" title={email}
         style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", cursor: "pointer", fontWeight: 800, fontSize: 15, fontFamily: sans }}>
@@ -58,6 +62,11 @@ export default function AccountMenu() {
 
           {!pwMode ? (
             <div style={{ padding: 6 }}>
+              {isAdmin(email) && (
+                <button onClick={() => { setShowAdmin(true); setOpen(false); }} style={{ ...itemStyle, color: "#2B6CB0" }}>
+                  <Users size={16} /> Usuários cadastrados
+                </button>
+              )}
               <button onClick={() => { setPwMode(true); setMsg(""); }} style={itemStyle}>
                 <KeyRound size={16} /> Alterar senha
               </button>
@@ -84,6 +93,8 @@ export default function AccountMenu() {
         </div>
       )}
     </div>
+    {showAdmin && <AdminUsers onClose={() => setShowAdmin(false)} />}
+    </>
   );
 }
 
