@@ -26,12 +26,15 @@ export default async function handler(req) {
   const appUrl = process.env.APP_URL || req.headers.get("origin") || "";
   const idem = `${user.id}-${Date.now()}`;
 
+  const description = process.env.SUB_DESCRIPTION || "ACLS Protocolos - Anamnese IA (assinatura mensal - 30 dias)";
   const body = {
     transaction_amount: amount,
-    description: "Assinatura Anamnese IA — 30 dias",
+    description,
+    statement_descriptor: (process.env.SUB_STATEMENT || "ACLSPROTOCOLOS").replace(/[^A-Za-z0-9]/g, "").slice(0, 22),
     payment_method_id: "pix",
     payer: { email: user.email },
     external_reference: user.id,
+    additional_info: { items: [{ id: "anamnese-mensal", title: description, quantity: 1, unit_price: amount }] },
     ...(appUrl ? { notification_url: `${appUrl}/api/mp-webhook` } : {}),
   };
 
