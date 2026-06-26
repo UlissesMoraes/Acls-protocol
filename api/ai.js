@@ -146,6 +146,7 @@ Use Markdown e siga esta estrutura base (omita uma seção apenas se não houver
 Regras invioláveis:
 - NÃO invente dados que não estejam na transcrição. Se algo não foi dito, escreva "não relatado".
 - Os códigos CID-10 são sugestões e devem ser sempre conferidos pelo médico.
+- LINGUAGEM TÉCNICA E PADRONIZADA (obrigatório): escreva TODA a análise em terminologia médica formal e vigente. Use o termo técnico correto para sintomas, sinais, topografia e diagnósticos — ex.: dispneia (não "falta de ar"), cefaleia (não "dor de cabeça"), êmese/náusea, hematêmese, dor torácica em aperto, lombalgia, palpitações, síncope, hiporexia, astenia, edema de membros inferiores. Empregue a semiologia adequada (caráter, localização, irradiação, intensidade, fatores) e a nomenclatura atual das diretrizes. A linguagem leiga só pode aparecer ENTRE ASPAS ao citar a fala do paciente; o restante do texto é sempre técnico.
 - Seja técnico, objetivo e completo. Sem floreios. Português do Brasil.
 - Finalize com: "⚠️ Documento gerado por IA a partir de transcrição — revisar e validar antes de registrar em prontuário. A responsabilidade clínica é do médico assistente."`;
 
