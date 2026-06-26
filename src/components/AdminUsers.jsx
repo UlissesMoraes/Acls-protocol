@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Users, X, Loader2, AlertTriangle, CheckCircle2, Clock, RefreshCw } from "lucide-react";
+import { Users, X, Loader2, AlertTriangle, CheckCircle2, Clock, RefreshCw, Wallet } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
+import { getAccessToken } from "../lib/subscription.js";
 
 const sans = "var(--font)";
 const ACCENT = "#2B6CB0";
@@ -9,6 +10,20 @@ const fmt = iso => { try { return iso ? new Date(iso).toLocaleString("pt-BR", { 
 
 export default function AdminUsers({ onClose }) {
   const [state, setState] = useState({ loading: true, error: "", users: [] });
+  const [mp, setMp] = useState({ loading: false, done: false, data: null, error: "" });
+
+  const checkMp = async () => {
+    setMp({ loading: true, done: false, data: null, error: "" });
+    try {
+      const token = await getAccessToken();
+      const r = await fetch("/api/mp-status", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) { setMp({ loading: false, done: true, data: null, error: body.error || `Erro ${r.status}` }); return; }
+      setMp({ loading: false, done: true, data: body, error: "" });
+    } catch (e) {
+      setMp({ loading: false, done: true, data: null, error: e.message || "Falha ao verificar." });
+    }
+  };
 
   const load = async () => {
     setState(s => ({ ...s, loading: true, error: "" }));
@@ -79,6 +94,31 @@ export default function AdminUsers({ onClose }) {
               </span>
             </div>
           ))}
+
+          {/* Diagnóstico Mercado Pago */}
+          <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <Wallet size={16} color="#1E8449" />
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "var(--text-strong)", fontFamily: sans }}>Integração Mercado Pago</span>
+              <button onClick={checkMp} disabled={mp.loading} style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 9, border: "1px solid var(--input-border)", background: "var(--surface)", color: "var(--text)", fontSize: 12.5, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+                {mp.loading ? <Loader2 size={14} className="auth-spin" /> : <RefreshCw size={14} />} Verificar conta
+              </button>
+            </div>
+            {mp.error && <div style={{ fontSize: 12.5, color: "#C53030", fontFamily: sans }}>{mp.error}</div>}
+            {mp.done && mp.data && !mp.data.configured && <div style={{ fontSize: 12.5, color: "#B7791F", fontFamily: sans }}>MP_ACCESS_TOKEN não configurado na Vercel.</div>}
+            {mp.done && mp.data?.valid && (
+              <div style={{ fontSize: 13, fontFamily: sans, color: "var(--text)", lineHeight: 1.7 }}>
+                <div>Conta recebedora: <strong>{mp.data.name || "—"}</strong> <span style={{ color: "var(--muted)" }}>({mp.data.nickname})</span></div>
+                <div style={{ color: "var(--muted)", fontSize: 12 }}>email: {mp.data.email || "—"} · país: {mp.data.site_id || "—"} · id: {mp.data.id}</div>
+                {mp.data.looks_test
+                  ? <div style={{ marginTop: 4, color: "#B7791F", fontWeight: 700 }}>⚠️ Parece ser uma conta de TESTE — troque pelo token de produção.</div>
+                  : <div style={{ marginTop: 4, color: "#1E8449", fontWeight: 700 }}>✓ É o nome que aparece para quem paga o Pix.</div>}
+              </div>
+            )}
+            {mp.done && mp.data && mp.data.configured && mp.data.valid === false && (
+              <div style={{ fontSize: 12.5, color: "#C53030", fontFamily: sans }}>Token inválido: {mp.data.error}</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
