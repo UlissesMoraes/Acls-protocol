@@ -9,6 +9,7 @@ import InfusionCalc from "./components/InfusionCalc.jsx";
 import CodeTimer from "./components/CodeTimer.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import AnamneseTool from "./components/AnamneseTool.jsx";
+import AccountMenu from "./components/AccountMenu.jsx";
 import SymptomTriage from "./components/SymptomTriage.jsx";
 import DrugAlerts from "./components/DrugAlerts.jsx";
 import PedWeight from "./components/PedWeight.jsx";
@@ -304,6 +305,7 @@ export default function App() {
                   <Icons.Siren size={16} /><span className="btn-label">PCR</span>
                 </button>
               )}
+              <AccountMenu />
             </div>
           </div>
         </div>

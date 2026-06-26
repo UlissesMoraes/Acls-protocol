@@ -46,6 +46,15 @@ servidor). O gate real é server-side: `api/transcribe.js` e o modo `anamnese` d
 `api/ai.js` revalidam a senha a cada chamada (o front-end apenas destrava a UI).
 Dados clínicos vão à OpenAI — manter o aviso de LGPD na ferramenta.
 
+## Autenticação (Supabase Auth)
+
+O app inteiro é protegido por **login com email/senha** (Supabase Auth) — cadastro
+gratuito, para controlar quem acessa. Cliente em `src/lib/supabase.js`, hook
+`src/hooks/useAuth.js`, telas `AuthScreen.jsx` (login/cadastro/recuperar) e
+`AccountMenu.jsx` (alterar senha/sair); o gate fica em `src/main.jsx` (`Root`).
+A sessão persiste (uso offline após o 1º login). Não criar tabela própria de
+senha — usar sempre o Supabase Auth. Usuários: painel → Authentication → Users.
+
 ## Git
 
 Desenvolver na branch `claude/zealous-bohr-91jb9h`. Commitar e dar push apenas

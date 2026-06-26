@@ -103,6 +103,27 @@ npm run content:seed-sql        # gera supabase/seed.sql
 Configuração via `.env` (opcional — há fallback embutido): veja `.env.example`.
 Para desligar o backend e usar só o conteúdo embutido: `VITE_REMOTE_CONTENT=off`.
 
+## 🔐 Cadastro e acesso (Supabase Auth)
+
+O app exige **cadastro com email e senha** (acesso gratuito) — assim o
+responsável controla quem usa a plataforma. Usa **Supabase Auth** (mesma URL +
+chave publishable do conteúdo vivo); a sessão é persistida no aparelho (uma vez
+logado, funciona offline). Telas de **login, criar conta, recuperar senha** e
+**alterar senha** (menu de conta no cabeçalho).
+
+Os usuários cadastrados aparecem no painel do Supabase em **Authentication →
+Users** (onde dá para bloquear/excluir). Configuração única no painel:
+
+1. **Authentication → Providers → Email**: habilitado (padrão). Defina se exige
+   **confirmação de email** ("Confirm email").
+2. **Authentication → URL Configuration**: em **Site URL** e **Redirect URLs**,
+   informe o domínio do app (ex.: `https://seu-app.vercel.app`) — necessário para
+   os links de confirmação e de redefinição de senha.
+
+> Sem Supabase configurado (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`), o app
+> abre sem exigir login (modo aberto). O primeiro login exige internet; depois a
+> sessão fica salva para uso offline.
+
 ## 👶 Modo Pediátrico (PALS)
 
 Seletor **Adulto ⇄ Pediátrico** na tela inicial que troca todo o conjunto clínico:

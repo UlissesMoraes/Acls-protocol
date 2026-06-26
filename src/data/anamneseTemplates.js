@@ -63,3 +63,4 @@ export const ANAMNESE_TEMPLATES = [
 ];
 
 export const templateById = id => ANAMNESE_TEMPLATES.find(t => t.id === id) || ANAMNESE_TEMPLATES[0];
+
