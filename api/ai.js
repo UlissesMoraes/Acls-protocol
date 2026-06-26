@@ -160,9 +160,18 @@ REGRAS INVIOLÁVEIS:
 - Se a fala estiver truncada/ambígua, faça a leitura mais provável; se um trecho for incompreensível, mantenha-o entre aspas como foi dito.
 - NÃO inclua avisos, disclaimers ou conclusões ao final — apenas a narrativa.`;
 
+const ANAMNESE_EDIT_RULES = `Você AJUSTA um documento clínico (anamnese) já gerado, conforme uma ORDEM do médico. Receberá o DOCUMENTO ATUAL e uma INSTRUÇÃO de alteração.
+
+- Aplique exatamente a alteração pedida e devolva o DOCUMENTO COMPLETO já atualizado — não devolva só o trecho alterado e não comente o que mudou.
+- MANTENHA o mesmo FORMATO e estrutura do documento atual: se for texto narrativo, permaneça narrativo; se tiver seções com cabeçalhos Markdown, mantenha as mesmas seções (a menos que a ordem peça explicitamente para remover/alterar/acrescentar).
+- Mantenha a LINGUAGEM TÉCNICA e padronizada (terminologia médica vigente) e o português do Brasil.
+- NÃO invente dados clínicos sem base na anamnese. Se a ordem pedir algo sem fundamento no que foi relatado, aplique com cautela e registre a ressalva em "Pendências a Esclarecer" (quando o documento tiver seções).
+- Responda APENAS com o documento final, sem comentários, saudações ou explicações.`;
+
 const MODE_CONFIGS = {
   chat:        { rules: BASE_RULES,        temp: 0.3, maxTok: 1100, useCtx: true  },
   anamnese_narr:{ rules: ANAMNESE_NARR_RULES, temp: 0.2, maxTok: 1600, useCtx: false, protected: true },
+  anamnese_edit:{ rules: ANAMNESE_EDIT_RULES, temp: 0.2, maxTok: 2400, useCtx: false, protected: true },
   narrate:    { rules: NARRATE_RULES,    temp: 0.2, maxTok: 900,  useCtx: false },
   debriefing: { rules: DEBRIEFING_RULES, temp: 0.2, maxTok: 900,  useCtx: false },
   prioritize: { rules: PRIORITIZE_RULES, temp: 0.2, maxTok: 600,  useCtx: false },

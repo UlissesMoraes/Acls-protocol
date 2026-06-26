@@ -3,7 +3,7 @@ import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
   Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
   History, RotateCcw, ChevronDown, Activity, Tag, FlaskConical, ListChecks, HelpCircle, Siren,
-  ExternalLink, BarChart3, FilePlus,
+  ExternalLink, BarChart3, FilePlus, Wand2, Send,
 } from "lucide-react";
 import { parseAnamnese, shortHip, hasApontamentos, buildSoap } from "../lib/anamneseParse.js";
 import { suggestLinks, SCORE_SHORT } from "../lib/anamneseLinks.js";
@@ -89,6 +89,9 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const [showHist, setShowHist] = useState(false);
   const [tab3, setTab3] = useState("apont");
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
+  const [order, setOrder] = useState("");
+  const [editing, setEditing] = useState(false);
   const abortRef = useRef(null);
 
   // Apontamentos visuais extraídos da análise (atualiza durante o streaming).
@@ -251,6 +254,32 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     finally { setPdfBusy(false); }
   };
 
+  // Chat de ordens: a IA reescreve a análise conforme a instrução do médico.
+  const applyOrder = async (text) => {
+    const ord = (text ?? order).trim();
+    if (!ord || editing || streaming || !analysis.trim()) return;
+    setEditing(true); setError("");
+    const userMsg = `DOCUMENTO ATUAL:\n"""\n${analysis.trim()}\n"""\n\nORDEM DO MÉDICO: ${ord}\n\nDevolva o documento completo já com a alteração aplicada.`;
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    try {
+      let acc = "";
+      await streamChat({
+        messages: [{ role: "user", content: userMsg }],
+        mode: "anamnese_edit", authKey, signal: ctrl.signal,
+        onToken: d => { acc += d; setAnalysis(acc); },
+      });
+      if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), tmpl: templateById(tmpl).label, transcript: transcript.trim(), analysis: acc }));
+      setOrder("");
+    } catch (e) {
+      if (e?.name === "AbortError") { /* mantém parcial */ }
+      else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
+      else if (e instanceof AnamneseConfigError || e instanceof AIConfigError) setNotConfigured(true);
+      else setError(e.message || "Falha ao ajustar a análise.");
+    } finally { setEditing(false); abortRef.current = null; }
+  };
+  const ORDER_SUGGESTIONS = ["Deixar mais conciso", "Detalhar a conduta", "Adicionar diagnósticos diferenciais", "Reescrever em tópicos"];
+
   // ── Histórico (24h) ──
   const reopen = h => {
     setTranscript(h.transcript || ""); setAnalysis(h.analysis || "");
@@ -269,6 +298,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     clearAudio();
     setTranscript(""); setAnalysis(""); setIdade(""); setSexo(""); setNota("");
     setError(""); setCopied(""); setTab3("apont"); setRecSecs(0);
+    setShowOrders(false); setOrder("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -566,7 +596,7 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
             </div>
           )}
 
-          {analysis && !streaming && (
+          {analysis && !streaming && !editing && (
             <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
               <button onClick={() => copy(showTabs && tab3 === "soap" ? soapText(soap) : analysis, "a")} style={btnGhost}>
                 {copied === "a" ? <Check size={15} color="#1E8449" /> : <Copy size={15} />} Copiar {showTabs && tab3 === "soap" ? "SOAP" : (isNarrative ? "narrativa" : "análise")}
@@ -574,6 +604,49 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
               <button onClick={exportPDF} disabled={pdfBusy} style={{ ...btnPrimary, background: ACCENT, opacity: pdfBusy ? 0.6 : 1 }}>
                 {pdfBusy ? <Loader2 size={16} className="anam-spin" /> : <FileDown size={16} />} {pdfBusy ? "Gerando…" : "Exportar PDF"}
               </button>
+              <button onClick={() => setShowOrders(s => !s)} style={{ ...btnGhost, borderColor: showOrders ? "#7C3AED" : "var(--input-border)", color: "#7C3AED" }}>
+                <Wand2 size={15} /> Ajustar com IA
+              </button>
+            </div>
+          )}
+
+          {/* Chat de ordens */}
+          {analysis && (showOrders || editing) && (
+            <div style={{ marginTop: 12, background: "color-mix(in srgb,#7C3AED 7%,var(--surface))", border: "1px solid color-mix(in srgb,#7C3AED 26%,var(--surface))", borderRadius: 12, padding: "12px 13px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
+                <Wand2 size={16} color="#7C3AED" />
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#7C3AED", fontFamily: sans, textTransform: "uppercase", letterSpacing: ".03em" }}>Ajustar com IA — ordens</span>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                <textarea value={order} onChange={e => setOrder(e.target.value)} rows={1} disabled={editing}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); applyOrder(); } }}
+                  placeholder="Ex.: deixe mais conciso · adicione hipótese de TEP · remova a seção de exames · troque o CID de I10"
+                  style={{ flex: 1, resize: "none", maxHeight: 100, minHeight: 42, padding: "11px 12px", borderRadius: 10, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--text)", fontSize: 14, fontFamily: sans, outline: "none", lineHeight: 1.4 }} />
+                {editing ? (
+                  <button onClick={() => abortRef.current?.abort?.()} title="Parar" style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 10, border: "none", background: "#C53030", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Square size={16} fill="#fff" />
+                  </button>
+                ) : (
+                  <button onClick={() => applyOrder()} disabled={!order.trim()} title="Aplicar ordem" style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 10, border: "none", background: order.trim() ? "#7C3AED" : "var(--border)", color: "#fff", cursor: order.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Send size={17} />
+                  </button>
+                )}
+              </div>
+              {editing && (
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 9, fontSize: 12, color: "#7C3AED", fontFamily: sans, fontWeight: 600 }}>
+                  <Loader2 size={14} className="anam-spin" /> Ajustando a análise…
+                </div>
+              )}
+              {!editing && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9 }}>
+                  {ORDER_SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => applyOrder(s)} style={{ padding: "5px 10px", borderRadius: 20, border: "1px solid color-mix(in srgb,#7C3AED 30%,var(--surface))", background: "var(--surface)", color: "#7C3AED", fontSize: 12, fontFamily: sans, fontWeight: 600, cursor: "pointer" }}>{s}</button>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 10.5, color: "var(--muted)", fontFamily: sans, marginTop: 9, lineHeight: 1.5 }}>
+                A IA reescreve a análise conforme a ordem; o resultado substitui o atual (cada versão fica no histórico de 24h).
+              </div>
             </div>
           )}
         </Section>
