@@ -18,11 +18,13 @@ export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (req.method !== "GET") return json({ error: "Method not allowed" }, 405);
 
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  // URL e chave publishable são públicas — fallback embutido para não exigir
+  // configuração extra na Vercel (igual ao front-end). Só a service_role é secreta.
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://rjexmjigzxyrpbuwlnur.supabase.co";
+  const anon = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_QkRlpKhtxhl8iQkxOlLbiw_wgg2IH4w";
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !service) {
-    return json({ error: "Painel de admin não configurado", detail: "Defina SUPABASE_SERVICE_ROLE_KEY (e SUPABASE_URL) nas variáveis de ambiente da Vercel.", code: "no_admin" }, 503);
+  if (!service) {
+    return json({ error: "Painel de admin não configurado", detail: "Defina SUPABASE_SERVICE_ROLE_KEY nas variáveis de ambiente da Vercel e faça um novo deploy.", code: "no_admin" }, 503);
   }
 
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
