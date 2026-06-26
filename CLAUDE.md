@@ -41,10 +41,17 @@ pelas funções serverless `api/ai.js` e `api/transcribe.js`. **Nunca** colocar 
 chave no código, no bundle do front-end nem em commits. Não usar prefixo `VITE_`
 nessa variável.
 
-A área de **anamnese** é protegida por senha (`ANAMNESE_PASSWORD`, também só no
-servidor). O gate real é server-side: `api/transcribe.js` e o modo `anamnese` de
-`api/ai.js` revalidam a senha a cada chamada (o front-end apenas destrava a UI).
-Dados clínicos vão à OpenAI — manter o aviso de LGPD na ferramenta.
+A área de **anamnese** é paga e protegida no servidor: o acesso é liberado por
+**senha** (`ANAMNESE_PASSWORD`) **OU admin** (`ADMIN_EMAILS`) **OU assinatura
+ativa**. O gate fica em `api/_lib/access.js` (`anamneseAccess`), usado por
+`api/transcribe.js` e pelos modos `anamnese*` de `api/ai.js`. O front-end apenas
+destrava a UI. Dados clínicos vão à OpenAI — manter o aviso de LGPD.
+
+A **assinatura (R$20/mês via Pix, Mercado Pago)** usa a tabela
+`public.subscriptions` (RLS: usuário lê só a própria linha; escrita só pela
+service_role). `api/mp-create-pix.js` gera o Pix; `api/mp-webhook.js` libera 30
+dias quando o pagamento é aprovado. Chaves do MP (`MP_ACCESS_TOKEN`,
+`MP_WEBHOOK_SECRET`) e a `SUPABASE_SERVICE_ROLE_KEY` vivem **só no servidor**.
 
 ## Autenticação (Supabase Auth)
 

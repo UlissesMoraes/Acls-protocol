@@ -200,6 +200,23 @@ revalida a senha. O front-end apenas destrava a UI. Variáveis na Vercel:
 > do paciente, obter consentimento e seguir a política da instituição. Os CID-10 e
 > hipóteses são sugestões — conferir antes do prontuário.
 
+### Assinatura paga (R$20/mês via Pix — Mercado Pago)
+
+A anamnese é liberada por **senha** OU **admin** OU **assinatura ativa** (gate
+server-side em `api/_lib/access.js`). Quem não tem acesso vê um **paywall** que
+gera um **Pix** (`api/mp-create-pix.js`); ao confirmar o pagamento, o
+**webhook** (`api/mp-webhook.js`) libera **30 dias** na tabela
+`public.subscriptions`.
+
+Configuração:
+
+1. Rode `supabase/subscriptions.sql` no SQL Editor do Supabase (cria a tabela + RLS).
+2. Variáveis na Vercel: `MP_ACCESS_TOKEN` (Access Token do Mercado Pago),
+   `MP_WEBHOOK_SECRET` (segredo do webhook), `APP_URL` (domínio do app),
+   `SUPABASE_SERVICE_ROLE_KEY`. Opcionais: `SUB_PRICE` (20), `SUB_DAYS` (30).
+3. No painel do Mercado Pago, cadastre o **Webhook** apontando para
+   `https://seu-app.vercel.app/api/mp-webhook` (evento *payments*).
+
 ## 🧊 Procedimentos 3D
 
 Ferramenta de procedimentos com modelo 3D animado passo a passo, renderizado no

@@ -8,6 +8,8 @@
 //   OPENAI_MODEL     (opcional)    — padrão: gpt-4o-mini
 //   AI_ALLOWED_ORIGIN(opcional)    — restringe a origem (ex.: https://seu-app.vercel.app)
 
+import { anamneseAccess } from "./_lib/access.js";
+
 export const config = { runtime: "edge" };
 
 const DEFAULT_MODEL = "gpt-4o-mini";
@@ -215,11 +217,10 @@ export default async function handler(req) {
   const mode = VALID_MODES.includes(body.mode) ? body.mode : "chat";
   const cfg = MODE_CONFIGS[mode];
 
-  // Modos protegidos (área de anamnese): revalidar a senha no servidor.
+  // Modos protegidos (anamnese): acesso por senha OU admin OU assinatura ativa.
   if (cfg.protected) {
-    const pw = process.env.ANAMNESE_PASSWORD;
-    if (!pw) return json({ error: "Área de anamnese não configurada", detail: "Defina ANAMNESE_PASSWORD nas variáveis de ambiente da Vercel.", code: "no_password" }, 503);
-    if ((req.headers.get("x-anamnese-key") || "") !== pw) return json({ error: "Senha incorreta ou sessão expirada", code: "bad_password" }, 401);
+    const acc = await anamneseAccess(req);
+    if (!acc.ok) return json({ error: acc.error, code: acc.code }, acc.status);
   }
 
   let messages = Array.isArray(body.messages) ? body.messages : [];

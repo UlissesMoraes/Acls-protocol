@@ -3,13 +3,17 @@ import {
   Lock, ShieldCheck, Mic, Square, Upload, FileText, ClipboardList, Sparkles,
   Copy, FileDown, Trash2, AlertTriangle, Loader2, Stethoscope, LogOut, Check,
   History, RotateCcw, ChevronDown, Activity, Tag, FlaskConical, ListChecks, HelpCircle, Siren,
-  ExternalLink, BarChart3, FilePlus, Wand2, Send,
+  ExternalLink, BarChart3, FilePlus, Wand2, Send, ArrowLeft,
 } from "lucide-react";
 import { parseAnamnese, shortHip, hasApontamentos, buildSoap } from "../lib/anamneseParse.js";
 import { suggestLinks, SCORE_SHORT } from "../lib/anamneseLinks.js";
 import { ANAMNESE_TEMPLATES, templateById } from "../data/anamneseTemplates.js";
-import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError } from "../lib/aiClient.js";
+import { streamChat, AIConfigError, AnamneseAuthError, AnamneseConfigError, SubscriptionRequiredError } from "../lib/aiClient.js";
 import { verifyPassword, transcribeAudio } from "../lib/anamneseClient.js";
+import { supabase } from "../lib/supabase.js";
+import { isAdmin } from "../lib/admin.js";
+import { getAccessToken, getMySubscription } from "../lib/subscription.js";
+import Paywall from "./Paywall.jsx";
 import { Markdown, stripMd } from "../lib/markdown.jsx";
 import { useWakeLock } from "../hooks/useWakeLock.js";
 import { exportAnamnesePDF } from "../lib/anamnesePdf.js";
@@ -64,6 +68,10 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   const [checking, setChecking] = useState(false);
   const [authErr, setAuthErr] = useState("");
   const [notConfigured, setNotConfigured] = useState(false);
+  // ── Acesso por assinatura/admin ──
+  const [entitled, setEntitled] = useState(undefined); // undefined = verificando
+  const [gateMode, setGateMode] = useState("paywall");  // paywall | password
+  const unlocked = authed || entitled === true;
 
   // ── Áudio / gravação ──
   const [recording, setRecording] = useState(false);
@@ -112,7 +120,23 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
   useWakeLock(recording);
 
   // Carrega o histórico local (24h) ao desbloquear a área.
-  useEffect(() => { if (authed) setHistory(loadHistory()); }, [authed]);
+  useEffect(() => { if (unlocked) setHistory(loadHistory()); }, [unlocked]);
+
+  // Verifica direito de acesso: admin ou assinatura ativa.
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      try {
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (isAdmin(user?.email)) { if (on) setEntitled(true); return; }
+        }
+        const sub = await getMySubscription();
+        if (on) setEntitled(!!sub.active);
+      } catch { if (on) setEntitled(false); }
+    })();
+    return () => { on = false; };
+  }, []);
 
   useEffect(() => () => {
     clearInterval(timerRef.current);
@@ -194,7 +218,8 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     if (!audioBlob || transcribing) return;
     setTranscribing(true); setError("");
     try {
-      const text = await transcribeAudio(audioBlob, { authKey, filename: `anamnese.${audioBlob._ext || "webm"}` });
+      const accessToken = await getAccessToken();
+      const text = await transcribeAudio(audioBlob, { authKey, accessToken, filename: `anamnese.${audioBlob._ext || "webm"}` });
       setTranscript(prev => (prev ? prev.trim() + "\n\n" : "") + text);
       // Autopreenche os campos vazios a partir do que foi falado.
       const ex = extractContext(text);
@@ -202,7 +227,8 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
       if (ex.sexo)  setSexo(p => p || ex.sexo);
       if (ex.obs)   setNota(p => p || ex.obs);
     } catch (e) {
-      if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
+      if (e instanceof SubscriptionRequiredError) { setEntitled(false); setError("Sua assinatura expirou. Renove para continuar."); }
+      else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
       else if (e instanceof AnamneseConfigError || e instanceof AIConfigError) setNotConfigured(true);
       else setError(e.message || "Falha na transcrição.");
     } finally { setTranscribing(false); }
@@ -227,15 +253,17 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     abortRef.current = ctrl;
     setStreaming(true);
     try {
+      const accessToken = await getAccessToken();
       let acc = "";
       await streamChat({
         messages: [{ role: "user", content: userMsg }],
-        mode: isNarr ? "anamnese_narr" : "anamnese", authKey, signal: ctrl.signal,
+        mode: isNarr ? "anamnese_narr" : "anamnese", authKey, accessToken, signal: ctrl.signal,
         onToken: d => { acc += d; setAnalysis(acc); },
       });
       if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), tmpl: tpl.label, transcript: transcript.trim(), analysis: acc }));
     } catch (e) {
       if (e?.name === "AbortError") { /* mantém parcial */ }
+      else if (e instanceof SubscriptionRequiredError) { setEntitled(false); setError("Sua assinatura expirou. Renove para continuar."); }
       else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
       else if (e instanceof AnamneseConfigError || e instanceof AIConfigError) setNotConfigured(true);
       else setError(e.message || "Falha na análise.");
@@ -263,16 +291,18 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
+      const accessToken = await getAccessToken();
       let acc = "";
       await streamChat({
         messages: [{ role: "user", content: userMsg }],
-        mode: "anamnese_edit", authKey, signal: ctrl.signal,
+        mode: "anamnese_edit", authKey, accessToken, signal: ctrl.signal,
         onToken: d => { acc += d; setAnalysis(acc); },
       });
       if (acc.trim()) setHistory(saveEntry({ idade, sexo, nota: nota.trim(), tmpl: templateById(tmpl).label, transcript: transcript.trim(), analysis: acc }));
       setOrder("");
     } catch (e) {
       if (e?.name === "AbortError") { /* mantém parcial */ }
+      else if (e instanceof SubscriptionRequiredError) { setEntitled(false); setError("Sua assinatura expirou. Renove para continuar."); }
       else if (e instanceof AnamneseAuthError) { lock(); setError("Sessão expirada — informe a senha novamente."); }
       else if (e instanceof AnamneseConfigError || e instanceof AIConfigError) setNotConfigured(true);
       else setError(e.message || "Falha ao ajustar a análise.");
@@ -317,17 +347,38 @@ export default function AnamneseTool({ onOpenProtocol, onOpenTool, protocols = [
     );
   }
 
-  // ── Tela de senha ──
-  if (!authed) {
+  // ── Gate: assinatura / admin / senha ──
+  if (!unlocked) {
+    if (entitled === undefined) {
+      return (
+        <Card>
+          <style>{spin}</style>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, padding: 24, color: "var(--muted)", fontFamily: sans, fontSize: 13.5 }}>
+            <Loader2 size={18} className="anam-spin" /> Verificando seu acesso…
+          </div>
+        </Card>
+      );
+    }
+    if (gateMode !== "password") {
+      return (
+        <div style={{ paddingTop: 4 }}>
+          <style>{spin}</style>
+          <Paywall onUnlocked={() => setEntitled(true)} onUsePassword={() => setGateMode("password")} />
+        </div>
+      );
+    }
     return (
       <Card>
+        <button onClick={() => setGateMode("paywall")} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, fontFamily: sans, cursor: "pointer", padding: "2px 0", marginBottom: 6 }}>
+          <ArrowLeft size={15} /> Voltar para assinatura
+        </button>
         <div style={{ textAlign: "center", marginBottom: 6 }}>
           <span style={{ width: 56, height: 56, borderRadius: 16, background: `color-mix(in srgb,${ACCENT} 14%,var(--surface))`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             <Lock size={26} color={ACCENT} />
           </span>
         </div>
-        <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 800, color: "var(--text-strong)" }}>Área protegida — Anamnese</div>
-        <p style={{ ...txt, textAlign: "center" }}>Recurso exclusivo. Informe a senha para acessar a transcrição e a análise clínica.</p>
+        <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 800, color: "var(--text-strong)" }}>Acesso por senha</div>
+        <p style={{ ...txt, textAlign: "center" }}>Para administradores/equipe. Informe a senha de acesso.</p>
         <input
           type="password" value={pw} onChange={e => setPw(e.target.value)} autoFocus
           onKeyDown={e => { if (e.key === "Enter") unlock(); }}

@@ -10,6 +10,8 @@
 //   OPENAI_TRANSCRIBE_MODEL   (opcional)    — padrão: whisper-1
 //   AI_ALLOWED_ORIGIN         (opcional)    — restringe a origem
 
+import { anamneseAccess } from "./_lib/access.js";
+
 export const config = { runtime: "edge" };
 
 const MAX_BYTES = 25 * 1024 * 1024; // limite da API de transcrição da OpenAI
@@ -32,13 +34,9 @@ export default async function handler(req) {
     return json({ error: "IA não configurada", detail: "Defina OPENAI_API_KEY nas variáveis de ambiente da Vercel.", code: "no_key" }, 503);
   }
 
-  const pw = process.env.ANAMNESE_PASSWORD;
-  if (!pw) {
-    return json({ error: "Área de anamnese não configurada", detail: "Defina ANAMNESE_PASSWORD nas variáveis de ambiente da Vercel.", code: "no_password" }, 503);
-  }
-  if ((req.headers.get("x-anamnese-key") || "") !== pw) {
-    return json({ error: "Senha incorreta ou sessão expirada", code: "bad_password" }, 401);
-  }
+  // Acesso à anamnese: senha OU admin OU assinatura ativa.
+  const acc = await anamneseAccess(req);
+  if (!acc.ok) return json({ error: acc.error, code: acc.code }, acc.status);
 
   let form;
   try { form = await req.formData(); } catch { return json({ error: "Formato inválido — multipart/form-data esperado" }, 400); }

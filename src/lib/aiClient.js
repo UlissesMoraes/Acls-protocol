@@ -8,15 +8,17 @@ export class AIConfigError extends Error {}
 // Área de anamnese (protegida por senha).
 export class AnamneseAuthError extends Error {}
 export class AnamneseConfigError extends Error {}
+export class SubscriptionRequiredError extends Error {}
 
 // Lê o stream SSE da OpenAI repassado pelo backend e chama onToken(delta).
 // Retorna o texto completo acumulado. `authKey` (opcional) autentica modos
 // protegidos (ex.: anamnese) — enviado no header x-anamnese-key.
-export async function streamChat({ messages, context, mode = "chat", authKey, signal, onToken }) {
+export async function streamChat({ messages, context, mode = "chat", authKey, accessToken, signal, onToken }) {
   let res;
   try {
     const headers = { "Content-Type": "application/json" };
     if (authKey) headers["x-anamnese-key"] = authKey;
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
     res = await fetch(ENDPOINT, {
       method: "POST",
       headers,
@@ -31,6 +33,7 @@ export async function streamChat({ messages, context, mode = "chat", authKey, si
   if (!res.ok) {
     let info = {};
     try { info = await res.json(); } catch {}
+    if (res.status === 402) throw new SubscriptionRequiredError(info.error || "Assinatura necessária.");
     if (res.status === 401) throw new AnamneseAuthError(info.error || "Senha incorreta ou sessão expirada.");
     if (res.status === 503 && info.code === "no_password") throw new AnamneseConfigError(info.detail || "Área de anamnese não configurada.");
     if (res.status === 503) throw new AIConfigError(info.detail || "IA não configurada no servidor.");
