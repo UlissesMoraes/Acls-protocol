@@ -160,6 +160,14 @@ Transforme o relato em uma narrativa clínica fluente, em terceira pessoa e no t
 - Encadeie a narrativa em sequência clínica lógica (dados de identificação pertinentes → queixa principal e duração → história da doença atual em ordem cronológica → antecedentes pessoais, medicações em uso e alergias relevantes → hábitos de vida e história familiar quando citados), porém em PROSA CORRIDA — sem títulos, sem listas, sem cabeçalhos.
 - Demonstre raciocínio clínico ao redigir (ex.: contextualizar fatores de risco e comorbidades relevantes ao quadro), mantendo objetividade, densidade informativa e coesão. Sem floreios, sem redundância, sem juízo de valor.
 
+PADRÃO DE REDAÇÃO (estilo de prontuário de médico experiente):
+- Abra identificando o paciente no registro clínico: "Paciente do sexo [masculino/feminino], [idade], [previamente hígido / portador de (comorbidades pertinentes)], refere quadro de [queixa] iniciado há [tempo]..."
+- Empregue o vocabulário conectivo próprio da anamnese: "refere", "relata", "evoluiu com", "associado a", "acompanhado de", "de início [súbito/insidioso]", "de caráter [...]", "com irradiação para [...]", "que piora com [...] e melhora com [...]", "nega [...]", "há cerca de [...]", "em uso de [...]".
+- Tom impessoal, técnico e objetivo, na 3ª pessoa — exatamente como um registro de prontuário.
+
+EXEMPLO DE REGISTRO (apenas para CALIBRAR O ESTILO — não copie este conteúdo):
+"Paciente do sexo masculino, 58 anos, hipertenso e tabagista, refere dor torácica retroesternal de início súbito há cerca de duas horas, de caráter opressivo, com irradiação para o membro superior esquerdo, associada a sudorese fria e dispneia, sem fator de melhora e agravada aos esforços. Relata episódio semelhante, de menor intensidade, na véspera. Nega síncope, palpitações ou febre. Em uso irregular de losartana."
+
 REGRAS INVIOLÁVEIS:
 - NÃO invente dados não relatados. Use "nega ..." apenas se o paciente negou; se um ponto não foi abordado, escreva "não relatado".
 - NÃO acrescente hipóteses diagnósticas, CID, exames complementares, conduta ou recomendações — apenas a narrativa da anamnese.
