@@ -10,6 +10,7 @@ import CodeTimer from "./components/CodeTimer.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import AnamneseTool from "./components/AnamneseTool.jsx";
 import AccountMenu from "./components/AccountMenu.jsx";
+import GasometriaTool from "./components/GasometriaTool.jsx";
 import SymptomTriage from "./components/SymptomTriage.jsx";
 import DrugAlerts from "./components/DrugAlerts.jsx";
 import PedWeight from "./components/PedWeight.jsx";
@@ -550,6 +551,7 @@ export default function App() {
               {kind === "pedweight" && <PedWeight onApply={setWeight} currentWeight={weight} />}
               {kind === "assistant" && <AIAssistant protocols={protocols} weight={weight} focusId={aiFocus} focusLabel={protocols.find(p=>p.id===aiFocus)?.label} />}
               {kind === "anamnese" && <AnamneseTool onOpenProtocol={openProto} onOpenTool={openTool} protocols={protocols} />}
+              {kind === "gasometria" && <GasometriaTool />}
               {kind === "infusion" && <InfusionCalc globalW={weight} />}
               {kind === "score" && <ScoreWidget scoreKey={tool} color={gcolor} light={tint(gcolor)} border={gborder} globalW={weight} />}
             </div>

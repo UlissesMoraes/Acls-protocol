@@ -68,6 +68,7 @@ export const TOOL_GROUPS = [
     cat: "Sepse / UTI",
     color: "#1E8449", light: "#E9F7EF", border: "#27AE60",
     items: [
+      { id: "gasometria", kind: "gasometria", label: "Analisador de Gasometria", sub: "Distúrbio ácido-base, compensação, ânion gap e oxigenação (PaO₂/FiO₂)" },
       { id: "qsofa", kind: "score" },
       { id: "sofa",  kind: "score" },
       { id: "clcr",  kind: "score" },
