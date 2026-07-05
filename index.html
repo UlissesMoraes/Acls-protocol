@@ -4,13 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Protocolos de Emergência ACLS 2025 — Sala de Emergência CFM/CRM" />
-    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="theme-color" content="#C53030" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ACLS 2025" />
     <title>Protocolos ACLS 2025</title>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html, body, #root { height: 100%; }
       body { background: #F7F9FC; }
+      html[data-theme="dark"] body { background: #0E1217; }
     </style>
+    <script>
+      // Aplica o tema salvo antes da pintura para evitar flash (FOUC)
+      try {
+        var t = JSON.parse(localStorage.getItem("acls.theme"));
+        if (t === "dark" || t === "light") {
+          document.documentElement.dataset.theme = t;
+          if (t === "dark") document.querySelector('meta[name=theme-color]').setAttribute("content", "#1A212B");
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
