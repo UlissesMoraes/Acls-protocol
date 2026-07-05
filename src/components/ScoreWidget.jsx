@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, Copy, Check } from "lucide-react";
 import { SCORES_DEF } from "../data/scores.js";
 import { normVals } from "../utils/format.js";
 
@@ -11,6 +11,7 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
   const [selects, setSelects] = useState({});
   const [bools, setBools]   = useState({});
   const [nihssVals, setNihssVals] = useState({});
+  const [copied, setCopied] = useState(false);
   if (!sc) return null;
 
   // Campos de peso herdam o peso global do paciente quando não preenchidos localmente
@@ -161,6 +162,15 @@ export default function ScoreWidget({ scoreKey, color, light, border, globalW })
             </span>
           </div>
           <div style={{ fontSize:12, color:interp.color, fontFamily:sans, lineHeight:1.6 }}>{interp.text}</div>
+          <button
+            onClick={async () => {
+              const val = `${sc.type==="calc" ? total.toFixed(1) : total} ${sc.unit||"pts"}`;
+              const txt = `${sc.label}: ${val} — ${interp.label}. ${interp.text}`;
+              try { await navigator.clipboard.writeText(txt); setCopied(true); setTimeout(()=>setCopied(false), 1600); } catch {}
+            }}
+            style={{ marginTop:10, display:"inline-flex", alignItems:"center", gap:6, padding:"8px 12px", borderRadius:8, border:`1px solid ${interp.color}55`, background:"var(--surface)", color:interp.color, fontSize:12, fontFamily:sans, fontWeight:700, cursor:"pointer" }}>
+            {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copiado!" : "Copiar p/ prontuário"}
+          </button>
         </div>
       </div>
     </div>

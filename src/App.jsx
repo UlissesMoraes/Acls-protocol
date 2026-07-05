@@ -30,6 +30,7 @@ export default function App() {
   const [tools, setTools] = useState(false);
   const [tool, setTool] = useState(null);
   const [aiFocus, setAiFocus] = useState(null);
+  const [toolQuery, setToolQuery] = useState("");
   const [tab, setTab] = useState("cascade");
   const [openSteps, setOpenSteps] = useState({});
   const [cat, setCat] = useState("Todos");
@@ -481,26 +482,51 @@ export default function App() {
         )}
 
         {/* ── TOOLS — CATÁLOGO ── */}
-        {tools && !tool && (
+        {tools && !tool && (() => {
+          const norm = s => (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+          const q = norm(toolQuery.trim());
+          const subOf = item => item.sub || SCORES_DEF[item.id]?.sub || "";
+          const nameOf = item => (TOOL_META[item.id]?.short) || item.label || SCORES_DEF[item.id]?.label || item.id;
+          const groups = TOOL_GROUPS.filter(g => !g.mode || g.mode === mode)
+            .map(g => ({ ...g, items: q ? g.items.filter(it => norm(nameOf(it)+" "+subOf(it)+" "+(SCORES_DEF[it.id]?.label||"")).includes(q)) : g.items }))
+            .filter(g => g.items.length);
+          return (
           <div style={{ paddingTop:20, paddingBottom:60 }}>
-            {TOOL_GROUPS.filter(g => !g.mode || g.mode === mode).map(group => (
+            {/* Busca de ferramentas */}
+            <div style={{ position:"relative", marginBottom:18 }}>
+              <Icons.Search size={17} color={S} style={{ position:"absolute", left:13, top:"50%", transform:"translateY(-50%)" }} />
+              <input value={toolQuery} onChange={e=>setToolQuery(e.target.value)} placeholder="Buscar ferramenta ou escore… (ex: gasometria, HEART, infusão)"
+                style={{ width:"100%", boxSizing:"border-box", padding:"12px 38px", borderRadius:12, border:`1px solid ${BD}`, background:W, color:"var(--text)", fontSize:14.5, fontFamily:sans, outline:"none", boxShadow:"var(--shadow-sm)" }} />
+              {toolQuery && (
+                <button onClick={()=>setToolQuery("")} aria-label="Limpar busca" style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:S, cursor:"pointer", padding:6, display:"flex" }}>
+                  <Icons.X size={16} />
+                </button>
+              )}
+            </div>
+            {groups.length === 0 && (
+              <div style={{ textAlign:"center", padding:"30px 10px", color:S, fontFamily:sans, fontSize:13.5 }}>Nenhuma ferramenta encontrada para "{toolQuery}".</div>
+            )}
+            {groups.map(group => (
               <div key={group.cat} style={{ marginBottom:22 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:group.color, fontFamily:sans, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
                   {group.cat==="Fluxo crítico" && <Icons.Siren size={14} />}{group.cat==="Inteligência" && <Icons.Sparkles size={14} />}{group.cat}
+                  <span style={{ fontWeight:600, color:S, letterSpacing:0, textTransform:"none" }}>· {group.items.length}</span>
                 </div>
                 <div className="tool-cat-grid">
                   {group.items.map(item => {
                     const meta = TOOL_META[item.id] || {};
                     const Ic = meta.Ic || Icons.Score;
                     const crit = group.cat==="Fluxo crítico";
+                    const sub = subOf(item);
                     return (
                       <button key={item.id} onClick={()=>openTool(item.id)} className="tool-card"
-                        style={{ display:"flex", flexDirection:"column", gap:9, padding:"14px", borderRadius:14, cursor:"pointer", textAlign:"left", fontFamily:sans,
+                        style={{ display:"flex", flexDirection:"column", gap:8, padding:"14px", borderRadius:14, cursor:"pointer", textAlign:"left", fontFamily:sans,
                           background: crit ? tint(group.color,12) : W, border:`1px solid ${crit?group.border+"66":BD}`, boxShadow:"var(--shadow-sm)", transition:"all .15s" }}>
                         <span style={{ width:42, height:42, borderRadius:11, background:tint(group.color,16), display:"flex", alignItems:"center", justifyContent:"center" }}>
                           <Ic size={22} color={group.color} />
                         </span>
-                        <span style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", lineHeight:1.2 }}>{meta.short || item.label}</span>
+                        <span style={{ fontSize:13, fontWeight:700, color:"var(--text-strong)", lineHeight:1.2 }}>{nameOf(item)}</span>
+                        {sub && <span className="tool-sub" style={{ fontSize:11, color:S, lineHeight:1.4 }}>{sub}</span>}
                       </button>
                     );
                   })}
@@ -513,7 +539,8 @@ export default function App() {
               <span style={{ fontSize:12, color:S, fontFamily:sans, lineHeight:1.5 }}>Calculadoras são apoio à decisão. Confira sempre doses, diluições e contraindicações — a responsabilidade é do médico assistente.</span>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* ── TOOLS — FERRAMENTA DEDICADA ── */}
         {tools && tool && (() => {
@@ -910,6 +937,7 @@ export default function App() {
         .quick-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         .tool-cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
         .tool-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .tool-sub { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         @media (hover: none) { .quick-card:active, .tool-card:active { transform: scale(.98); } }
         button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #4299E1; outline-offset: 2px; }
         button:focus:not(:focus-visible) { outline: none; }

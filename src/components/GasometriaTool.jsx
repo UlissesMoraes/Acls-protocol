@@ -1,6 +1,22 @@
 import { useState, useMemo } from "react";
-import { Gauge, Activity, Wind, FlaskConical, Droplet, AlertTriangle, Stethoscope } from "lucide-react";
+import { Gauge, Activity, Wind, FlaskConical, Droplet, AlertTriangle, Stethoscope, Copy, Check, Eraser } from "lucide-react";
 import { analyzeGas } from "../lib/gasometria.js";
+
+// Texto pronto para prontuário a partir do resultado.
+function gasReport(v, r) {
+  const l = [];
+  const vals = [`pH ${r.ph}`, `PaCO₂ ${r.pco2}`, `HCO₃⁻ ${r.hco3}`];
+  if (v.na) vals.push(`Na⁺ ${v.na}`); if (v.cl) vals.push(`Cl⁻ ${v.cl}`);
+  if (v.pao2) vals.push(`PaO₂ ${v.pao2}`); if (v.fio2) vals.push(`FiO₂ ${v.fio2}%`);
+  if (v.lactato) vals.push(`lactato ${v.lactato}`);
+  l.push(`Gasometria arterial: ${vals.join(" · ")}.`);
+  l.push(`Interpretação: ${r.conclusion}.`);
+  if (r.compensation) l.push(`Compensação: ${r.compensation.text}.`);
+  if (r.anionGap) l.push(`${r.anionGap.text}.`);
+  if (r.correctedHco3) l.push(`${r.correctedHco3.text}.`);
+  if (r.oxygenation) l.push(`Oxigenação: ${r.oxygenation.text}.`);
+  return l.join("\n");
+}
 
 const sans = "var(--font)";
 const ACCENT = "#0E7490";
@@ -18,8 +34,12 @@ const FIELDS = [
 
 export default function GasometriaTool() {
   const [v, setV] = useState({});
+  const [copied, setCopied] = useState(false);
   const set = (k, x) => setV(p => ({ ...p, [k]: x }));
   const res = useMemo(() => analyzeGas(v), [v]);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(gasReport(v, res)); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {}
+  };
 
   const acidColor = res.valid && res.phStatus === "acidemia" ? "#C0392B" : res.valid && res.phStatus === "alcalemia" ? "#2471A3" : "#1E8449";
 
@@ -60,6 +80,15 @@ export default function GasometriaTool() {
           {res.anionGap && <Row Ic={FlaskConical} color={res.anionGap.high ? "#C0392B" : "#2B6CB0"} title="Ânion gap" text={res.anionGap.text} />}
           {res.correctedHco3 && <Row Ic={FlaskConical} color="#7D6608" title="HCO₃⁻ corrigido (delta)" text={res.correctedHco3.text} />}
           {res.oxygenation && <Row Ic={Droplet} color={res.oxygenation.hypoxemia ? "#C0392B" : "#0E7490"} title="Oxigenação" text={res.oxygenation.text} />}
+
+          <div style={{ display: "flex", gap: 9, marginTop: 4, flexWrap: "wrap" }}>
+            <button onClick={copy} style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 15px", borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 13, fontFamily: sans, fontWeight: 700, cursor: "pointer" }}>
+              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copiado!" : "Copiar p/ prontuário"}
+            </button>
+            <button onClick={() => setV({})} style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 15px", borderRadius: 10, border: "1px solid var(--input-border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: sans, fontWeight: 600, cursor: "pointer" }}>
+              <Eraser size={15} /> Limpar
+            </button>
+          </div>
 
           <div style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 10.5, color: "var(--muted)", fontFamily: sans, lineHeight: 1.5, marginTop: 2 }}>
             <Stethoscope size={13} style={{ flexShrink: 0, marginTop: 1 }} />
